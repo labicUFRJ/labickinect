@@ -1,28 +1,0 @@
-TALL_BUILD
-v5
-r1
-cCheck dependencies
-cPhaseScriptExecution "CMake Rules" /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/ALL_BUILD.build/Script-0B6A77B57F7240ED9DC8B2F7.sh
-
-N/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/ALL_BUILD.build/Script-0B6A77B57F7240ED9DC8B2F7.sh
-c000000005216BECF00000000000000AC
-t1377222351
-s172
-
-CCheck dependencies
-r0
-lSLF05#21%IDEActivityLogSection1@2#32"com.apple.dt.IDE.BuildLogSection18"Check dependenciesb7d570e3fbc6b741^a60f71e3fbc6b741^---0#1#0#--18"Check dependencies36"847070A9-6E5F-483E-A256-131BA6DD3CDC-
-
-CPhaseScriptExecution "CMake Rules" /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/ALL_BUILD.build/Script-0B6A77B57F7240ED9DC8B2F7.sh
-s398916579.443004
-e398916579.483429
-r1
-xPhaseScriptExecution
-xCMake Rules
-x/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/ALL_BUILD.build/Script-0B6A77B57F7240ED9DC8B2F7.sh
-oecho ""
-o
-oecho Build\ all\ projects
-oBuild all projects
-lSLF05#21%IDEActivityLogSection1@2#32"com.apple.dt.IDE.BuildLogSection37"Run custom shell script 'CMake Rules'fd1572e3fbc6b741^dd0b7ce3fbc6b741^-54"echo ""echo Build\ all\ projectsBuild all projects3(21%IDEActivityLogMessage2@8"echo ""-398916579#0#8#-0#-----2@26"echo Build\ all\ projects-398916579#9#26#-0#-----2@19"Build all projects-398916579#35#19#-0#-----0#0#0#--291"PhaseScriptExecution "CMake Rules" xcode/LabicKinect.build/Debug/ALL_BUILD.build/Script-0B6A77B57F7240ED9DC8B2F7.sh    cd /Users/macecchi/Desktop/labickinect    /bin/sh -c /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/ALL_BUILD.build/Script-0B6A77B57F7240ED9DC8B2F7.sh36"CB7275B1-1D87-4DC4-AEF4-06056B6E90DF-
-

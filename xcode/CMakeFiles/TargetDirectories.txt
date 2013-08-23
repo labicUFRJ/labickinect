@@ -1,3 +1,0 @@
-/Users/macecchi/Desktop/labickinect/xcode/CMakeFiles/ALL_BUILD.dir
-/Users/macecchi/Desktop/labickinect/xcode/CMakeFiles/ZERO_CHECK.dir
-/Users/macecchi/Desktop/labickinect/xcode/CMakeFiles/labickinect.dir

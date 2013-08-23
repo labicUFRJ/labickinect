@@ -1,28 +1,0 @@
-TZERO_CHECK
-v5
-r1
-cCheck dependencies
-cPhaseScriptExecution "CMake Rules" /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/ZERO_CHECK.build/Script-C44D56F592B24DFAA1F90CC4.sh
-
-N/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/ZERO_CHECK.build/Script-C44D56F592B24DFAA1F90CC4.sh
-c000000005216BA1100000000000000AD
-t1377221137
-s173
-
-CCheck dependencies
-r0
-lSLF05#21%IDEActivityLogSection1@2#32"com.apple.dt.IDE.BuildLogSection18"Check dependenciesccf10a91f1c6b741^e9810b91f1c6b741^---0#1#0#--18"Check dependencies36"A8C458E7-1942-415A-BAA8-B6F32E58F3C5-
-
-CPhaseScriptExecution "CMake Rules" /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/ZERO_CHECK.build/Script-C44D56F592B24DFAA1F90CC4.sh
-s398913937.046058
-e398913937.113326
-r1
-xPhaseScriptExecution
-xCMake Rules
-x/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/ZERO_CHECK.build/Script-C44D56F592B24DFAA1F90CC4.sh
-oecho ""
-o
-omake -f /Users/macecchi/Desktop/labickinect/xcode/CMakeScripts/ReRunCMake.make
-omake[1]: `CMakeFiles/cmake.check_cache' is up to date.
-lSLF05#21%IDEActivityLogSection1@2#32"com.apple.dt.IDE.BuildLogSection37"Run custom shell script 'CMake Rules'2b180d91f1c6b741^05151d91f1c6b741^-143"echo ""make -f /Users/macecchi/Desktop/labickinect/xcode/CMakeScripts/ReRunCMake.makemake[1]: `CMakeFiles/cmake.check_cache' is up to date.3(21%IDEActivityLogMessage2@8"echo ""-398913937#0#8#-0#-----2@79"make -f /Users/macecchi/Desktop/labickinect/xcode/CMakeScripts/ReRunCMake.make-398913937#9#79#-0#-----2@55"make[1]: `CMakeFiles/cmake.check_cache' is up to date.-398913937#88#55#-0#-----0#0#0#--293"PhaseScriptExecution "CMake Rules" xcode/LabicKinect.build/Debug/ZERO_CHECK.build/Script-C44D56F592B24DFAA1F90CC4.sh    cd /Users/macecchi/Desktop/labickinect    /bin/sh -c /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/ZERO_CHECK.build/Script-C44D56F592B24DFAA1F90CC4.sh36"37624DC0-3BE1-4CC7-9F3E-81198463D5F0-
-
