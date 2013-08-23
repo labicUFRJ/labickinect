@@ -1,220 +1,0 @@
-Tlabickinect
-v5
-r1
-cCheck dependencies
-cCompileC xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/main.o /Users/macecchi/Desktop/labickinect/main.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler
-cCompileC xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicKinect.o /Users/macecchi/Desktop/labickinect/LabicKinect.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler
-cCompileC xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicCV.o /Users/macecchi/Desktop/labickinect/LabicCV.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler
-cCompileC xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicMatcher.o /Users/macecchi/Desktop/labickinect/LabicMatcher.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler
-cCompileC xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicPCL.o /Users/macecchi/Desktop/labickinect/LabicPCL.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler
-
-N/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk
-c0000000051BE664900000000000000AA
-t1371432521
-s170
-
-N/Users/macecchi/Desktop/labickinect/LabicCV.cpp
-c00000000521668A700000000000000C5
-t1377200295
-s197
-
-N/Users/macecchi/Desktop/labickinect/LabicCV.h
-c0000000052166898000000000000018E
-t1377200280
-s398
-
-N/Users/macecchi/Desktop/labickinect/LabicKinect.cpp
-c000000005216B7A90000000000001FC2
-t1377220521
-s8130
-
-N/Users/macecchi/Desktop/labickinect/LabicKinect.h
-c000000005216BA0C000000000000047E
-t1377221132
-s1150
-
-N/Users/macecchi/Desktop/labickinect/LabicMatcher.cpp
-c000000005216B665000000000000334E
-t1377220197
-s13134
-
-N/Users/macecchi/Desktop/labickinect/LabicPCL.cpp
-c000000005216B670000000000000141A
-t1377220208
-s5146
-
-N/Users/macecchi/Desktop/labickinect/LabicPCL.h
-c000000005216652C00000000000003E6
-t1377199404
-s998
-
-N/Users/macecchi/Desktop/labickinect/main.cpp
-c000000005216B71D0000000000000299
-t1377220381
-s665
-i<boost/thread.hpp>
-i"LabicKinect.h"
-i"LabicCV.h"
-i"LabicPCL.h"
-
-N/Users/macecchi/Desktop/labickinect/xcode/Debug/labickinect
-t2
-s0
-
-N/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicCV.o
-t2
-s0
-
-N/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicKinect.o
-t2
-s0
-
-N/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicMatcher.o
-t2
-s0
-
-N/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicPCL.o
-t2
-s0
-
-N/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/labickinect.LinkFileList
-c000000005216BA11000000000000024B
-t1377221137
-s587
-
-N/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/main.o
-t2
-s0
-
-N/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Script-38DF38A4599E40FA83B111E5.sh
-c000000005216BA1100000000000000A8
-t1377221137
-s168
-
-N/opt/local/include/boost/thread.hpp
-c00000000506DBE840000000000000347
-t1349369476
-s839
-
-CBuild AST from /Users/macecchi/Desktop/labickinect/LabicCV.cpp
-r0
-
-CBuild AST from /Users/macecchi/Desktop/labickinect/LabicKinect.cpp
-r0
-
-CBuild AST from /Users/macecchi/Desktop/labickinect/LabicMatcher.cpp
-r0
-
-CBuild AST from /Users/macecchi/Desktop/labickinect/LabicPCL.cpp
-r0
-
-CBuild AST from /Users/macecchi/Desktop/labickinect/main.cpp
-r0
-
-CCheck dependencies
-r0
-lSLF05#21%IDEActivityLogSection1@2#32"com.apple.dt.IDE.BuildLogSection18"Check dependenciescaa92191f1c6b741^417e2291f1c6b741^---0#1#0#--18"Check dependencies36"2B19EE24-B0B8-4EF2-AFE4-3A833DF9FF2B-
-
-CCompileC xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicCV.o /Users/macecchi/Desktop/labickinect/LabicCV.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler
-s398913938.029408
-e398913938.766399
-r1
-xCompileC
-xxcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicCV.o
-x/Users/macecchi/Desktop/labickinect/LabicCV.cpp
-xnormal
-xx86_64
-xc++
-xcom.apple.compilers.llvm.clang.1_0.compiler
-lSLF05#21%IDEActivityLogSection1@2#32"com.apple.dt.IDE.BuildLogSection55"Compile /Users/macecchi/Desktop/labickinect/LabicCV.cpp01a30792f1c6b741^ec68c492f1c6b741^---0#0#0#-19%DVTDocumentLocation2@63"file://localhost/Users/macecchi/Desktop/labickinect/LabicCV.cpp0000000000000000^2414"CompileC xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicCV.o LabicCV.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler    cd /Users/macecchi/Desktop/labickinect    setenv LANG en_US.US-ASCII    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -arch x86_64 -fmessage-length=0 -Wno-trigraphs -fpascal-strings -O0 -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wformat -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-enum-conversion -Wno-shorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions "-DCMAKE_INTDIR=\"Debug\"" -DEIGEN_USE_NEW_STDVECTOR -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET -DFLANN_STATIC -Dqh_QHpointer -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk -fasm-blocks -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -mmacosx-version-min=10.8 -g -Wno-sign-conversion -I/Users/macecchi/Desktop/labickinect/xcode/Debug/include -I/opt/local/include/vtk-5.10 -I/usr/local/include/opencv -I/usr/local/include -I/usr/local/include/pcl-1.6 -I/opt/local/include/eigen3 -I/opt/local/include -I/usr/include/ni -I/usr/local/include/qhull -I/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/DerivedSources/x86_64 -I/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/DerivedSources -Wmost -Wno-four-char-constants -Wno-unknown-pragmas -F/Users/macecchi/Desktop/labickinect/xcode/Debug -msse4.1 -mfpmath=sse -Wno-deprecated -Wno-invalid-offsetof -Qunused-arguments -MMD -MT dependencies -MF /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicCV.d --serialize-diagnostics /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicCV.dia -c /Users/macecchi/Desktop/labickinect/LabicCV.cpp -o /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicCV.o36"7F500336-9D4D-46DA-AFD0-588E025DACB3-
-
-CCompileC xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicKinect.o /Users/macecchi/Desktop/labickinect/LabicKinect.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler
-s398913937.136086
-e398913938.028086
-r1
-xCompileC
-xxcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicKinect.o
-x/Users/macecchi/Desktop/labickinect/LabicKinect.cpp
-xnormal
-xx86_64
-xc++
-xcom.apple.compilers.llvm.clang.1_0.compiler
-o/Users/macecchi/Desktop/labickinect/LabicKinect.cpp:14:27: warning: unused variable 'requested_format' [-Wunused-variable]
-o    freenect_video_format requested_format(FREENECT_VIDEO_RGB); // moved from main
-o                          ^
-o1 warning generated.
-lSLF05#21%IDEActivityLogSection1@2#32"com.apple.dt.IDE.BuildLogSection59"Compile /Users/macecchi/Desktop/labickinect/LabicKinect.cpp2f6a2391f1c6b741^40300792f1c6b741^-255"/Users/macecchi/Desktop/labickinect/LabicKinect.cpp:14:27: warning: unused variable 'requested_format' [-Wunused-variable]    freenect_video_format requested_format(FREENECT_VIDEO_RGB); // moved from main                          ^1 warning generated.1(36%IDEClangDiagnosticActivityLogMessage2@34"Unused variable 'requested_format'-398913938#18446744073709551615#0#-1#27"com.apple.dt.IDE.diagnostic23%DVTTextDocumentLocation3@67"file://localhost/Users/macecchi/Desktop/labickinect/LabicKinect.cpp0000000000000000^13#26#13#26#575#0#19"Unused Entity Issue--0#0#0#-19%DVTDocumentLocation4@67"file://localhost/Users/macecchi/Desktop/labickinect/LabicKinect.cpp0000000000000000^2438"CompileC xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicKinect.o LabicKinect.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler    cd /Users/macecchi/Desktop/labickinect    setenv LANG en_US.US-ASCII    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -arch x86_64 -fmessage-length=0 -Wno-trigraphs -fpascal-strings -O0 -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wformat -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-enum-conversion -Wno-shorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions "-DCMAKE_INTDIR=\"Debug\"" -DEIGEN_USE_NEW_STDVECTOR -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET -DFLANN_STATIC -Dqh_QHpointer -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk -fasm-blocks -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -mmacosx-version-min=10.8 -g -Wno-sign-conversion -I/Users/macecchi/Desktop/labickinect/xcode/Debug/include -I/opt/local/include/vtk-5.10 -I/usr/local/include/opencv -I/usr/local/include -I/usr/local/include/pcl-1.6 -I/opt/local/include/eigen3 -I/opt/local/include -I/usr/include/ni -I/usr/local/include/qhull -I/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/DerivedSources/x86_64 -I/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/DerivedSources -Wmost -Wno-four-char-constants -Wno-unknown-pragmas -F/Users/macecchi/Desktop/labickinect/xcode/Debug -msse4.1 -mfpmath=sse -Wno-deprecated -Wno-invalid-offsetof -Qunused-arguments -MMD -MT dependencies -MF /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicKinect.d --serialize-diagnostics /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicKinect.dia -c /Users/macecchi/Desktop/labickinect/LabicKinect.cpp -o /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicKinect.o36"78F53ACC-C4E6-4FFC-B800-284547478685-
-
-CCompileC xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicMatcher.o /Users/macecchi/Desktop/labickinect/LabicMatcher.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler
-s398913938.767619
-e398913940.488156
-r1
-xCompileC
-xxcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicMatcher.o
-x/Users/macecchi/Desktop/labickinect/LabicMatcher.cpp
-xnormal
-xx86_64
-xc++
-xcom.apple.compilers.llvm.clang.1_0.compiler
-lSLF05#21%IDEActivityLogSection1@2#32"com.apple.dt.IDE.BuildLogSection60"Compile /Users/macecchi/Desktop/labickinect/LabicMatcher.cppb69fc492f1c6b741^81047d94f1c6b741^---0#0#0#-19%DVTDocumentLocation2@68"file://localhost/Users/macecchi/Desktop/labickinect/LabicMatcher.cpp0000000000000000^2444"CompileC xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicMatcher.o LabicMatcher.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler    cd /Users/macecchi/Desktop/labickinect    setenv LANG en_US.US-ASCII    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -arch x86_64 -fmessage-length=0 -Wno-trigraphs -fpascal-strings -O0 -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wformat -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-enum-conversion -Wno-shorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions "-DCMAKE_INTDIR=\"Debug\"" -DEIGEN_USE_NEW_STDVECTOR -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET -DFLANN_STATIC -Dqh_QHpointer -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk -fasm-blocks -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -mmacosx-version-min=10.8 -g -Wno-sign-conversion -I/Users/macecchi/Desktop/labickinect/xcode/Debug/include -I/opt/local/include/vtk-5.10 -I/usr/local/include/opencv -I/usr/local/include -I/usr/local/include/pcl-1.6 -I/opt/local/include/eigen3 -I/opt/local/include -I/usr/include/ni -I/usr/local/include/qhull -I/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/DerivedSources/x86_64 -I/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/DerivedSources -Wmost -Wno-four-char-constants -Wno-unknown-pragmas -F/Users/macecchi/Desktop/labickinect/xcode/Debug -msse4.1 -mfpmath=sse -Wno-deprecated -Wno-invalid-offsetof -Qunused-arguments -MMD -MT dependencies -MF /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicMatcher.d --serialize-diagnostics /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicMatcher.dia -c /Users/macecchi/Desktop/labickinect/LabicMatcher.cpp -o /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicMatcher.o36"DE751945-AFEC-4F20-9872-B0DBD9E7F16B-
-
-CCompileC xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicPCL.o /Users/macecchi/Desktop/labickinect/LabicPCL.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler
-s398913940.489364
-e398913960.632011
-r1
-xCompileC
-xxcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicPCL.o
-x/Users/macecchi/Desktop/labickinect/LabicPCL.cpp
-xnormal
-xx86_64
-xc++
-xcom.apple.compilers.llvm.clang.1_0.compiler
-lSLF05#21%IDEActivityLogSection1@2#32"com.apple.dt.IDE.BuildLogSection56"Compile /Users/macecchi/Desktop/labickinect/LabicPCL.cpp9e627d94f1c6b741^32cca1a8f1c6b741^---0#0#0#-19%DVTDocumentLocation2@64"file://localhost/Users/macecchi/Desktop/labickinect/LabicPCL.cpp0000000000000000^2420"CompileC xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicPCL.o LabicPCL.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler    cd /Users/macecchi/Desktop/labickinect    setenv LANG en_US.US-ASCII    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -arch x86_64 -fmessage-length=0 -Wno-trigraphs -fpascal-strings -O0 -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wformat -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-enum-conversion -Wno-shorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions "-DCMAKE_INTDIR=\"Debug\"" -DEIGEN_USE_NEW_STDVECTOR -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET -DFLANN_STATIC -Dqh_QHpointer -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk -fasm-blocks -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -mmacosx-version-min=10.8 -g -Wno-sign-conversion -I/Users/macecchi/Desktop/labickinect/xcode/Debug/include -I/opt/local/include/vtk-5.10 -I/usr/local/include/opencv -I/usr/local/include -I/usr/local/include/pcl-1.6 -I/opt/local/include/eigen3 -I/opt/local/include -I/usr/include/ni -I/usr/local/include/qhull -I/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/DerivedSources/x86_64 -I/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/DerivedSources -Wmost -Wno-four-char-constants -Wno-unknown-pragmas -F/Users/macecchi/Desktop/labickinect/xcode/Debug -msse4.1 -mfpmath=sse -Wno-deprecated -Wno-invalid-offsetof -Qunused-arguments -MMD -MT dependencies -MF /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicPCL.d --serialize-diagnostics /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicPCL.dia -c /Users/macecchi/Desktop/labickinect/LabicPCL.cpp -o /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/LabicPCL.o36"6ACE6B67-37AA-4BBF-8D5F-4F8A92D15EF1-
-
-CCompileC xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/main.o /Users/macecchi/Desktop/labickinect/main.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler
-s398913937.135899
-e398913957.704358
-r0
-xCompileC
-xxcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/main.o
-x/Users/macecchi/Desktop/labickinect/main.cpp
-xnormal
-xx86_64
-xc++
-xcom.apple.compilers.llvm.clang.1_0.compiler
-oIn file included from /Users/macecchi/Desktop/labickinect/main.cpp:13:
-oIn file included from /Users/macecchi/Desktop/labickinect/LabicCV.h:13:
-o/Users/macecchi/Desktop/labickinect/LabicKinect.h:19:7: error: redefinition of 'Mutex'
-oclass Mutex {
-o      ^
-o/Users/macecchi/Desktop/labickinect/LabicKinect.h:19:7: note: previous definition is here
-oclass Mutex {
-o      ^
-oIn file included from /Users/macecchi/Desktop/labickinect/main.cpp:13:
-oIn file included from /Users/macecchi/Desktop/labickinect/LabicCV.h:13:
-o/Users/macecchi/Desktop/labickinect/LabicKinect.h:21:8: error: expected member name or ';' after declaration specifiers
-o        Mutex();
-o        ~~~~~ ^
-o/Users/macecchi/Desktop/labickinect/LabicKinect.h:44:7: error: redefinition of 'Kinect'
-oclass Kinect : public Freenect::FreenectDevice {
-o      ^
-o/Users/macecchi/Desktop/labickinect/LabicKinect.h:44:7: note: previous definition is here
-oclass Kinect : public Freenect::FreenectDevice {
-o      ^
-oIn file included from /Users/macecchi/Desktop/labickinect/main.cpp:13:
-oIn file included from /Users/macecchi/Desktop/labickinect/LabicCV.h:13:
-o/Users/macecchi/Desktop/labickinect/LabicKinect.h:46:26: error: expected ')'
-o        Kinect(freenect_context *_ctx, int _index);
-o                                ^
-o/Users/macecchi/Desktop/labickinect/LabicKinect.h:46:8: note: to match this '('
-o        Kinect(freenect_context *_ctx, int _index);
-o              ^
-o4 errors generated.
-lSLF05#21%IDEActivityLogSection1@2#32"com.apple.dt.IDE.BuildLogSection52"Compile /Users/macecchi/Desktop/labickinect/main.cppd2e42291f1c6b741^7461b4a5f1c6b741^-1426"In file included from /Users/macecchi/Desktop/labickinect/main.cpp:13:In file included from /Users/macecchi/Desktop/labickinect/LabicCV.h:13:/Users/macecchi/Desktop/labickinect/LabicKinect.h:19:7: error: redefinition of 'Mutex'class Mutex {      ^/Users/macecchi/Desktop/labickinect/LabicKinect.h:19:7: note: previous definition is hereclass Mutex {      ^In file included from /Users/macecchi/Desktop/labickinect/main.cpp:13:In file included from /Users/macecchi/Desktop/labickinect/LabicCV.h:13:/Users/macecchi/Desktop/labickinect/LabicKinect.h:21:8: error: expected member name or ';' after declaration specifiers        Mutex();        ~~~~~ ^/Users/macecchi/Desktop/labickinect/LabicKinect.h:44:7: error: redefinition of 'Kinect'class Kinect : public Freenect::FreenectDevice {      ^/Users/macecchi/Desktop/labickinect/LabicKinect.h:44:7: note: previous definition is hereclass Kinect : public Freenect::FreenectDevice {      ^In file included from /Users/macecchi/Desktop/labickinect/main.cpp:13:In file included from /Users/macecchi/Desktop/labickinect/LabicCV.h:13:/Users/macecchi/Desktop/labickinect/LabicKinect.h:46:26: error: expected ')'        Kinect(freenect_context *_ctx, int _index);                                ^/Users/macecchi/Desktop/labickinect/LabicKinect.h:46:8: note: to match this '('        Kinect(freenect_context *_ctx, int _index);              ^4 errors generated.4(36%IDEClangDiagnosticActivityLogMessage2@23"Redefinition of 'Mutex'-398913957#18446744073709551615#0#3(2@70"In file included from /Users/macecchi/Desktop/labickinect/main.cpp:13:-398913957#18446744073709551615#0#-0#27"com.apple.dt.IDE.diagnostic23%DVTTextDocumentLocation3@60"file://localhost/Users/macecchi/Desktop/labickinect/main.cpp0000000000000000^12#9#12#9#157#0#21"Clang LLVM 1.0 Notice--2@71"In file included from /Users/macecchi/Desktop/labickinect/LabicCV.h:13:-398913957#18446744073709551615#0#-0#27"com.apple.dt.IDE.diagnostic3@61"file://localhost/Users/macecchi/Desktop/labickinect/LabicCV.h0000000000000000^12#9#12#9#179#0#21"Clang LLVM 1.0 Notice--2@27"Previous definition is here-398913957#18446744073709551615#0#-0#27"com.apple.dt.IDE.diagnostic3@65"file://localhost/Users/macecchi/Desktop/labickinect/LabicKinect.h0000000000000000^18#6#18#6#248#0#21"Clang LLVM 1.0 Notice--2#27"com.apple.dt.IDE.diagnostic3@65"file://localhost/Users/macecchi/Desktop/labickinect/LabicKinect.h0000000000000000^18#6#18#6#248#0#14"Semantic Issue--2@56"Expected member name or ';' after declaration specifiers-398913957#18446744073709551615#0#2(2@70"In file included from /Users/macecchi/Desktop/labickinect/main.cpp:13:-398913957#18446744073709551615#0#-0#27"com.apple.dt.IDE.diagnostic3@60"file://localhost/Users/macecchi/Desktop/labickinect/main.cpp0000000000000000^12#9#12#9#157#0#21"Clang LLVM 1.0 Notice--2@71"In file included from /Users/macecchi/Desktop/labickinect/LabicCV.h:13:-398913957#18446744073709551615#0#-0#27"com.apple.dt.IDE.diagnostic3@61"file://localhost/Users/macecchi/Desktop/labickinect/LabicCV.h0000000000000000^12#9#12#9#179#0#21"Clang LLVM 1.0 Notice--2#27"com.apple.dt.IDE.diagnostic3@65"file://localhost/Users/macecchi/Desktop/labickinect/LabicKinect.h0000000000000000^20#7#20#7#271#0#11"Parse Issue1(3@65"file://localhost/Users/macecchi/Desktop/labickinect/LabicKinect.h0000000000000000^20#1#20#6#265#0#-2@24"Redefinition of 'Kinect'-398913957#18446744073709551615#0#3(2@70"In file included from /Users/macecchi/Desktop/labickinect/main.cpp:13:-398913957#18446744073709551615#0#-0#27"com.apple.dt.IDE.diagnostic3@60"file://localhost/Users/macecchi/Desktop/labickinect/main.cpp0000000000000000^12#9#12#9#157#0#21"Clang LLVM 1.0 Notice--2@71"In file included from /Users/macecchi/Desktop/labickinect/LabicCV.h:13:-398913957#18446744073709551615#0#-0#27"com.apple.dt.IDE.diagnostic3@61"file://localhost/Users/macecchi/Desktop/labickinect/LabicCV.h0000000000000000^12#9#12#9#179#0#21"Clang LLVM 1.0 Notice--2@27"Previous definition is here-398913957#18446744073709551615#0#-0#27"com.apple.dt.IDE.diagnostic3@65"file://localhost/Users/macecchi/Desktop/labickinect/LabicKinect.h0000000000000000^43#6#43#6#530#0#21"Clang LLVM 1.0 Notice--2#27"com.apple.dt.IDE.diagnostic3@65"file://localhost/Users/macecchi/Desktop/labickinect/LabicKinect.h0000000000000000^43#6#43#6#530#0#14"Semantic Issue--2@12"Expected ')'-398913957#18446744073709551615#0#3(2@70"In file included from /Users/macecchi/Desktop/labickinect/main.cpp:13:-398913957#18446744073709551615#0#-0#27"com.apple.dt.IDE.diagnostic3@60"file://localhost/Users/macecchi/Desktop/labickinect/main.cpp0000000000000000^12#9#12#9#157#0#21"Clang LLVM 1.0 Notice--2@71"In file included from /Users/macecchi/Desktop/labickinect/LabicCV.h:13:-398913957#18446744073709551615#0#-0#27"com.apple.dt.IDE.diagnostic3@61"file://localhost/Users/macecchi/Desktop/labickinect/LabicCV.h0000000000000000^12#9#12#9#179#0#21"Clang LLVM 1.0 Notice--2@17"To match this '('-398913957#18446744073709551615#0#-0#27"com.apple.dt.IDE.diagnostic3@65"file://localhost/Users/macecchi/Desktop/labickinect/LabicKinect.h0000000000000000^45#7#45#7#588#0#21"Clang LLVM 1.0 Notice--2#27"com.apple.dt.IDE.diagnostic3@65"file://localhost/Users/macecchi/Desktop/labickinect/LabicKinect.h0000000000000000^45#25#45#25#606#0#11"Parse Issue--0#0#0#-19%DVTDocumentLocation4@60"file://localhost/Users/macecchi/Desktop/labickinect/main.cpp0000000000000000^2396"CompileC xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/main.o main.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler    cd /Users/macecchi/Desktop/labickinect    setenv LANG en_US.US-ASCII    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -arch x86_64 -fmessage-length=0 -Wno-trigraphs -fpascal-strings -O0 -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wformat -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-enum-conversion -Wno-shorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions "-DCMAKE_INTDIR=\"Debug\"" -DEIGEN_USE_NEW_STDVECTOR -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET -DFLANN_STATIC -Dqh_QHpointer -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk -fasm-blocks -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -mmacosx-version-min=10.8 -g -Wno-sign-conversion -I/Users/macecchi/Desktop/labickinect/xcode/Debug/include -I/opt/local/include/vtk-5.10 -I/usr/local/include/opencv -I/usr/local/include -I/usr/local/include/pcl-1.6 -I/opt/local/include/eigen3 -I/opt/local/include -I/usr/include/ni -I/usr/local/include/qhull -I/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/DerivedSources/x86_64 -I/Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/DerivedSources -Wmost -Wno-four-char-constants -Wno-unknown-pragmas -F/Users/macecchi/Desktop/labickinect/xcode/Debug -msse4.1 -mfpmath=sse -Wno-deprecated -Wno-invalid-offsetof -Qunused-arguments -MMD -MT dependencies -MF /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/main.d --serialize-diagnostics /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/main.dia -c /Users/macecchi/Desktop/labickinect/main.cpp -o /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Objects-normal/x86_64/main.o36"801333AE-2896-491A-A147-39B23499A406-
-
-CLd /Users/macecchi/Desktop/labickinect/xcode/Debug/labickinect normal x86_64
-r0
-
-CPhaseScriptExecution "CMake PostBuild Rules" /Users/macecchi/Desktop/labickinect/xcode/LabicKinect.build/Debug/labickinect.build/Script-38DF38A4599E40FA83B111E5.sh
-r0
-
