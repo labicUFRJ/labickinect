@@ -17,8 +17,10 @@ using namespace Labic;
 int main(int argc, char **argv) {
     Freenect::Freenect freenect;
     Kinect *kinect;
+    freenect_video_format requested_format(FREENECT_VIDEO_RGB);
+
     LabicCV *cv;
-	LabicPCL *pcl;
+//	LabicPCL *pcl;
 	
 	cout << "[main] Initializing Kinect device..." << endl;
 	
@@ -34,11 +36,12 @@ int main(int argc, char **argv) {
 		cout << "[main] Streams started." << endl;
 	} catch (runtime_error &e) {
 		cout << "[main] Kinect ERROR: " << e.what() << endl;
-//		return 1;
+		return 1;
 	}
     
 	// opencv thread
 	cv = new LabicCV(kinect, 640, 480); // TODO const
+    cv->init();
 	cv->start();
 	
     // pcl thread

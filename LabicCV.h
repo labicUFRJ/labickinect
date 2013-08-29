@@ -30,7 +30,8 @@ namespace Labic {
     private:
 		boost::thread m_Thread;
         Kinect *kinect;
-		
+		bool initialized;
+        bool stop;
 		int width;
 		int height;
 		cv::Mat rgb_image;
@@ -42,17 +43,21 @@ namespace Labic {
 		std::string rgb_s_window = "Source RGB Camera";
 		std::string depth_window = "Depth";
 		std::string rgbd_window = "RGBD Video";
-		static const int WINDOW_FLAGS = CV_WINDOW_NORMAL | CV_GUI_EXPANDED | CV_WINDOW_KEEPRATIO;
-		static const int REFRESH_INTERVAL = 1;
-
-		void display_rgb_window();
-		void display_depth_window();
-		cv::Vec3b depth_to_color_mm(float depth_value);
+        static const int REFRESH_INTERVAL = 1;
+        static const int DEPTH_RAW = 1;
+        static const int DEPTH_MM = 2;
+		static const int WINDOW_FLAGS = CV_WINDOW_AUTOSIZE;
+    
+		void displayRGB();
+		void displayDepth();
+        void keyboardHandler(int key);
+		cv::Vec3b depth_to_color(float raw_depth_value);
 		
     public:
         LabicCV(Kinect *_kinect, int _width, int _height);
 		void start();
 		void join();
+        void init();
         void display();
     };
 }

@@ -3,87 +3,89 @@
 using namespace Labic;
 
 Kinect::Kinect(freenect_context *_ctx, int _index)
-: Freenect::FreenectDevice(_ctx, _index), m_buffer_depth(freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB).bytes),m_buffer_video(freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB).bytes), m_gamma(2048), m_new_rgb_frame(false), m_new_depth_frame(false)
+: Freenect::FreenectDevice(_ctx, _index), m_buffer_depth(FREENECT_DEPTH_REGISTERED),m_buffer_video(FREENECT_VIDEO_RGB), m_gamma(2048), m_new_rgb_frame(false), m_new_depth_frame(false),
+depthMat(cv::Size(640,480),CV_16UC1), rgbMat(cv::Size(640,480),CV_8UC3,cv::Scalar(0)), ownMat(cv::Size(640,480),CV_8UC3,cv::Scalar(0))
 {
-    for ( unsigned int i = 0 ; i < 2048 ; i++) {
-        float v = i/2048.0;
-        v = std::pow(v, 3)* 6;
-        m_gamma[i] = v*6*256;
-    }
-    
-//    freenect_video_format requested_format(FREENECT_VIDEO_RGB); // moved from main
+    // ...
 }
 
 void Kinect::VideoCallback(void* _rgb, uint32_t timestamp) {
-    Mutex::ScopedLock lock(m_rgb_mutex);
+    m_rgb_mutex.lock();
     uint8_t* rgb = static_cast<uint8_t*>(_rgb);
-    std::copy(rgb, rgb+getVideoBufferSize(), m_buffer_video.begin());
+//    copy(rgb, rgb+getVideoBufferSize(), m_buffer_video.begin());
+    rgbMat.data = rgb;
     m_new_rgb_frame = true;
-}
+    m_rgb_mutex.unlock();
+};
 
 void Kinect::DepthCallback(void* _depth, uint32_t timestamp) {
-    Mutex::ScopedLock lock(m_depth_mutex);
+    m_depth_mutex.lock();
     uint16_t* depth = static_cast<uint16_t*>(_depth);
-    for( unsigned int i = 0 ; i < 640*480 ; i++) {
-        int pval = m_gamma[depth[i]];
-        int lb = pval & 0xff;
-        switch (pval>>8) {
-            case 0:
-                m_buffer_depth[3*i+0] = 255;
-                m_buffer_depth[3*i+1] = 255-lb;
-                m_buffer_depth[3*i+2] = 255-lb;
-                break;
-            case 1:
-                m_buffer_depth[3*i+0] = 255;
-                m_buffer_depth[3*i+1] = lb;
-                m_buffer_depth[3*i+2] = 0;
-                break;
-            case 2:
-                m_buffer_depth[3*i+0] = 255-lb;
-                m_buffer_depth[3*i+1] = 255;
-                m_buffer_depth[3*i+2] = 0;
-                break;
-            case 3:
-                m_buffer_depth[3*i+0] = 0;
-                m_buffer_depth[3*i+1] = 255;
-                m_buffer_depth[3*i+2] = lb;
-                break;
-            case 4:
-                m_buffer_depth[3*i+0] = 0;
-                m_buffer_depth[3*i+1] = 255-lb;
-                m_buffer_depth[3*i+2] = 255;
-                break;
-            case 5:
-                m_buffer_depth[3*i+0] = 0;
-                m_buffer_depth[3*i+1] = 0;
-                m_buffer_depth[3*i+2] = 255-lb;
-                break;
-            default:
-                m_buffer_depth[3*i+0] = 0;
-                m_buffer_depth[3*i+1] = 0;
-                m_buffer_depth[3*i+2] = 0;
-                break;
-        }
-    }
+    depth_buffer = depth;
+    depthMat.data = (uchar*) depth;
+//    std::copy(depth2, depth2+640*480*sizeof(uint16_t), m_buffer_depth_f.begin());
     m_new_depth_frame = true;
+    m_depth_mutex.unlock();
 }
 
-bool Kinect::getRGB(std::vector<uint8_t> &buffer) {
-    Mutex::ScopedLock lock(m_rgb_mutex);
-    if (!m_new_rgb_frame)
+bool Kinect::getVideo(std::vector<uint8_t> &buffer) {
+    m_rgb_mutex.lock();
+    if(m_new_rgb_frame) {
+        buffer.swap(m_buffer_video);
+        m_new_rgb_frame = false;
+        m_rgb_mutex.unlock();
+        return true;
+    } else {
+        m_rgb_mutex.unlock();
         return false;
-    buffer.swap(m_buffer_video);
-    m_new_rgb_frame = false;
-    return true;
+    }
 }
 
-bool Kinect::getDepth(std::vector<uint8_t> &buffer) {
-    Mutex::ScopedLock lock(m_depth_mutex);
-    if (!m_new_depth_frame)
+bool Kinect::getDepth(uint16_t* &buffer) {
+    m_depth_mutex.lock();
+    if(m_new_depth_frame) {
+        buffer = depth_buffer;
+        m_new_depth_frame = false;
+        m_depth_mutex.unlock();
+        return true;
+    } else {
+        m_depth_mutex.unlock();
         return false;
-    buffer.swap(m_buffer_depth);
-    m_new_depth_frame = false;
-    return true;
+    }
+}
+
+bool Kinect::getVideoMat(cv::Mat& output) {
+    m_rgb_mutex.lock();
+    if(m_new_rgb_frame) {
+        cvtColor(rgbMat, output, CV_RGB2BGR);
+        m_new_rgb_frame = false;
+        m_rgb_mutex.unlock();
+        return true;
+    } else {
+        m_rgb_mutex.unlock();
+        return false;
+    }
+}
+
+bool Kinect::getDepthMat(cv::Mat& output) {
+    m_depth_mutex.lock();
+    if(m_new_depth_frame) {
+        depthMat.copyTo(output);
+        m_new_depth_frame = false;
+        m_depth_mutex.unlock();
+        return true;
+    } else {
+        m_depth_mutex.unlock();
+        return false;
+    }
+}
+
+int Kinect::mmToRaw(float depthValue) {
+    int z = DEPTH_BLANK;
+    if (depthValue > 0) {
+        z = (int) MAX(0, ((1.0/(depthValue/1000.0)) - 3.3309495161)/(-0.0030711016));
+    }
+    return z;
 }
 
 Mutex::Mutex() {

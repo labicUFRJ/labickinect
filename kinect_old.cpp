@@ -1,4 +1,4 @@
-#include "labickinect.h"
+mon#include "labickinect.h"
 
 freenect_context *f_ctx;
 freenect_device *f_dev;
