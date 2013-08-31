@@ -32,25 +32,26 @@ namespace Labic {
         Kinect *kinect;
 		bool initialized;
         bool stop;
+        bool window_closed;
 		int width;
 		int height;
 		cv::Mat rgb_image;
 		cv::Mat depth_image;
 		uint16_t t_gamma[2048];
 		
-		std::string rgb_window = "RGB Camera";
-		std::string rgb_t_window = "Target RGB Camera";
-		std::string rgb_s_window = "Source RGB Camera";
-		std::string depth_window = "Depth";
+		std::string input_window = "Kinect Input";
+		std::string rgb_window = "RGB camera";
+		std::string rgb_t_window = "Target RGB camera";
+		std::string rgb_s_window = "Source RGB camera";
+		std::string depth_window = "Depth camera";
 		std::string rgbd_window = "RGBD Video";
         static const int REFRESH_INTERVAL = 1;
         static const int DEPTH_RAW = 1;
         static const int DEPTH_MM = 2;
 		static const int WINDOW_FLAGS = CV_WINDOW_AUTOSIZE;
-    
-		void displayRGB();
-		void displayDepth();
+        
         void keyboardHandler(int key);
+        void generateDepthImage(uint16_t *depth, cv::Mat depthMat);
 		cv::Vec3b depth_to_color(float raw_depth_value);
 		
     public:

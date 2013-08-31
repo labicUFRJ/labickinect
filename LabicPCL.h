@@ -7,14 +7,10 @@
 //
 
 
-#include <math.h>
-#include <cstdlib>
 #include <iostream>
-#include <algorithm>
-#include <iterator>
-#include <vector>
-#include <pcl/io/pcd_io.h>
-//#include <pcl/point_types.h>
+
+#include <boost/thread/thread.hpp>
+#include <pcl/common/common_headers.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include "opencv2/core/core.hpp"
 
@@ -30,23 +26,27 @@ namespace Labic {
 	class LabicPCL {
 		
 	private:
+		boost::thread m_Thread;
 		Kinect *kinect;
+        int width;
+        int height;
+        
+        void generateDepthCloud(uint16_t *depth);
 		
 	public:
-        // point cloud and viewer
-        pcl::visualization::PCLVisualizer         viewer;
-        pcl::PointCloud<pcl::PointXYZRGB>         cloud;
+        pcl::visualization::PCLVisualizer viewer;
+        pcl::PointCloud<pcl::PointXYZRGB> cloud;
+        pcl::PointCloud<pcl::PointXYZRGB> liveCloud;
         int viewPort;
         
-        LabicPCL(Kinect *_kinect);
+        LabicPCL(Kinect *_kinect, int _width, int _height);
 		void start();
 		void join();
         
         void addCameras(const std::vector<cv::Mat>&         T,
-                                   const std::vector<cv::Mat>&         R);
+                        const std::vector<cv::Mat>&         R);
         
-        void updateCloud(std::vector< cv::Point3d >& objPoints,
-                                               cv::Mat img);
+        void updateCloud(std::vector< cv::Point3d >& objPoints, cv::Mat img);
         
         void display();
         

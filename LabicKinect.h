@@ -17,6 +17,7 @@
 #include <cv.h>
 #include <cxcore.h>
 #include <highgui.h>
+#include <pcl/common/common_headers.h>
 
 #endif
 
@@ -51,16 +52,19 @@ private:
 class Kinect : public Freenect::FreenectDevice {
 public:
 	Kinect(freenect_context *_ctx, int _index);
-	//~MyFreenectDevice(){} TODO
-	// Do not call directly even in child
+    void close();
 	void VideoCallback(void* _rgb, uint32_t timestamp);
-	// Do not call directly even in child
 	void DepthCallback(void* _depth, uint32_t timestamp);
 	bool getVideo(std::vector<uint8_t> &buffer);
 	bool getDepth(uint16_t* &buffer);
 	bool getVideoMat(cv::Mat& output);
 	bool getDepthMat(cv::Mat& output);
+    void setTilt(double _tilt);
     int mmToRaw(float depthValue);
+    cv::Point3d ptToPoint3d (float cgx, float cgy, float cgz);
+    pcl::PointXYZRGB ptToPointXYZRGB (float cgx, float cgy, float cgz);
+    bool getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &cloud);
+    double tilt;
     static const int DEPTH_BLANK = 2047;
     
 private:

@@ -6,7 +6,13 @@ Kinect::Kinect(freenect_context *_ctx, int _index)
 : Freenect::FreenectDevice(_ctx, _index), m_buffer_depth(FREENECT_DEPTH_REGISTERED),m_buffer_video(FREENECT_VIDEO_RGB), m_gamma(2048), m_new_rgb_frame(false), m_new_depth_frame(false),
 depthMat(cv::Size(640,480),CV_16UC1), rgbMat(cv::Size(640,480),CV_8UC3,cv::Scalar(0)), ownMat(cv::Size(640,480),CV_8UC3,cv::Scalar(0))
 {
+    tilt = 0;
+    setLed(LED_RED);
     // ...
+}
+
+void Kinect::close() {
+    setLed(LED_BLINK_GREEN);
 }
 
 void Kinect::VideoCallback(void* _rgb, uint32_t timestamp) {
@@ -44,7 +50,8 @@ bool Kinect::getVideo(std::vector<uint8_t> &buffer) {
 bool Kinect::getDepth(uint16_t* &buffer) {
     m_depth_mutex.lock();
     if(m_new_depth_frame) {
-        buffer = depth_buffer;
+        //buffer = depth_buffer;
+        std::copy(depth_buffer, depth_buffer + 480*640, buffer);
         m_new_depth_frame = false;
         m_depth_mutex.unlock();
         return true;
@@ -86,6 +93,99 @@ int Kinect::mmToRaw(float depthValue) {
         z = (int) MAX(0, ((1.0/(depthValue/1000.0)) - 3.3309495161)/(-0.0030711016));
     }
     return z;
+}
+
+cv::Point3d Kinect::ptToPoint3d(float cgx, float cgy, float cgz) {
+    double fx_d = 1.0 / 5.9421434211923247e+02;
+    double fy_d = 1.0 / 5.9104053696870778e+02;
+    double cx_d = 3.3930780975300314e+02;
+    double cy_d = 2.4273913761751615e+02;
+    
+    cgz = cgz/1000.0; // cgz has to be in mm
+    
+    if (cgz == 0 || cgz == DEPTH_BLANK) {
+        return cv::Point3d(0,0,0);
+    }
+        
+    return cv::Point3d(
+                       (cgx - cx_d) * cgz * fx_d,
+                       (cgy - cy_d) * cgz * fy_d,
+                       cgz
+                       );
+}
+
+pcl::PointXYZRGB Kinect::ptToPointXYZRGB(float cgx, float cgy, float cgz) {
+    double fx_d = 1.0 / 5.9421434211923247e+02;
+    double fy_d = 1.0 / 5.9104053696870778e+02;
+    double cx_d = 3.3930780975300314e+02;
+    double cy_d = 2.4273913761751615e+02;
+    pcl::PointXYZRGB pt;
+    
+    cgz = cgz/1000.0; // cgz has to be in mm
+    
+    if (cgz == 0 || cgz == DEPTH_BLANK) {
+        pt.x = pt.y = pt.z = 0;
+    } else {
+        
+        pt.x = (cgx - cx_d) * cgz * fx_d;
+        pt.y = (cgy - cy_d) * cgz * fy_d;
+        pt.z = cgz;
+    }
+    
+    return pt;
+}
+
+bool Kinect::getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud) {
+    pcl::PointCloud<pcl::PointXYZRGB> cloud;
+    pcl::PointXYZRGB pt;
+    uint16_t *depth;
+    cv::Mat rgb(cv::Size(640, 480), CV_8UC3, cv::Scalar(0));
+    cv::Vec3b ptRGB;
+    int i, x, y;
+    
+    m_rgb_mutex.lock();
+    m_depth_mutex.lock();
+    
+    if (m_new_rgb_frame && m_new_depth_frame) {
+        depth = (uint16_t*) malloc(sizeof(uint16_t)*640*480);
+        std::copy(depth_buffer, depth_buffer + 480*640, depth);
+        cvtColor(rgbMat, rgb, CV_RGB2BGR);
+        m_rgb_mutex.unlock();
+        m_depth_mutex.unlock();
+    } else {
+        m_rgb_mutex.unlock();
+        m_depth_mutex.unlock();
+        return false;
+    }
+    
+    cloud.clear();
+    cloud.width = 640*480;
+    cloud.height = 1;
+    
+    for (i=0; i<640*480; i++) {
+        y = i/640;
+        x = i%640;
+        
+        pt = ptToPointXYZRGB(x, y, depth[i]);
+        ptRGB = rgb.at<cv::Vec3b>(y,x);
+        pt.r = ptRGB[2];
+        pt.g = ptRGB[1];
+        pt.b = ptRGB[0];
+        
+        cloud.points.push_back(pt);
+    }
+
+    _cloud = cloud;
+    free(depth);
+    return true;
+
+}
+
+void Kinect::setTilt(double _tilt) {
+    tilt = !_tilt ? 0 : tilt+_tilt;
+    if (tilt < -30) tilt = -30;
+    else if (tilt > 30) tilt = 30;
+    setTiltDegrees(tilt);
 }
 
 Mutex::Mutex() {

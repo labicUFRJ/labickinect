@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     freenect_video_format requested_format(FREENECT_VIDEO_RGB);
 
     LabicCV *cv;
-//	LabicPCL *pcl;
+	LabicPCL *pcl;
 	
 	cout << "[main] Initializing Kinect device..." << endl;
 	
@@ -45,22 +45,22 @@ int main(int argc, char **argv) {
 	cv->start();
 	
     // pcl thread
-//	pcl = new LabicPCL(kinect);
-//	pcl->start();
+	pcl = new LabicPCL(kinect, 640, 480);
+	pcl->start();
 	
     // matcher thread
 	// TODO
 	
 	// wait for threads to finish
 	cv->join();
-	free(cv);
-//	pcl->join();
-//	free(pcl);
+	pcl->join();
+    //delete cv; delete pcl;
     
 	cout << "[main] All threads have finished. Closing Kinect..." << endl;
 	
     kinect->stopVideo();
 	kinect->stopDepth();
+    kinect->close();
 	
 	cout << "[main] Kinect closed." << endl
 		 << "[main] Finishing main. Bye!" << endl;

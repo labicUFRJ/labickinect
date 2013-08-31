@@ -74,7 +74,7 @@ namespace Freenect {
 			freenect_set_video_callback(m_dev, freenect_video_callback);
 		}
 		virtual ~FreenectDevice() {
-			if(freenect_close_device(m_dev) < 0){} //FN_WARNING("Device did not shutdown in a clean fashion");
+			if(freenect_close_device(m_dev) < 0) throw std::runtime_error("Device did not shutdown in a clean fashion");
 		}
 		void startVideo() {
 			if(freenect_start_video(m_dev) < 0) throw std::runtime_error("Cannot start RGB callback");

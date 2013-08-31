@@ -18,6 +18,7 @@ LabicCV::LabicCV(Kinect *_kinect, int _width, int _height) {
 	height = _height;
     
     stop = false;
+    window_closed = false;
     initialized = false;
     
     for (unsigned int i=0; i<2048; i++) {
@@ -28,68 +29,61 @@ LabicCV::LabicCV(Kinect *_kinect, int _width, int _height) {
 }
 
 void LabicCV::init() {
-    // Initialize windows
-    
-	namedWindow(depth_window, WINDOW_FLAGS);
-//	resizeWindow(depth_window, width, height);
-	moveWindow(depth_window, 50, 0);
+    namedWindow(input_window, WINDOW_FLAGS);
 	
-	namedWindow(rgb_window, WINDOW_FLAGS);
-//	resizeWindow(rgb_window, width, height);
-	moveWindow(rgb_window, 50, 300);
-    
     initialized = true;
 }
 
 void LabicCV::display() {
     Mat rgbMat(Size(width, height), CV_8UC3, Scalar(0));
 	Mat depthMat(Size(width, height), CV_8UC3, Scalar(0));
+    Mat cameras(height, width*2, CV_8UC3);
+    Mat left(cameras, Rect(0, 0, width, height));
+    Mat right(cameras, Rect(width, 0, width, height));
 
-    uint16_t *depth = (uint16_t*) malloc(sizeof(uint16_t)*width*height);
-    int x, y;
-    int depthValue;
+    uint16_t *depth;
     
-	cout << "[LabicCV] Display started." << endl;
+	cout << "[LabicCV] Display started" << endl;
     if (!initialized) {
-        cout << "[LabicCV] ERROR: did not call init(). Display finished." << endl;
+        cout << "[LabicCV] ERROR: did not call init(). Display finished" << endl;
         return;
     }
     
     do {
+        depth = (uint16_t*) malloc(sizeof(uint16_t)*width*height);
+        
         kinect->getVideoMat(rgbMat);
         kinect->getDepth(depth);
         
-        for (int i=0; i<width*height; i++) {
-            y = i/width;
-            x = i%width;
-			
-			depthValue = kinect->mmToRaw(depth[i]);
-            
-            depthMat.at<Vec3b>(y,x) = depth_to_color(depthValue);
-//            cout << x << ", " << y << " = " << depthValue << "(" << depth[i] << " mm) -> " << depth_to_color(depthValue) << endl;
-
-        }
+        generateDepthImage(depth, depthMat);
+        free(depth);
         
-        imshow(rgb_window, rgbMat);
-        imshow(depth_window, depthMat);
+        rgbMat.copyTo(left);
+        depthMat.copyTo(right);
+        
+        putText(cameras, "W,S,X -> ADJUST TILT", Point(20,30), CV_FONT_HERSHEY_PLAIN, 0.8f, Scalar::all(0), 1, 8);
+        
+        if (!stop) imshow(input_window, cameras);
         
     } while (!stop);
     
-	cout << "[LabicCV] Display finished." << endl;
+    window_closed = true;
+
+	cout << "[LabicCV] Display finished" << endl;
 }
 
-void LabicCV::displayRGB() {
-    Mat rgbMat(Size(640,480), CV_8UC3, Scalar(0));
-	
-	cout << "[LabicCV] RGB window running." << endl;
-	
-	do {
-        kinect->getVideoMat(rgbMat);
+void LabicCV::generateDepthImage(uint16_t *depth, cv::Mat depthMat) {
+    int x, y, i;
+    int depthValue;
+    
+    for (i=0; i<width*height; i++) {
+        y = i/width;
+        x = i%width;
         
-		imshow(rgb_window, rgbMat);
-	} while (!stop);
-	
-	cout << "[LabicCV] RGB window finished." << endl;
+        depthValue = kinect->mmToRaw(depth[i]);
+        
+        depthMat.at<Vec3b>(y,x) = depth_to_color(depthValue);
+    }
 }
 
 Vec3b LabicCV::depth_to_color(float raw_depth_value) {
@@ -139,9 +133,41 @@ Vec3b LabicCV::depth_to_color(float raw_depth_value) {
 }
 
 void LabicCV::keyboardHandler(int key) {
-    if (key == 27) {
-        destroyAllWindows();
-        stop = true;
+    switch (key) {
+        case 27:
+            stop = true;
+            destroyAllWindows();
+            break;
+        case '1':
+        case '2':
+            //save_state(key);
+            break;
+        case 'w':
+            kinect->setTilt(+1.0);
+            break;
+        case 's':
+            kinect->setTilt(0.0);
+            break;
+        case 'x':
+            kinect->setTilt(-1.0);
+            break;
+        case ' ':
+//            display_final = 1;
+//            kinect_stop = 1;
+            break;
+        case 63235: // right, bigger area
+
+            break;
+        case 63234: // left, smaller area
+
+            break;
+        case 63232: // up, area closer to top
+            
+            break;
+        case 63233: // down, area closer to bottom
+            
+            break;
+
     }
 }
 
@@ -150,7 +176,7 @@ void LabicCV::start() {
 }
 
 void LabicCV::join() {
-    while (!stop) {
+    while (!stop && !window_closed) {
         keyboardHandler(waitKey(REFRESH_INTERVAL));
     }
     m_Thread.join();
