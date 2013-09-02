@@ -9,10 +9,14 @@
 
 #include <iostream>
 
-#include <boost/thread/thread.hpp>
 #include <pcl/common/common_headers.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include "opencv2/core/core.hpp"
+
+#ifndef BOOST_THREAD_INCLUDED
+#define BOOST_THREAD_INCLUDED
+#include <boost/thread.hpp>
+#endif
 
 #ifndef __LabicKinect__
 #include "LabicKinect.h"
@@ -30,7 +34,7 @@ namespace Labic {
 		Kinect *kinect;
         int width;
         int height;
-        
+        static const int REFRESH_INTERVAL = 1;
         void generateDepthCloud(uint16_t *depth);
 		
 	public:

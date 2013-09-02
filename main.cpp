@@ -17,7 +17,7 @@ using namespace Labic;
 int main(int argc, char **argv) {
     Freenect::Freenect freenect;
     Kinect *kinect;
-    freenect_video_format requested_format(FREENECT_VIDEO_RGB);
+//    freenect_video_format requested_format(FREENECT_VIDEO_RGB);
 
     LabicCV *cv;
 	LabicPCL *pcl;
@@ -46,14 +46,14 @@ int main(int argc, char **argv) {
 	
     // pcl thread
 	pcl = new LabicPCL(kinect, 640, 480);
-	pcl->start();
-	
+	//pcl->start();
+	pcl->display();
     // matcher thread
 	// TODO
 	
 	// wait for threads to finish
 	cv->join();
-	pcl->join();
+	//pcl->join();
     //delete cv; delete pcl;
     
 	cout << "[main] All threads have finished. Closing Kinect..." << endl;

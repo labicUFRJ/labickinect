@@ -61,14 +61,14 @@ void LabicPCL::display() {
 //        cloud.points.push_back(pt2);
         
         //boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
-        if (!kinect->getPointCloud(liveCloud)) continue;
+        if (!kinect->getPointCloud(liveCloud, 4)) continue;
         cout << "Map updated with" << liveCloud.width << " points" << endl;
         //rgb.setInputCloud(cloud.makeShared());
         if (!viewer.updatePointCloud(liveCloud.makeShared())) {
             viewer.addPointCloud<PointXYZRGB>(liveCloud.makeShared());
         }
         
-		//viewer.spinOnce(100);
+		viewer.spinOnce(REFRESH_INTERVAL);
 	}
     //viewer.spin();
     

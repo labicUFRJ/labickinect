@@ -135,13 +135,16 @@ pcl::PointXYZRGB Kinect::ptToPointXYZRGB(float cgx, float cgy, float cgz) {
     return pt;
 }
 
-bool Kinect::getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud) {
+bool Kinect::getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud, const int nThreads) {
     pcl::PointCloud<pcl::PointXYZRGB> cloud;
     pcl::PointXYZRGB pt;
     uint16_t *depth;
     cv::Mat rgb(cv::Size(640, 480), CV_8UC3, cv::Scalar(0));
     cv::Vec3b ptRGB;
-    int i, x, y;
+    int i;
+    int x, y;
+    clock_t t;
+    
     
     m_rgb_mutex.lock();
     m_depth_mutex.lock();
@@ -162,7 +165,22 @@ bool Kinect::getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud) {
     cloud.width = 640*480;
     cloud.height = 1;
     
-    for (i=0; i<640*480; i++) {
+    t = clock();
+    
+    //std::vector<boost::thread> threads(nThreads);
+    boost::thread_group threads;
+    int pointsPerThread = 640*480/nThreads;
+    
+    for (i=0; i<nThreads; i++) {
+        threads.create_thread(boost::bind(&Kinect::getPointCloudThread, this, cloud, rgb, depth, i*pointsPerThread, (i+1)*pointsPerThread));
+//        std::cout << "Started thread " << i << " from " << i*pointsPerThread << " to " << (i+1)*pointsPerThread << std::endl;
+    }
+    
+    threads.join_all();
+    //    std::cout << "Joined thread " << i << std::endl;
+    std::cout << "Total points after join: " << cloud.points.size() << "" << std::endl;
+    
+    /*for (i=0; i<640*480; i++) {
         y = i/640;
         x = i%640;
         
@@ -173,12 +191,41 @@ bool Kinect::getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud) {
         pt.b = ptRGB[0];
         
         cloud.points.push_back(pt);
-    }
-
+    }*/
+    
+    t = clock() - t;
+    
     _cloud = cloud;
     free(depth);
+    
+    std::cout << "[LabicKinect] getPointCloud time: " << ((float)t)/CLOCKS_PER_SEC << " secs " << std::endl;
+    
     return true;
+    
+}
 
+void Kinect::teste() {
+    std::cout << "Thread teste!" << std::endl;
+}
+
+void Kinect::getPointCloudThread(pcl::PointCloud<pcl::PointXYZRGB> &cloud, cv::Mat &rgb, uint16_t *depth, int start, int end) {
+    pcl::PointXYZRGB pt;
+    cv::Vec3b ptRGB;
+    int x, y;
+    int i;
+    
+    for (i=start; i<end; i++) {
+        y = i/640;
+        x = i%640;
+        
+        pt = ptToPointXYZRGB(x, y, depth[i]);
+        ptRGB = rgb.at<cv::Vec3b>(y,x);
+        pt.r = ptRGB[2];
+        pt.g = ptRGB[1];
+        pt.b = ptRGB[0];
+        
+        cloud.push_back(pt);
+    }
 }
 
 void Kinect::setTilt(double _tilt) {

@@ -18,6 +18,13 @@
 #include <cxcore.h>
 #include <highgui.h>
 #include <pcl/common/common_headers.h>
+#include <ctime>
+#include <boost/thread.hpp>
+
+#ifndef BOOST_THREAD_INCLUDED
+#define BOOST_THREAD_INCLUDED
+#include <boost/thread.hpp>
+#endif
 
 #endif
 
@@ -63,7 +70,9 @@ public:
     int mmToRaw(float depthValue);
     cv::Point3d ptToPoint3d (float cgx, float cgy, float cgz);
     pcl::PointXYZRGB ptToPointXYZRGB (float cgx, float cgy, float cgz);
-    bool getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &cloud);
+    bool getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &cloud, const int nThreads);
+    void getPointCloudThread(pcl::PointCloud<pcl::PointXYZRGB> &cloud, cv::Mat &rgb, uint16_t *depth, int start, int end);
+    void teste();
     double tilt;
     static const int DEPTH_BLANK = 2047;
     
