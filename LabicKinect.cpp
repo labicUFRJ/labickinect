@@ -1,12 +1,13 @@
 #include "LabicKinect.h"
 
-using namespace Labic;
+using namespace labic;
 
 Kinect::Kinect(freenect_context *_ctx, int _index)
 : Freenect::FreenectDevice(_ctx, _index), m_buffer_depth(FREENECT_DEPTH_REGISTERED),m_buffer_video(FREENECT_VIDEO_RGB), m_gamma(2048), m_new_rgb_frame(false), m_new_depth_frame(false),
 depthMat(cv::Size(640,480),CV_16UC1), rgbMat(cv::Size(640,480),CV_8UC3,cv::Scalar(0)), ownMat(cv::Size(640,480),CV_8UC3,cv::Scalar(0))
 {
     tilt = 0;
+	stop = false;
     setLed(LED_RED);
     // ...
 }
@@ -87,6 +88,28 @@ bool Kinect::getDepthMat(cv::Mat& output) {
     }
 }
 
+
+bool Kinect::getFrame(cv::Mat &video, uint16_t *depth) {
+	
+    m_rgb_mutex.lock();
+    m_depth_mutex.lock();
+    
+    if (m_new_rgb_frame && m_new_depth_frame) {
+        depth = (uint16_t*) malloc(sizeof(uint16_t)*640*480);
+        std::copy(depth_buffer, depth_buffer + 480*640, depth);
+        cvtColor(rgbMat, video, CV_RGB2BGR);
+        m_rgb_mutex.unlock();
+        m_depth_mutex.unlock();
+		return true;
+    } else {
+        m_rgb_mutex.unlock();
+        m_depth_mutex.unlock();
+        return false;
+    }
+    
+}
+
+
 int Kinect::mmToRaw(float depthValue) {
     int z = DEPTH_BLANK;
     if (depthValue > 0) {
@@ -162,25 +185,33 @@ bool Kinect::getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud, const int 
     }
     
     cloud.clear();
-    cloud.width = 640*480;
-    cloud.height = 1;
     
     t = clock();
     
-    //std::vector<boost::thread> threads(nThreads);
-    boost::thread_group threads;
+    /*boost::thread_group threads;
+	
+	std::vector<pcl::PointCloud<pcl::PointXYZRGB> > miniclouds(nThreads);
     int pointsPerThread = 640*480/nThreads;
     
     for (i=0; i<nThreads; i++) {
-        threads.create_thread(boost::bind(&Kinect::getPointCloudThread, this, cloud, rgb, depth, i*pointsPerThread, (i+1)*pointsPerThread));
+        threads.create_thread(boost::bind(&Kinect::getPointCloudThread, this, miniclouds[i], rgb, depth, i*pointsPerThread, (i+1)*pointsPerThread));
 //        std::cout << "Started thread " << i << " from " << i*pointsPerThread << " to " << (i+1)*pointsPerThread << std::endl;
     }
     
     threads.join_all();
-    //    std::cout << "Joined thread " << i << std::endl;
-    std::cout << "Total points after join: " << cloud.points.size() << "" << std::endl;
-    
-    /*for (i=0; i<640*480; i++) {
+	
+	for (i=0; i<nThreads; i++) {
+		cloud += miniclouds[i];
+		std::cout << "Mergin with miniclouds " << i << " with " << miniclouds[i].points.size() << std::endl;
+
+	}
+	
+	cloud.width = cloud.points.size();
+	cloud.height = 1;
+
+    std::cout << "Total points after join: " << cloud.width << "" << std::endl;
+    */
+    for (i=0; i<640*480; i++) {
         y = i/640;
         x = i%640;
         
@@ -191,7 +222,7 @@ bool Kinect::getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud, const int 
         pt.b = ptRGB[0];
         
         cloud.points.push_back(pt);
-    }*/
+    }
     
     t = clock() - t;
     
@@ -204,11 +235,8 @@ bool Kinect::getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud, const int 
     
 }
 
-void Kinect::teste() {
-    std::cout << "Thread teste!" << std::endl;
-}
-
-void Kinect::getPointCloudThread(pcl::PointCloud<pcl::PointXYZRGB> &cloud, cv::Mat &rgb, uint16_t *depth, int start, int end) {
+void Kinect::getPointCloudThread(pcl::PointCloud<pcl::PointXYZRGB> &_cloud, cv::Mat &rgb, uint16_t *depth, int start, int end) {
+	pcl::PointCloud<pcl::PointXYZRGB> cloud;
     pcl::PointXYZRGB pt;
     cv::Vec3b ptRGB;
     int x, y;
@@ -226,6 +254,10 @@ void Kinect::getPointCloudThread(pcl::PointCloud<pcl::PointXYZRGB> &cloud, cv::M
         
         cloud.push_back(pt);
     }
+	
+	_cloud = cloud;
+	
+	std::cout << "exiting thread with " << cloud.points.size() << " points" << std::endl;
 }
 
 void Kinect::setTilt(double _tilt) {

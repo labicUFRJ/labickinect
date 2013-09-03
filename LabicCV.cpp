@@ -10,7 +10,7 @@
 
 using namespace std;
 using namespace cv;
-using namespace Labic;
+using namespace labic;
 
 LabicCV::LabicCV(Kinect *_kinect, int _width, int _height) {
     kinect = _kinect;

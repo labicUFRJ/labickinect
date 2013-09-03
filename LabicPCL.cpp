@@ -10,7 +10,7 @@
 
 using namespace pcl;
 using namespace pcl::visualization;
-using namespace Labic;
+using namespace labic;
 
 LabicPCL::LabicPCL(Kinect *_kinect, int _width, int _height) {
     kinect = _kinect;
@@ -26,51 +26,22 @@ LabicPCL::LabicPCL(Kinect *_kinect, int _width, int _height) {
 void LabicPCL::display() {
 	std::cout << "[LabicPCL] Display started\n";
     
-//    PointXYZRGB pt1;
-//    pt1.x = pt1.y = pt1.z = 1;
-//    pt1.r = pt1.g = pt1.b = 255;
-//    
-//    cloud.clear();
-//    cloud.width = 1;
-//    cloud.height = 1;
-//    cloud.points.push_back(pt1);
-    
-    //cout << "Generating depth 3d map" << endl;
-    //kinect->getDepth(depth);
-    //generateDepthCloud(depth);
-    //kinect->getPointCloud(cloud);
-    //cout << "Map generated with" << cloud.width << " points" << endl;
-    
-//    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud.makeShared());
-//    viewer.addPointCloud<PointXYZRGB>(cloud.makeShared());
     viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3);
-    viewer.addCoordinateSystem(1.0);
+    viewer.addCoordinateSystem(0.1);
     viewer.initCameraParameters();
-    
-    viewer.setCameraPosition(0.0, 0.0, -3.0, 0.0, -1.0, 0.0);
-    viewer.addText("Teste", 10, 10);    
+    viewer.setCameraPosition(0.0, 0.0, -1.0, 0.0, -1.0, 0.0);
+    viewer.addText("Live PointCloud", 10, 10);    
     
     while (!viewer.wasStopped()) {
-//        i++;
-//        PointXYZRGB pt2;
-//        pt2.x = pt2.y = 0.05*i;
-//        pt2.z = 1;
-//        pt2.r = pt2.g = pt2.b = 255;
-//        
-//        cloud.width = i+1;
-//        cloud.points.push_back(pt2);
-        
-        //boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
         if (!kinect->getPointCloud(liveCloud, 4)) continue;
-        cout << "Map updated with" << liveCloud.width << " points" << endl;
-        //rgb.setInputCloud(cloud.makeShared());
+
         if (!viewer.updatePointCloud(liveCloud.makeShared())) {
             viewer.addPointCloud<PointXYZRGB>(liveCloud.makeShared());
         }
         
 		viewer.spinOnce(REFRESH_INTERVAL);
+//		boost::this_thread::sleep_for(boost::chrono::milliseconds(1));
 	}
-    //viewer.spin();
     
     cout << "[LabicPCL] User closed PCLVisualizer window" << endl;
 

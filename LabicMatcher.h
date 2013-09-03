@@ -14,7 +14,7 @@
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/contrib/contrib.hpp"
 
-namespace Labic {
+namespace labic {
 	
 	class Matcher {
 		
@@ -48,19 +48,19 @@ namespace Labic {
 							 cv::Mat&                     descriptors);
 		
 		void matchImages(std::vector<cv::KeyPoint>&   _keypoints_q,
-							const cv::Mat&               _descriptors_q,
-							std::vector<cv::KeyPoint>&   _keypoints_t,
-							const cv::Mat&               _descriptors_t,
-							std::vector<cv::DMatch>&     _matches);
+						 const cv::Mat&               _descriptors_q,
+						 std::vector<cv::KeyPoint>&   _keypoints_t,
+						 const cv::Mat&               _descriptors_t,
+						 std::vector<cv::DMatch>&     _matches);
         
         cv::Mat filterMatches(std::vector<cv::KeyPoint>&   _keypoints_q,
-                                       std::vector<cv::KeyPoint>&   _keypoints_t,
+							  std::vector<cv::KeyPoint>&   _keypoints_t,
                               std::vector<cv::DMatch>&     _matches,
                               bool                         _giveID);
         
         cv::Mat perform_ransac_alignment(std::vector<cv::KeyPoint>&   _keypoints_q,
-                                                  std::vector<cv::KeyPoint>&   _keypoints_t,
-                                                  std::vector<cv::DMatch>&     _matches);
+										 std::vector<cv::KeyPoint>&   _keypoints_t,
+										 std::vector<cv::DMatch>&     _matches);
         
         cv::Mat sba_transform(std::vector<cv::DMatch> _matches);
         

@@ -28,8 +28,8 @@
 
 #endif /* defined(__LabicKinect__LabicCV__) */
 
-namespace Labic {
-
+namespace labic {
+	
     class LabicCV {
     private:
 		boost::thread m_Thread;

@@ -1,26 +1,43 @@
 //
-//  maintestekinect.cpp
 //  LabicKinect
-//
-//  Created by Mario Cecchi on 8/22/13.
-//
+//  Author: Mario Cecchi <macecchi@gmail.com>
+//  Laboratorio de Inteligencia Computacional
+//  www.labic.nce.ufrj.br
 //
 
+#define LABIC_ENABLE_CV   OFF
+#define LABIC_ENABLE_PCL  ON
 
 #include "LabicKinect.h"
+
+#if LABIC_ENABLE_CV == ON
 #include "LabicCV.h"
+#endif
+
+#if LABIC_ENABLE_PCL == ON
 #include "LabicPCL.h"
+#endif
 
 using namespace std;
-using namespace Labic;
+using namespace labic;
+
+//void kinectLoop(Kinect *kinect, cv::Mat rgbMat, uint16_t *depth) {
+//	while (!kinect->stop) {
+//		kinect->getFrame(rgbMat, depth);
+//	}
+//}
 
 int main(int argc, char **argv) {
     Freenect::Freenect freenect;
     Kinect *kinect;
-//    freenect_video_format requested_format(FREENECT_VIDEO_RGB);
-
-    LabicCV *cv;
+    #if LABIC_ENABLE_CV == ON
+	LabicCV *cv;
+	#endif
+	#if LABIC_ENABLE_PCL == ON
 	LabicPCL *pcl;
+	#endif
+//	cv::Mat rgbMat(cv::Size(640, 480), CV_8UC3, cv::Scalar(0));
+//    uint16_t *depth = (uint16_t*) malloc(sizeof(uint16_t)*640*480);
 	
 	cout << "[main] Initializing Kinect device..." << endl;
 	
@@ -39,22 +56,34 @@ int main(int argc, char **argv) {
 		return 1;
 	}
     
-	// opencv thread
+//	boost::thread frameCatcher(kinectLoop);
+	
+	// OpenCV thread
+	#if LABIC_ENABLE_CV == ON
 	cv = new LabicCV(kinect, 640, 480); // TODO const
     cv->init();
 	cv->start();
+	#endif
 	
-    // pcl thread
+    // PCL thread
+	#if LABIC_ENABLE_PCL == ON
 	pcl = new LabicPCL(kinect, 640, 480);
 	//pcl->start();
 	pcl->display();
-    // matcher thread
+	#endif
+    
+	// matcher thread
 	// TODO
 	
-	// wait for threads to finish
+	// Wait for threads to finish
+	#if LABIC_ENABLE_CV == ON
 	cv->join();
+	#endif
 	//pcl->join();
-    //delete cv; delete pcl;
+	
+	
+//	frameCatcher.join();
+	
     
 	cout << "[main] All threads have finished. Closing Kinect..." << endl;
 	

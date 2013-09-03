@@ -25,7 +25,7 @@
 void show_pcl();
 
 
-namespace Labic {
+namespace labic {
 	
 	class LabicPCL {
 		
@@ -34,13 +34,13 @@ namespace Labic {
 		Kinect *kinect;
         int width;
         int height;
-        static const int REFRESH_INTERVAL = 1;
         void generateDepthCloud(uint16_t *depth);
 		
 	public:
         pcl::visualization::PCLVisualizer viewer;
         pcl::PointCloud<pcl::PointXYZRGB> cloud;
         pcl::PointCloud<pcl::PointXYZRGB> liveCloud;
+        static const int REFRESH_INTERVAL = 1;
         int viewPort;
         
         LabicPCL(Kinect *_kinect, int _width, int _height);

@@ -8,7 +8,7 @@
 
 #include "LabicMatcher.h"
 
-using namespace Labic;
+using namespace labic;
 
 Matcher::Matcher(int _minFeature, int _maxFeature){
 		
