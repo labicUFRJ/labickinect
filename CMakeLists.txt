@@ -11,7 +11,7 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 #add_executable (labickinect main.cpp labickinect.h kinect_old.cpp cv.cpp cv_matcher.cpp cv_matcher.h pcl.cpp pcl.h)
-add_executable (labickinect main.cpp LabicKinect.cpp LabicKinect.h LabicCV.cpp LabicCV.h LabicMatcher.cpp LabicMatcher.h LabicPCL.cpp LabicPCL.h libfreenect.h)
+add_executable (labickinect main.cpp LabicKinect.cpp LabicKinect.h LabicCV.cpp LabicCV.h LabicReconstructor.cpp LabicReconstructor.h LabicPCL.cpp LabicPCL.h libfreenect.h)
 
 # to supress pcl libraries warnings
 if ( CMAKE_COMPILER_IS_GNUCC )
