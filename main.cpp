@@ -5,8 +5,9 @@
 //  www.labic.nce.ufrj.br
 //
 
-#define LABIC_ENABLE_CV   OFF
-#define LABIC_ENABLE_PCL  ON
+#define LABIC_ENABLE_CV      OFF
+#define LABIC_ENABLE_PCL     ON
+#define LABIC_ENABLE_MATCHER ON
 
 #include "LabicKinect.h"
 
@@ -16,6 +17,10 @@
 
 #if LABIC_ENABLE_PCL == ON
 #include "LabicPCL.h"
+#endif
+
+#if LABIC_ENABLE_MATCHER == ON
+#include "LabicReconstructor.h"
 #endif
 
 using namespace std;
@@ -30,14 +35,17 @@ using namespace labic;
 int main(int argc, char **argv) {
     Freenect::Freenect freenect;
     Kinect *kinect;
-    #if LABIC_ENABLE_CV == ON
+#if LABIC_ENABLE_CV == ON
 	LabicCV *cv;
-	#endif
-	#if LABIC_ENABLE_PCL == ON
+#endif
+#if LABIC_ENABLE_PCL == ON
 	LabicPCL *pcl;
-	#endif
-//	cv::Mat rgbMat(cv::Size(640, 480), CV_8UC3, cv::Scalar(0));
-//    uint16_t *depth = (uint16_t*) malloc(sizeof(uint16_t)*640*480);
+#endif
+#if LABIC_ENABLE_MATCHER == ON
+	LabicReconstructor *recon;
+#endif
+    //	cv::Mat rgbMat(cv::Size(640, 480), CV_8UC3, cv::Scalar(0));
+    //    uint16_t *depth = (uint16_t*) malloc(sizeof(uint16_t)*640*480);
 	
 	cout << "[main] Initializing Kinect device..." << endl;
 	
@@ -45,7 +53,7 @@ int main(int argc, char **argv) {
 		kinect = &freenect.createDevice<Kinect>(0);
 		
 		cout << "[main] Kinect initialized." << endl
-			 << "[main] Starting streams..." << endl;
+        << "[main] Starting streams..." << endl;
 		
 		kinect->startVideo();
 		kinect->startDepth();
@@ -56,33 +64,43 @@ int main(int argc, char **argv) {
 		return 1;
 	}
     
-//	boost::thread frameCatcher(kinectLoop);
+    //	boost::thread frameCatcher(kinectLoop);
 	
+#if LABIC_ENABLE_MATCHER == ON
+	recon = new LabicReconstructor(100,500);
+#endif
+    
 	// OpenCV thread
-	#if LABIC_ENABLE_CV == ON
+#if LABIC_ENABLE_CV == ON
 	cv = new LabicCV(kinect, 640, 480); // TODO const
+#if LABIC_ENABLE_MATCHER == ON
+	recon->cv = cv;
+#endif
     cv->init();
 	cv->start();
-	#endif
+#endif
 	
     // PCL thread
-	#if LABIC_ENABLE_PCL == ON
+#if LABIC_ENABLE_PCL == ON
 	pcl = new LabicPCL(kinect, 640, 480);
+#if LABIC_ENABLE_MATCHER == ON
+	recon->pcl = pcl;
+#endif
 	//pcl->start();
 	pcl->display();
-	#endif
+#endif
     
 	// matcher thread
 	// TODO
 	
 	// Wait for threads to finish
-	#if LABIC_ENABLE_CV == ON
+#if LABIC_ENABLE_CV == ON
 	cv->join();
-	#endif
+#endif
 	//pcl->join();
 	
 	
-//	frameCatcher.join();
+    //	frameCatcher.join();
 	
     
 	cout << "[main] All threads have finished. Closing Kinect..." << endl;
@@ -92,7 +110,7 @@ int main(int argc, char **argv) {
     kinect->close();
 	
 	cout << "[main] Kinect closed." << endl
-		 << "[main] Finishing main. Bye!" << endl;
-
+    << "[main] Finishing main. Bye!" << endl;
+    
 	return 0;
 }

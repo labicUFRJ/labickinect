@@ -7,7 +7,12 @@
 //
 
 #include <iostream>
-
+#ifndef __LabicCV__
+#include "LabicCV.h"
+#endif
+#ifndef __LabicPCL__
+#include "LabicPCL.h"
+#endif
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/features2d/features2d.hpp"
@@ -16,7 +21,7 @@
 
 namespace labic {
 	
-	class Matcher {
+	class LabicReconstructor {
 		
 	private:
 		
@@ -39,15 +44,18 @@ namespace labic {
 		
 	public:
 		
-		Matcher(int _minFeature, int _maxFeature);
+		LabicCV *cv;
+        LabicPCL *pcl;
+         
+		LabicReconstructor(int _minFeature, int _maxFeature);
 		
 		unsigned int getID();
 		
-		void computeFeatures(const cv::Mat&               img,
+		void extractRGBFeatures(const cv::Mat&               img,
 							 std::vector<cv::KeyPoint>&   keypoints,
 							 cv::Mat&                     descriptors);
 		
-		void matchImages(std::vector<cv::KeyPoint>&   _keypoints_q,
+		void matchFeatures(std::vector<cv::KeyPoint>&   _keypoints_q,
 						 const cv::Mat&               _descriptors_q,
 						 std::vector<cv::KeyPoint>&   _keypoints_t,
 						 const cv::Mat&               _descriptors_t,

@@ -6,6 +6,8 @@
 //  Copyright (c) 2013 Mario Cecchi. All rights reserved.
 //
 
+#ifndef __LabicPCL__
+#define __LabicPCL__
 
 #include <iostream>
 
@@ -22,8 +24,7 @@
 #include "LabicKinect.h"
 #endif
 
-void show_pcl();
-
+#endif
 
 namespace labic {
 	

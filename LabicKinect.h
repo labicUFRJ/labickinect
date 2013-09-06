@@ -77,7 +77,7 @@ namespace labic {
 		double tilt;
 		bool stop;
 		static const int DEPTH_BLANK = 2047;
-		
+        
 	private:
 		std::vector<uint8_t> m_buffer_depth;
 		uint16_t *depth_buffer;
