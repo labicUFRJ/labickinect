@@ -26,8 +26,6 @@
 #include <boost/thread.hpp>
 #endif
 
-#endif
-
 namespace labic {
 	
 	class Mutex {
@@ -93,3 +91,4 @@ namespace labic {
 	};
 }
 
+#endif /* __LabicKinect__ */

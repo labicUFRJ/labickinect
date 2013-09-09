@@ -26,8 +26,6 @@
 #include "LabicKinect.h"
 #endif
 
-#endif /* defined(__LabicKinect__LabicCV__) */
-
 namespace labic {
 	
     class LabicCV {
@@ -66,3 +64,5 @@ namespace labic {
         void display();
     };
 }
+
+#endif /* __LabicCV__ */

@@ -24,8 +24,6 @@
 #include "LabicKinect.h"
 #endif
 
-#endif
-
 namespace labic {
 	
 	class LabicPCL {
@@ -56,6 +54,6 @@ namespace labic {
         void display();
         
     };
-
-    
 }
+
+#endif /* __LabicPCL__ */

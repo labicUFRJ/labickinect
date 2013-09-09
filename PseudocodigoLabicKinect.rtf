@@ -20,7 +20,7 @@ Enquanto (\'85):\
 	pointCloudCurrent <- get3dPointsFrom2d(rgbCurrent, depthCurrent)\
 \
 \
-	// Calcular movimento e alinhamento a partir dos recursos visuais\
+	// 2. Calcular movimento e alinhamento a partir dos recursos visuais\
 \
 	relatedFeatures2d <- matchFeatures(featuresPrevious, featuresCurrent)\
 	\
@@ -30,12 +30,18 @@ Enquanto (\'85):\
 	// ??\
 	// Esta parte estaria dentro de um modelo RANSAC para otimiza\'e7\'e3o\
 	// RANSAC AQUI\
+	transfCurrent <- performRansacAlignment(pointCloudCurrent, pointCloudPrevious)\
+\
+	Se (inliers < 10):\
+		transfCurrent <- transfPrevious // Ignorar novo c\'e1lculo \
 	\
-	// Aplicar transformacao a toda a imagem 3d\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\li639\fi-640\sl312\slmult1\pardirnatural
+\cf0 	// Aplicar transformacao a toda a imagem 3d\
 	pointCloudCurrent <- applyTransformation(pointCloudCurrent, transfCurrent)\
 	// Combinar pointCloud atual com o mapa ja montado\
 	worldPointCloud <- worldPointCloud + pointCloudCurrent\
 \
 	(rgbPrevious, depthPrevious) <- (rgbCurrent, depthCurrent)\
 	featuresPrevious <- featuresCurrent\
+	transfPrevious <- transfCurrent\
 }
