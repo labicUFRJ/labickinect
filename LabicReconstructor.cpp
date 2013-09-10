@@ -26,6 +26,30 @@ LabicReconstructor::LabicReconstructor(int _minFeature, int _maxFeature) {
 	
 };
 
+bool LabicReconstructor::mainLoopPart(const int t) {
+    if (cv->isReady()) {
+        cout << "[LabicReconstructor] Reconstructor got frames. Reconstructing..." << endl;
+        
+        performLoop(cv->rgbCurrent, cv->rgbPrevious, cv->depthCurrent, cv->depthPrevious);
+        
+        cout << "[LabicReconstructor] Finished reconstruction loop" << endl;
+        
+        cv->restartState();
+    }
+    
+    return true;
+}
+
+void LabicReconstructor::reconstruct() {
+    cout << "[LabicReconstructor] Reconstructor initialized" << endl;
+    /*
+    while (!cv->isReady()) {
+        // wait...
+    }*/
+    
+    //cout << "[LabicReconstructor] Ready! Starting reconstructor" << endl;
+}
+
 void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 								  const Mat& rgbPrevious,
 								  const uint16_t* depthCurrent,
@@ -40,7 +64,7 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 	
 	// 1. Extract features from both images
 	extractRGBFeatures(rgbPrevious, featuresPrevious, descriptorsPrevious);
-	extractRGBFeatures(rgbCurrent, featuresCurrent, descriptorsPrevious);
+	extractRGBFeatures(rgbCurrent, featuresCurrent, descriptorsCurrent);
 	
 	// 2. Get relationship (matches) between features from both images
 	matchFeatures(featuresPrevious, descriptorsPrevious, featuresCurrent, descriptorsCurrent, relatedFeatures);
@@ -52,7 +76,7 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 	// TODO ransac loop
 	estimator.estimateRigidTransformation(cloudCurrent, cloudPrevious, transform);
 	
-	cout << transform << endl;
+    cout << "[LabicReconstructor::performLoop] final transformation matrix:" << endl << transform << endl;
 	
 	// 5. Apply transformation to all frame points
 	// TODO
@@ -63,21 +87,21 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 
 void LabicReconstructor::extractRGBFeatures(const Mat& img, vector<KeyPoint>& keypoints, Mat& descriptors) {
 	
-	cout << "[Labic::LabicReconstructor::computeFeatures] computing features" << endl;
+	cout << "[LabicReconstructor::extractRGBFeatures] computing features" << endl;
 	
 	// detect features
 	for (int i=0; i<maxDetectionIte; i++) {
 		adjuster->detect(img, keypoints);
-		extractor -> compute(img, keypoints, descriptors);
+		extractor->compute(img, keypoints, descriptors);
 		
 		if ( keypoints.size() < minFeatures){
 			adjuster->tooFew (minFeatures, keypoints.size());
 		} else if ( keypoints.size() > maxFeatures) {
 			adjuster->tooMany(maxFeatures, keypoints.size());
 		} else {
-			cout << "[Labic::LabicReconstructor::computeFeatures] the number of features: " << keypoints.size() << endl
-			<< "[Labic::LabicReconstructor::computeFeatures] target range: " << minFeatures << " to " << maxFeatures
-			<< ", iteration: " << i << endl;
+			cout << "[LabicReconstructor::extractRGBFeatures] the number of features: " << keypoints.size()
+			<< "(target range: " << minFeatures << " to " << maxFeatures
+			<< ", iteration: " << i << ")" << endl;
 			return;
 		}
 	}
@@ -89,15 +113,15 @@ void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 									   const Mat&               _descriptors_t,
 									   vector<DMatch>&     _matches) const {
 	
-	cout << "[Labic::LabicReconstructor::matchImages] matching features\n";
+	cout << "[LabicReconstructor::matchImages] matching features\n";
 	vector<DMatch> matches;
 	
 	int iter = 0;
 	if (iter == 10) {
-		cout << "[Labic::LabicReconstructor::matchImages] ERRO MATCH" << endl;
+		cout << "[LabicReconstructor::matchImages] ERRO MATCH" << endl;
 	}
 	matcher2->match(_descriptors_q, _descriptors_t, matches);
-	cout << "[Labic::LabicReconstructor::matchImages] initial matched features: " << matches.size() << endl;
+	cout << "[LabicReconstructor::matchImages] initial matched features: " << matches.size() << endl;
 	
 	iter++;
 	
@@ -110,10 +134,10 @@ void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 		}
 	}
 	
-	cout << "[Labic::LabicReconstructor::matchImages] final matched features: " << _matches.size() << endl;
+	cout << "[LabicReconstructor::matchImages] final matched features: " << _matches.size() << endl;
 	
 	if (_matches.size() < minMatches){
-		cout << "[Labic::LabicReconstructor::matchImages] images do not match!" << endl;
+		cout << "[LabicReconstructor::matchImages] images do not match!" << endl;
 	}
 }
 
@@ -240,10 +264,10 @@ Mat LabicReconstructor::filterMatches(vector<KeyPoint>&   _keypoints_q,
 				itT++;
 			}
 		}
-		cout << "[Labic::LabicReconstructor::matchImages] survived matched features: "
+		cout << "[LabicReconstructor::matchImages] survived matched features: "
 		<< _matches.size() << endl;
-		cout << "[Labic::LabicReconstructor::matchImages] merged object points: " << count2 << endl;
-		cout << "[Labic::LabicReconstructor::matchImages] new object points: " << count1 << endl;
+		cout << "[LabicReconstructor::matchImages] merged object points: " << count2 << endl;
+		cout << "[LabicReconstructor::matchImages] new object points: " << count1 << endl;
 	} else {
 		for (; itI != inliers.end(); itI++){
 			if (!*itI){
@@ -256,10 +280,18 @@ Mat LabicReconstructor::filterMatches(vector<KeyPoint>&   _keypoints_q,
 				itT++;
 			}
 		}
-		cout << "[Labic::LabicReconstructor::matchImages] survived matched features: "
+		cout << "[LabicReconstructor::matchImages] survived matched features: "
 		<< _matches.size() << endl;
 	}
 	
 	return findFundamentalMat(imgPoints_t, imgPoints_q, CV_FM_8POINT);
-	
+
 };
+
+void LabicReconstructor::start() {
+    m_Thread = boost::thread(&LabicReconstructor::reconstruct, this);
+}
+
+void LabicReconstructor::join() {
+    m_Thread.join();
+}

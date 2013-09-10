@@ -10,12 +10,14 @@
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/contrib/contrib.hpp"
 #include <pcl/registration/transformation_estimation_svd.h>
+#include <boost/thread.hpp>
 
 namespace labic {
 	
 	class LabicReconstructor {
 		
 	private:
+        boost::thread m_Thread;
 		unsigned int ID;
 		int     minFeatures;
 		int     maxFeatures;
@@ -28,7 +30,9 @@ namespace labic {
 		cv::Ptr<cv::DescriptorMatcher>    matcher;
 		cv::Ptr<cv::DescriptorMatcher>    matcher2;
 		cv::Ptr<cv::DescriptorExtractor>  extractor;
-		
+        
+		void reconstruct();
+        
 		void performLoop(const cv::Mat& rgbCurrent,
 						 const cv::Mat& rgbPrevious,
 						 const uint16_t* depthCurrent,
@@ -56,6 +60,9 @@ namespace labic {
 		
 		LabicReconstructor(int _minFeature, int _maxFeature);
 		
+		void start();
+        bool mainLoopPart(const int t);
+		void join();
 		
 		cv::Mat performRansacAlignment(const pcl::PointCloud<pcl::PointXYZRGB>& cloud_src,
 									   const pcl::PointCloud<pcl::PointXYZRGB>& cloud_tgt,

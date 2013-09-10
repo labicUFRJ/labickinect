@@ -5,9 +5,13 @@
 //  www.labic.nce.ufrj.br
 //
 
-#define LABIC_ENABLE_CV      OFF
+#define LABIC_ENABLE_CV      ON
 #define LABIC_ENABLE_PCL     ON
 #define LABIC_ENABLE_MATCHER ON
+#define REFRESH_INTERVAL     1
+
+#include <iostream>
+#include <ctime>
 
 #include "LabicKinect.h"
 
@@ -44,6 +48,9 @@ int main(int argc, char **argv) {
 #if LABIC_ENABLE_MATCHER == ON
 	LabicReconstructor *recon;
 #endif
+    clock_t t, t1, t2, t3;
+    float timeTotal, timeCV, timePCL, timeReconstructor;
+    
     //	cv::Mat rgbMat(cv::Size(640, 480), CV_8UC3, cv::Scalar(0));
     //    uint16_t *depth = (uint16_t*) malloc(sizeof(uint16_t)*640*480);
 	
@@ -86,19 +93,56 @@ int main(int argc, char **argv) {
 #if LABIC_ENABLE_MATCHER == ON
 	recon->pcl = pcl;
 #endif
-	//pcl->start();
-	pcl->display();
+	pcl->start();
+	//pcl->display();
 #endif
     
-	// matcher thread
-	// TODO
+    // Reconstructor thread
+#if LABIC_ENABLE_MATCHER == ON
+	recon->start();
+#endif
+    
+    // TODO add ifdef
+    while (1) {
+        t = clock();
+        t1 = clock();
+        if (!pcl->mainLoopPart(REFRESH_INTERVAL)) break;
+        t1 = clock() - t1;
+        t2 = clock();
+        if (!cv->mainLoopPart(REFRESH_INTERVAL)) break;
+        t2 = clock() - t2;
+        t3 = clock();
+        if (!recon->mainLoopPart(REFRESH_INTERVAL)) break;
+        t3 = clock() - t3;
+        
+        t = clock() - t;
+        
+        timeTotal = 1000*((float)t)/CLOCKS_PER_SEC;
+        timePCL = 1000*((float)t1)/CLOCKS_PER_SEC;
+        timeCV = 1000*((float)t2)/CLOCKS_PER_SEC;
+        timeReconstructor = 1000*((float)t3)/CLOCKS_PER_SEC;
+        
+        cout << "[main] Loop time: "
+        << timeTotal << "ms "
+        << "CV: " << timeCV << "ms "
+        << "PCL: " << timePCL << "ms "
+        << "Rec: " << timeReconstructor << "ms " <<
+        endl;
+        
+    }
+    
+    cout << "[main] Stop requested. Joining threads..." << endl;
 	
 	// Wait for threads to finish
 #if LABIC_ENABLE_CV == ON
 	cv->join();
 #endif
-	//pcl->join();
-	
+#if LABIC_ENABLE_PCL == ON
+	pcl->join();
+#endif
+#if LABIC_ENABLE_MATCHER == ON
+	recon->join();
+#endif
 	
     //	frameCatcher.join();
 	

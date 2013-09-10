@@ -39,11 +39,11 @@ namespace labic {
         pcl::visualization::PCLVisualizer viewer;
         pcl::PointCloud<pcl::PointXYZRGB> cloud;
         pcl::PointCloud<pcl::PointXYZRGB> liveCloud;
-        static const int REFRESH_INTERVAL = 1;
         int viewPort;
         
         LabicPCL(Kinect *_kinect, int _width, int _height);
 		void start();
+        bool mainLoopPart(const int t);
 		void join();
         
         void addCameras(const std::vector<cv::Mat>&         T,

@@ -26,6 +26,12 @@ LabicCV::LabicCV(Kinect *_kinect, int _width, int _height) {
 		v = powf(v, 3)* 6;
 		t_gamma[i] = v*6*256;
 	}
+    
+    depthPrevious = (uint16_t*) malloc(sizeof(uint16_t)*width*height);
+    depthCurrent = (uint16_t*) malloc(sizeof(uint16_t)*width*height);
+    rgbPrevious = Mat(Size(width, height), CV_8UC3, Scalar(0));
+    rgbCurrent = Mat(Size(width, height), CV_8UC3, Scalar(0));
+    previousSet = currentSet = false;
 }
 
 void LabicCV::init() {
@@ -85,6 +91,11 @@ void LabicCV::generateDepthImage(uint16_t *depth, cv::Mat depthMat) {
         depthMat.at<Vec3b>(y,x) = depth_to_color(depthValue);
     }
 }
+/*
+void LabicCV::registerState(Mat& rgbState, uint16_t *depthState) {
+    rgbState.swap(rgb_image);
+    depthState = (uint16_t*) memcpy(depth_t, depth, sizeof(uint16_t)*width*height);
+}*/
 
 Vec3b LabicCV::depth_to_color(float raw_depth_value) {
     
@@ -139,8 +150,14 @@ void LabicCV::keyboardHandler(int key) {
             destroyAllWindows();
             break;
         case '1':
+            previousSet = kinect->getVideoMat(rgbPrevious);
+            previousSet &= kinect->getDepth(depthPrevious);
+            if (previousSet) cout << "[LabicCV] Previous state set" << endl;
+            break;
         case '2':
-            //save_state(key);
+            currentSet = kinect->getVideoMat(rgbCurrent);
+            currentSet &= kinect->getDepth(depthCurrent);
+            if (currentSet) cout << "[LabicCV] Current state set" << endl;
             break;
         case 'w':
             kinect->setTilt(+1.0);
@@ -152,8 +169,7 @@ void LabicCV::keyboardHandler(int key) {
             kinect->setTilt(-1.0);
             break;
         case ' ':
-//            display_final = 1;
-//            kinect_stop = 1;
+            
             break;
         case 63235: // right, bigger area
 
@@ -175,9 +191,14 @@ void LabicCV::start() {
 	m_Thread = boost::thread(&LabicCV::display, this);
 }
 
+bool LabicCV::mainLoopPart(const int t) {
+    keyboardHandler(waitKey(t));
+    return !(stop || window_closed);
+}
+
 void LabicCV::join() {
-    while (!stop && !window_closed) {
-        keyboardHandler(waitKey(REFRESH_INTERVAL));
-    }
+//    while (!stop && !window_closed) {
+//        keyboardHandler(waitKey(REFRESH_INTERVAL));
+//    }
     m_Thread.join();
 }

@@ -188,17 +188,18 @@ bool Kinect::getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud, const int 
     
     t = clock();
     
-    /*boost::thread_group threads;
+    boost::thread_group threads;
 	
 	std::vector<pcl::PointCloud<pcl::PointXYZRGB> > miniclouds(nThreads);
     int pointsPerThread = 640*480/nThreads;
     
     for (i=0; i<nThreads; i++) {
-        threads.create_thread(boost::bind(&Kinect::getPointCloudThread, this, miniclouds[i], rgb, depth, i*pointsPerThread, (i+1)*pointsPerThread));
+       // threads.create_thread(boost::bind(&Kinect::getPointCloudThread, this, miniclouds[i], rgb, depth, i*pointsPerThread, (i+1)*pointsPerThread));
+        getPointCloudThread(miniclouds[i], rgb, depth, i*pointsPerThread, (i+1)*pointsPerThread);
 //        std::cout << "Started thread " << i << " from " << i*pointsPerThread << " to " << (i+1)*pointsPerThread << std::endl;
     }
     
-    threads.join_all();
+    //threads.join_all();
 	
 	for (i=0; i<nThreads; i++) {
 		cloud += miniclouds[i];
@@ -210,7 +211,9 @@ bool Kinect::getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud, const int 
 	cloud.height = 1;
 
     std::cout << "Total points after join: " << cloud.width << "" << std::endl;
-    */
+    
+    
+    /*
     for (i=0; i<640*480; i++) {
         y = i/640;
         x = i%640;
@@ -223,13 +226,13 @@ bool Kinect::getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud, const int 
         
         cloud.points.push_back(pt);
     }
-    
+    */
     t = clock() - t;
     
     _cloud = cloud;
     free(depth);
     
-    std::cout << "[LabicKinect] getPointCloud time: " << ((float)t)/CLOCKS_PER_SEC << " secs " << std::endl;
+    //std::cout << "[LabicKinect] getPointCloud time: " << ((float)t)/CLOCKS_PER_SEC << " secs " << std::endl;
     
     return true;
     
@@ -257,7 +260,7 @@ void Kinect::getPointCloudThread(pcl::PointCloud<pcl::PointXYZRGB> &_cloud, cv::
 	
 	_cloud = cloud;
 	
-	std::cout << "exiting thread with " << cloud.points.size() << " points" << std::endl;
+	std::cout << "exiting thread with " << _cloud.points.size() << " points" << std::endl;
 }
 
 void Kinect::setTilt(double _tilt) {
