@@ -122,11 +122,11 @@ int main(int argc, char **argv) {
         timeCV = 1000*((float)t2)/CLOCKS_PER_SEC;
         timeReconstructor = 1000*((float)t3)/CLOCKS_PER_SEC;
         
-        cout << "[main] Loop time: "
-        << timeTotal << "ms "
+        cout << "[main] Iteration time: "
+        << timeTotal << "ms ("
         << "CV: " << timeCV << "ms "
         << "PCL: " << timePCL << "ms "
-        << "Rec: " << timeReconstructor << "ms " <<
+        << "Rec: " << timeReconstructor << "ms)" <<
         endl;
         
     }

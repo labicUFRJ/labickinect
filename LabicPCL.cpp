@@ -19,26 +19,20 @@ LabicPCL::LabicPCL(Kinect *_kinect, int _width, int _height) {
     
     viewPort = 1;
     
-//    std::cout << "[LabicPCL] Initializing viewer\n";
     std::cout << "[LabicPCL] Viewer initialized\n";
 }
 
 bool LabicPCL::mainLoopPart(const int t) {
     if (!viewer.wasStopped()) {
-        if (!kinect->getPointCloud(liveCloud, 4)) return true;
-        
-        if (!viewer.updatePointCloud(liveCloud.makeShared())) {
-            viewer.addPointCloud<PointXYZRGB>(liveCloud.makeShared());
-        }
-        
-		viewer.spinOnce(t);
+		viewer.spinOnce(100);
+		//boost::this_thread::sleep (boost::posix_time::microseconds (100000));
         return true;
     } else {
         cout << "[LabicPCL] User closed PCLVisualizer window" << endl;
 
         viewer.close();
         
-        cout << "[LabicPCL] Display finished" << endl;
+        cout << "[LabicPCL] mainLoopPart finished" << endl;
         return false;
     }
 }
@@ -46,29 +40,23 @@ bool LabicPCL::mainLoopPart(const int t) {
 void LabicPCL::display() {
 	std::cout << "[LabicPCL] Display started\n";
     
-    viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3);
     viewer.addCoordinateSystem(0.1);
     viewer.initCameraParameters();
     viewer.setCameraPosition(0.0, 0.0, -1.0, 0.0, -1.0, 0.0);
+    //viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3);
     viewer.addText("Live PointCloud", 10, 10);    
     
-    /*
+    
     while (!viewer.wasStopped()) {
         if (!kinect->getPointCloud(liveCloud, 4)) continue;
-
+        
         if (!viewer.updatePointCloud(liveCloud.makeShared())) {
             viewer.addPointCloud<PointXYZRGB>(liveCloud.makeShared());
+			viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3);
         }
-        
-		viewer.spinOnce(REFRESH_INTERVAL);
 	}
-    
-    cout << "[LabicPCL] User closed PCLVisualizer window" << endl;
-
     viewer.close();
-	
-	cout << "[LabicPCL] Display finished" << endl;
-     */
+	std::cout << "[LabicPCL] Display finished\n";
 }
 
 void LabicPCL::generateDepthCloud(uint16_t *depth) {

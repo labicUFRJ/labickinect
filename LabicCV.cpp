@@ -47,7 +47,7 @@ void LabicCV::display() {
     Mat left(cameras, Rect(0, 0, width, height));
     Mat right(cameras, Rect(width, 0, width, height));
 
-    uint16_t *depth;
+    uint16_t *depth = NULL;
     
 	cout << "[LabicCV] Display started" << endl;
     if (!initialized) {
@@ -56,13 +56,18 @@ void LabicCV::display() {
     }
     
     do {
+		if (depth != NULL) free(depth);
         depth = (uint16_t*) malloc(sizeof(uint16_t)*width*height);
         
+		/*
         kinect->getVideoMat(rgbMat);
         kinect->getDepth(depth);
+		*/
+		kinect->getFrame(rgbMat, depth);
         
         generateDepthImage(depth, depthMat);
-        free(depth);
+        
+		
         
         rgbMat.copyTo(left);
         depthMat.copyTo(right);
