@@ -10,19 +10,12 @@
 #define __LabicPCL__
 
 #include <iostream>
-
 #include <pcl/common/common_headers.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/io/ply_io.h>
 #include "opencv2/core/core.hpp"
-
-#ifndef BOOST_THREAD_INCLUDED
-#define BOOST_THREAD_INCLUDED
 #include <boost/thread.hpp>
-#endif
-
-#ifndef __LabicKinect__
 #include "LabicKinect.h"
-#endif
 
 namespace labic {
 	
@@ -33,6 +26,7 @@ namespace labic {
 		Kinect *kinect;
         int width;
         int height;
+        bool stop;
         void generateDepthCloud(uint16_t *depth);
 		
 	public:
@@ -45,6 +39,7 @@ namespace labic {
 		void start();
         bool mainLoopPart(const int t);
 		void join();
+        void close();
         
         void addCameras(const std::vector<cv::Mat>&         T,
                         const std::vector<cv::Mat>&         R);

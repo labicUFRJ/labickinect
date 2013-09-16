@@ -11,20 +11,14 @@
 
 #include <iostream>
 #include <string>
+#include <ctime>
 #include "opencv2/core/core.hpp"
 #include "opencv2/nonfree/features2d.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-
-//#ifndef BOOST_THREAD_INCLUDED
-//#define BOOST_THREAD_INCLUDED
 #include <boost/thread.hpp>
-//#endif
-
-#ifndef __LabicKinect__
 #include "LabicKinect.h"
-#endif
 
 namespace labic {
 	
@@ -64,10 +58,13 @@ namespace labic {
 		void start();
         bool mainLoopPart(const int t);
 		void join();
+        void close();
         void init();
         void display();
         const bool isReady() const { return previousSet && currentSet; }
         void restartState() { previousSet = currentSet = false; }
+        void showMatchesPreview(const cv::Mat& img1, const std::vector<cv::KeyPoint>& keypoints1, const cv::Mat& img2, const std::vector<cv::KeyPoint>& keypoints2, const std::vector<cv::DMatch>& matches1to2);
+
     };
 }
 

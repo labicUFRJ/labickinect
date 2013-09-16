@@ -13,26 +13,24 @@ LabicReconstructor::LabicReconstructor(int _minFeature, int _maxFeature) {
 	maxFeatures     = _maxFeature;
 	maxDetectionIte = 100;
 	minMatches      = 10;
+	maxMatchDistance = 10;
 	
 	adjuster  = new FastAdjuster(100, true);
 	extractor = new BriefDescriptorExtractor();
 	matcher   = new BFMatcher(NORM_HAMMING, true); // gives infinite distance between matchings
 	matcher2  = new BFMatcher(NORM_HAMMING, false);
 	
-	KPDistThresh = 100;
-	
 	RANSACDist = 2.0;
 	RANSACConf = .99;
-	
 };
 
 bool LabicReconstructor::mainLoopPart(const int t) {
     if (cv->isReady()) {
-        cout << "[LabicReconstructor] Reconstructor got frames. Reconstructing..." << endl;
+        cout << endl << "[LabicReconstructor] Reconstructor got frames. Reconstructing..." << endl;
         
         performLoop(cv->rgbCurrent, cv->rgbPrevious, cv->depthCurrent, cv->depthPrevious);
         
-        cout << "[LabicReconstructor] Finished reconstruction loop" << endl;
+        cout << "[LabicReconstructor] Finished reconstruction loop" << endl << endl;
         
         cv->restartState();
     }
@@ -58,9 +56,11 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 	vector<KeyPoint> featuresCurrent, featuresPrevious;
 	Mat descriptorsCurrent, descriptorsPrevious;
 	vector<DMatch> relatedFeatures;
-	PointCloud<PointXYZRGB> cloudCurrent, cloudPrevious;
-	pcl::registration::TransformationEstimationSVD<PointXYZRGB, PointXYZRGB, float> estimator;
-	Eigen::Matrix4f transform;
+    vector<Point2f> featurePointsCurrent, featurePointsPrevious;
+	PointCloud<PointXYZRGB> cloudCurrent, cloudPrevious, featureCloudCurrent, featureCloudPrevious, transformedCloudCurrent;
+	//pcl::registration::TransformationEstimationSVD<PointXYZRGB, PointXYZRGB, float> estimator;
+	Eigen::Matrix4f transform = Eigen::Matrix4f::Zero();
+    vector<int> consensusSetIndexes;
 	
 	// 1. Extract features from both images
 	extractRGBFeatures(rgbPrevious, featuresPrevious, descriptorsPrevious);
@@ -68,31 +68,59 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 	
 	// 2. Get relationship (matches) between features from both images
 	matchFeatures(featuresPrevious, descriptorsPrevious, featuresCurrent, descriptorsCurrent, relatedFeatures);
+    cv->showMatchesPreview(rgbCurrent, featuresCurrent, rgbPrevious, featuresPrevious, relatedFeatures);
+    featurePointsPrevious.reserve(relatedFeatures.size());
+    featurePointsCurrent.reserve(relatedFeatures.size());
+    for (int i=0; i<relatedFeatures.size(); i++) {
+        int previousIndex = relatedFeatures[i].trainIdx;
+        int currentIndex = relatedFeatures[i].queryIdx;
+        featurePointsPrevious.push_back(featuresPrevious[previousIndex].pt);
+        featurePointsCurrent.push_back(featuresCurrent[currentIndex].pt);
+    }
 	
 	// 3. Generate PointClouds of related features (pointcloudsrc, pointcloudtgt)
-	// TODO
-	
+    Kinect::frameToPointCloud(rgbPrevious, depthPrevious, featureCloudPrevious, 1, featurePointsPrevious);
+    Kinect::frameToPointCloud(rgbCurrent, depthCurrent, featureCloudCurrent, 1, featurePointsCurrent);
+    
+    cout << "[LabicReconstructor::performLoop] cloudPrevious with " << featureCloudPrevious.size() << " points" << endl
+    << "[LabicReconstructor::performLoop] cloudCurrent with " << featureCloudCurrent.size() << " points" << endl;
+    /*
+    pcl::io::savePLYFileASCII("cloudPrevious.ply", featureCloudPrevious);
+    pcl::io::savePLYFileASCII("cloudCurrent.ply", featureCloudCurrent);
+	*/
 	// 4. Alignment detection
 	// TODO ransac loop
-	estimator.estimateRigidTransformation(cloudCurrent, cloudPrevious, transform);
+    cout << "[LabicReconstructor::performLoop] transformation matrix before estimate:" << endl << transform << endl;
+
+	//estimator.estimateRigidTransformation(featureCloudPrevious, featureCloudCurrent, transform);
+    performRansacAlignment(featureCloudPrevious, featureCloudCurrent, consensusSetIndexes, transform);
 	
     cout << "[LabicReconstructor::performLoop] final transformation matrix:" << endl << transform << endl;
 	
 	// 5. Apply transformation to all frame points
-	// TODO
-	
+    Kinect::frameToPointCloud(rgbPrevious, depthPrevious, cloudPrevious);
+    Kinect::frameToPointCloud(rgbCurrent, depthCurrent, cloudCurrent);
+    transformPointCloud(cloudCurrent, transformedCloudCurrent, transform);
+    
+    pcl::visualization::PCLVisualizer vissvd;
+    vissvd.addPointCloud(cloudPrevious.makeShared(),"previous");
+    vissvd.addPointCloud(transformedCloudCurrent.makeShared(),"transformedCurrent");
+    vissvd.resetCamera();
+    vissvd.spin();
+    
 	// return updated world pointcloud
 	
 }
 
 void LabicReconstructor::extractRGBFeatures(const Mat& img, vector<KeyPoint>& keypoints, Mat& descriptors) {
-	
 	cout << "[LabicReconstructor::extractRGBFeatures] computing features" << endl;
 	
-	// detect features
+    Mat imgBlackWhite;
+    cvtColor(img, imgBlackWhite, CV_RGB2GRAY);
+    
 	for (int i=0; i<maxDetectionIte; i++) {
-		adjuster->detect(img, keypoints);
-		extractor->compute(img, keypoints, descriptors);
+		adjuster->detect(imgBlackWhite, keypoints);
+		extractor->compute(imgBlackWhite, keypoints, descriptors);
 		
 		if ( keypoints.size() < minFeatures){
 			adjuster->tooFew (minFeatures, keypoints.size());
@@ -113,107 +141,156 @@ void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 									   const Mat&               _descriptors_t,
 									   vector<DMatch>&     _matches) const {
 	
-	cout << "[LabicReconstructor::matchImages] matching features\n";
+	cout << "[LabicReconstructor::matchFeatures] matching features\n";
 	vector<DMatch> matches;
 	
-	int iter = 0;
-	if (iter == 10) {
-		cout << "[LabicReconstructor::matchImages] ERRO MATCH" << endl;
-	}
 	matcher2->match(_descriptors_q, _descriptors_t, matches);
-	cout << "[LabicReconstructor::matchImages] initial matched features: " << matches.size() << endl;
-	
-	iter++;
-	
+	cout << "[LabicReconstructor::matchFeatures] Inital matched features: " << matches.size() << endl;
+		
 	_matches.clear();
 	
 	// Distance filter
 	for (int i=0; i<matches.size(); i++) {
-		if (matches[i].distance < KPDistThresh) {
+		if (matches[i].distance < maxMatchDistance) {
 			_matches.push_back(matches[i]);
 		}
 	}
 	
-	cout << "[LabicReconstructor::matchImages] final matched features: " << _matches.size() << endl;
+	cout << "[LabicReconstructor::matchFeatures] Final matched features after threshold: " << _matches.size() << endl;
 	
 	if (_matches.size() < minMatches){
-		cout << "[LabicReconstructor::matchImages] images do not match!" << endl;
+		cout << "[LabicReconstructor::matchFeatures] IMAGES DO NOT MATCH!" << endl;
 	}
 }
 
-Mat LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& cloud_src,
-											   const PointCloud<PointXYZRGB>& cloud_tgt,
-											   const vector<DMatch>& _matches) {
+void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& cloudCurrent,
+											   const PointCloud<PointXYZRGB>& cloudPrevious,
+											   vector<int>& _inliersIndexes,
+                                               Eigen::Matrix4f& _bestTransform) {
 	
 	// RANSAC initial parameters
-	int max_iterations = 1; // k
-	int n_samples = 3; // number of maybe_inliers (random samples)
-	float max_dist = 3.0; // max error
+	int maxIterations = 5; // k
+	int nSamples = 3; // number of maybe_inliers (random samples)
+	float threshold = 3.0; // max error
+    int minInliers = 10;
 	
-	int iterations = 0;
-	int random_indexes[3];
-	double best_error = INFINITY, this_error;
-	Mat best_model, maybe_model;
-	vector<DMatch> maybe_inliers(0), other_inliers(0);
-	vector<DMatch> best_consensus_set(0), consensus_set(0);
+	double bestError = INFINITY, thisError;
+    Eigen::Matrix4f bestTransform, maybeTransform, thisTransform;
+	vector<int> maybeIndexes, notMaybeIndexes, bestConsensusSetIndexes, consensusSetIndexes;
+    
+    pcl::registration::TransformationEstimationSVD<PointXYZRGB, PointXYZRGB, float> estimatorSVD;
+    pcl::registration::TransformationEstimationLM<PointXYZRGB, PointXYZRGB, float> estimatorLM;
 	
 	srand(time(NULL));
 	
-	while (iterations < max_iterations) {
+    int iterations = 0;
+
+	while (iterations < maxIterations) {
+        cout << ">>> RANSAC iteration " << iterations+1 << endl;
+        
+        maybeIndexes.clear();
+        notMaybeIndexes.clear();
+        consensusSetIndexes.clear();
+        maybeTransform = Eigen::Matrix4f::Zero();
 		
-		// maybe_inliers/initial consensus set
-		for (int i=0; i<n_samples; i++) {
-			random_indexes[i] = rand() & _matches.size();
-			maybe_inliers.push_back(_matches[random_indexes[i]]);
-			consensus_set.push_back(_matches[random_indexes[i]]);
+		// Determine random sample (maybe)
+        cout << "       maybeIndexes/consensusSetIndexes = [";
+		for (int i=0; i<nSamples; i++) {
+            int randomSample = rand() % cloudCurrent.size();
+            cout << randomSample << ", ";
+            maybeIndexes.push_back(randomSample);
+			consensusSetIndexes.push_back(randomSample);
 		}
-		
-		// other_inliers
-		// the complexity of this loop can be improved?
-		for (int i=0; i<_matches.size(); i++) {
-			if (i != random_indexes[0] && i != random_indexes[1] && i != random_indexes[2]) {
-				other_inliers.push_back(_matches[i]);
+        cout << "]" << endl;
+        
+        // Estimate transformation from maybe set (size = nSamples)
+        estimatorLM.estimateRigidTransformation(cloudCurrent, maybeIndexes, cloudPrevious, maybeIndexes, maybeTransform);
+        
+        cout << "       maybeTransform = " << endl << maybeTransform << endl;
+        
+        // Create vector of points that are not in maybeInliers
+        // notMaybeIndexes = cloudCurrent \ maybeIndexes
+        //cout << "       notMaybeIndexes = [";
+        for (int i=0; i<cloudCurrent.size(); i++) {
+            bool isInMaybeIndexes = false;
+            for (int j=0; j<maybeIndexes.size(); j++) {
+                if (i == maybeIndexes[j]) {
+                    isInMaybeIndexes = true;
+                    break;
+                }
+            }
+            if (isInMaybeIndexes) continue;
+            //cout << i << ", ";
+            notMaybeIndexes.push_back(i);
+        }
+        //cout << "]" << endl;
+
+		// Test transformation with other points that are not in maybeIndexes
+		for (int i=0; i<notMaybeIndexes.size(); i++) {
+            int pointIndex = notMaybeIndexes[i];
+            PointCloud<PointXYZRGB> transformedPoint;
+            transformedPoint.push_back(cloudCurrent.points[pointIndex]);
+            transformPointCloud(transformedPoint, transformedPoint, maybeTransform);
+            double transformedDistance = euclideanDistance(transformedPoint.points[0], cloudPrevious.points[pointIndex]);
+            
+            cout << "       Point " << i << " distance = " << transformedDistance;
+			if (transformedDistance <= threshold) {
+				consensusSetIndexes.push_back(pointIndex);
+                cout << " (added to consensus set!)";
 			}
+            cout << endl;
 		}
 		
-		maybe_model = sba_transform(maybe_inliers);
-		
-		for (int i=0; i<other_inliers.size(); i++) {
-			if (transformation_error(maybe_model, other_inliers[i]) < max_dist) {
-				consensus_set.push_back(other_inliers[i]);
-			}
-		}
-		
-		if (consensus_set.size() > minMatches) {
-			// recalculate model
-			maybe_model = sba_transform(consensus_set);
-			this_error = transformation_error_set(maybe_model, consensus_set);
+        cout << "       consensusSet has " << consensusSetIndexes.size() << " points" << endl;
+		if (consensusSetIndexes.size() >= minInliers) {
+            cout << "           (ok! we may have found a good transformation. comparing to the best..." << endl;
+            
+			// Recalculate transformation from new consensus set
+            estimatorLM.estimateRigidTransformation(cloudPrevious, consensusSetIndexes, cloudCurrent, consensusSetIndexes, thisTransform);
+            
+            cout << "       thisTransform = " << endl << thisTransform << endl;
+            
+            // Generate the transformed cloud using thisTransform
+            // Note that this cloud will include points that are not in consensus set, be careful
+            PointCloud<PointXYZRGB> transformedCloudCurrent;
+            transformPointCloud(cloudCurrent, transformedCloudCurrent, thisTransform);
+            thisError = getAlignmentError(transformedCloudCurrent, cloudPrevious, consensusSetIndexes);
 			
-			if (this_error < best_error) {
-				best_model = maybe_model;
-				best_error = this_error;
-				best_consensus_set = consensus_set;
+            cout << "       thisError = " << thisError;
+			if (thisError < bestError) {
+                cout << " (great! best error so far. updating best parameters)";
+				bestTransform = thisTransform;
+				bestError = thisError;
+				bestConsensusSetIndexes = consensusSetIndexes;
 			}
+            cout << endl;
 		}
 		
 		// TODO test to stop if found error < ok_error
-		
+		cout << endl;
 		iterations++;
 	}
 	
-	return best_model;
+    _inliersIndexes = bestConsensusSetIndexes;
+    _bestTransform = bestTransform;
+
 }
 
-Mat LabicReconstructor::sba_transform(vector<DMatch> _matches) {
-	return Mat();
-}
-
-double LabicReconstructor::transformation_error(Mat transform, DMatch match) {
-	return 0.0;
-}
-
-double LabicReconstructor::transformation_error_set(Mat transform, vector<DMatch> matches) {
-	return 0.0;
+double LabicReconstructor::getAlignmentError(const PointCloud<PointXYZRGB>& cloud1,
+                                             const PointCloud<PointXYZRGB>& cloud2,
+                                             const vector<int> inliersIndexes) {
+    // Check if two clouds have the same size
+    assert(cloud1.size() == cloud2.size());
+    double error = 0;
+    
+    for (int i=0; i<inliersIndexes.size(); i++) {
+        int inlierIndex = inliersIndexes[i];
+        
+        error += squaredEuclideanDistance(cloud1.points[inlierIndex], cloud2.points[inlierIndex]);
+    }
+    
+    error /= inliersIndexes.size();
+    return error;
 }
 
 Mat LabicReconstructor::filterMatches(vector<KeyPoint>&   _keypoints_q,
@@ -294,4 +371,9 @@ void LabicReconstructor::start() {
 
 void LabicReconstructor::join() {
     m_Thread.join();
+}
+
+void LabicReconstructor::close() {
+    // Extra code if need to 
+    join();
 }

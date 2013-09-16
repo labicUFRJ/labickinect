@@ -21,11 +21,6 @@
 #include <ctime>
 #include <boost/thread.hpp>
 
-#ifndef BOOST_THREAD_INCLUDED
-#define BOOST_THREAD_INCLUDED
-#include <boost/thread.hpp>
-#endif
-
 namespace labic {
 	
 	class Mutex {
@@ -67,10 +62,10 @@ namespace labic {
 		bool getFrame(cv::Mat &video, uint16_t *depth);
 		void setTilt(double _tilt);
 		int mmToRaw(float depthValue) const;
-		cv::Point3d ptToPoint3d (float cgx, float cgy, float cgz) const;
-		pcl::PointXYZRGB ptToPointXYZRGB (float cgx, float cgy, float cgz) const;
-		bool getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &cloud, const int nThreads);
-		void getPointCloudThread(pcl::PointCloud<pcl::PointXYZRGB> &_cloud, cv::Mat &rgb, uint16_t *depth, int start, int end) const;
+		static cv::Point3d ptToPoint3d (float cgx, float cgy, float cgz);
+		static pcl::PointXYZRGB ptToPointXYZRGB (float cgx, float cgy, float cgz);
+		static bool frameToPointCloud(const cv::Mat& rgb, const uint16_t* depth, pcl::PointCloud<pcl::PointXYZRGB>& _cloud, const int nThreads = 1, const std::vector<cv::Point2f> pts = std::vector<cv::Point2f>());
+		static void getPointCloudThread(pcl::PointCloud<pcl::PointXYZRGB> &_cloud, cv::Mat &rgb, uint16_t *depth, int start, int end);
 		void teste();
 		double tilt;
 		bool stop;

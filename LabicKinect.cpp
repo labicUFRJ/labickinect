@@ -124,7 +124,7 @@ int Kinect::mmToRaw(float depthValue) const {
     return z;
 }
 
-cv::Point3d Kinect::ptToPoint3d(float cgx, float cgy, float cgz) const {
+cv::Point3d Kinect::ptToPoint3d(float cgx, float cgy, float cgz) {
     double fx_d = 1.0 / 5.9421434211923247e+02;
     double fy_d = 1.0 / 5.9104053696870778e+02;
     double cx_d = 3.3930780975300314e+02;
@@ -143,7 +143,7 @@ cv::Point3d Kinect::ptToPoint3d(float cgx, float cgy, float cgz) const {
                        );
 }
 
-pcl::PointXYZRGB Kinect::ptToPointXYZRGB(float cgx, float cgy, float cgz) const {
+pcl::PointXYZRGB Kinect::ptToPointXYZRGB(float cgx, float cgy, float cgz) {
     double fx_d = 1.0 / 5.9421434211923247e+02;
     double fy_d = 1.0 / 5.9104053696870778e+02;
     double cx_d = 3.3930780975300314e+02;
@@ -164,33 +164,15 @@ pcl::PointXYZRGB Kinect::ptToPointXYZRGB(float cgx, float cgy, float cgz) const 
     return pt;
 }
 
-bool Kinect::getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud, const int nThreads) {
+bool Kinect::frameToPointCloud(const cv::Mat& rgb, const uint16_t* depth, pcl::PointCloud<pcl::PointXYZRGB>& _cloud, const int nThreads, const vector<cv::Point2f> pts) {
     pcl::PointCloud<pcl::PointXYZRGB> cloud;
     pcl::PointXYZRGB pt;
-    uint16_t *depth;
-    cv::Mat rgb(cv::Size(640, 480), CV_8UC3, cv::Scalar(0));
+/*    uint16_t *depth;
+    cv::Mat rgb(cv::Size(640, 480), CV_8UC3, cv::Scalar(0));*/
     cv::Vec3b ptRGB;
     int i;
     int x, y;
     clock_t t;
-    
-    /*
-    m_rgb_mutex.lock();
-    m_depth_mutex.lock();
-    
-    if (m_new_rgb_frame && m_new_depth_frame) {
-		depth = depth_buffer;
-        cvtColor(rgbMat, rgb, CV_RGB2BGR);
-        m_rgb_mutex.unlock();
-        m_depth_mutex.unlock();
-    } else {
-        m_rgb_mutex.unlock();
-        m_depth_mutex.unlock();
-        return false;
-    }*/
-	
-	depth = (uint16_t*) malloc(sizeof(uint16_t)*640*480);
-	if (!getFrame(rgb, depth)) return false;
     
     cloud.clear();
     cloud.reserve(640*480);
@@ -222,17 +204,34 @@ bool Kinect::getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud, const int 
     std::cout << "Total points after join: " << cloud.width << "" << std::endl;
     */
 	
-    for (i=0; i<640*480; i++) {
-        y = i/640;
-        x = i%640;
-        
-        pt = ptToPointXYZRGB(x, y, depth[i]);
-        ptRGB = rgb.at<cv::Vec3b>(y,x);
-        pt.r = ptRGB[2];
-        pt.g = ptRGB[1];
-        pt.b = ptRGB[0];
-        
-        cloud.push_back(pt);
+    // If no specific points were specified
+    if (pts.empty()) {
+        for (i=0; i<640*480; i++) {
+            y = i/640;
+            x = i%640;
+            
+            pt = ptToPointXYZRGB(x, y, depth[i]);
+            ptRGB = rgb.at<cv::Vec3b>(y,x);
+            pt.r = ptRGB[2];
+            pt.g = ptRGB[1];
+            pt.b = ptRGB[0];
+            
+            cloud.push_back(pt);
+        }
+    } else {
+        for (i=0; i<pts.size(); i++) {
+            y = pts[i].y;
+            x = pts[i].x;
+            int index = y*640 + x;
+            
+            pt = ptToPointXYZRGB(x, y, depth[index]);
+            ptRGB = rgb.at<cv::Vec3b>(y,x);
+            pt.r = ptRGB[2];
+            pt.g = ptRGB[1];
+            pt.b = ptRGB[0];
+            
+            cloud.push_back(pt);
+        }
     }
     
     t = clock() - t;
@@ -240,13 +239,13 @@ bool Kinect::getPointCloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud, const int 
     _cloud = cloud;
     //free(depth);
     
-    //std::cout << "[LabicKinect] getPointCloud time: " << ((float)t)/CLOCKS_PER_SEC << " secs " << std::endl;
+//    cout << "[LabicKinect] frameToPointCloud time: " << 1000*((float)t)/CLOCKS_PER_SEC << " ms " << endl;
     
     return true;
     
 }
 
-void Kinect::getPointCloudThread(pcl::PointCloud<pcl::PointXYZRGB>& cloud, cv::Mat &rgb, uint16_t *depth, int start, int end) const {
+void Kinect::getPointCloudThread(pcl::PointCloud<pcl::PointXYZRGB>& cloud, cv::Mat &rgb, uint16_t *depth, int start, int end) {
 //	pcl::PointCloud<pcl::PointXYZRGB> cloud;
     pcl::PointXYZRGB pt;
     cv::Vec3b ptRGB;

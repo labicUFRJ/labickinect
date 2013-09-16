@@ -2,6 +2,9 @@
 #define __LabicReconstructor__
 
 #include <iostream>
+#include <cassert>
+#include <boost/thread.hpp>
+#include "LabicKinect.h"
 #include "LabicCV.h"
 #include "LabicPCL.h"
 #include "opencv2/core/core.hpp"
@@ -9,8 +12,11 @@
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/contrib/contrib.hpp"
+#include <pcl/common/common.h>
+#include <pcl/common/distances.h>
 #include <pcl/registration/transformation_estimation_svd.h>
-#include <boost/thread.hpp>
+#include <pcl/registration/transformation_estimation_lm.h>
+#include <pcl/io/ply_io.h>
 
 namespace labic {
 	
@@ -23,7 +29,7 @@ namespace labic {
 		int     maxFeatures;
 		int     maxDetectionIte;
 		int     minMatches;
-		float   KPDistThresh;
+		float   maxMatchDistance;
 		double  RANSACDist;
 		double  RANSACConf;
 		cv::Ptr<cv::FastAdjuster>         adjuster;
@@ -49,12 +55,11 @@ namespace labic {
 							  std::vector<cv::KeyPoint>&   _keypoints_t,
 							  std::vector<cv::DMatch>&     _matches,
 							  bool                         _giveID);
-		cv::Mat sba_transform(std::vector<cv::DMatch> _matches);
-		double transformation_error(cv::Mat transform, cv::DMatch match);
-		double transformation_error_set(cv::Mat transform, std::vector<cv::DMatch> matches);
+        static double getAlignmentError(const pcl::PointCloud<pcl::PointXYZRGB>& cloud1,
+                                        const pcl::PointCloud<pcl::PointXYZRGB>& cloud2,
+                                        const std::vector<int> inliersIndexes);
 		
 	public:
-		
 		LabicCV *cv;
 		LabicPCL *pcl;
 		
@@ -63,10 +68,12 @@ namespace labic {
 		void start();
         bool mainLoopPart(const int t);
 		void join();
+        void close();
 		
-		cv::Mat performRansacAlignment(const pcl::PointCloud<pcl::PointXYZRGB>& cloud_src,
-									   const pcl::PointCloud<pcl::PointXYZRGB>& cloud_tgt,
-									   const std::vector<cv::DMatch>&     _matches);
+		void performRansacAlignment(const pcl::PointCloud<pcl::PointXYZRGB>& cloudCurrent,
+                                    const pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious,
+                                    std::vector<int>& _inliersIndexes,
+                                    Eigen::Matrix4f& _bestTransform);
 		
 		
 		void matchImages2(std::vector<cv::KeyPoint>&   _keypoints_q,

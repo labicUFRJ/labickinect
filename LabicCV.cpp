@@ -87,6 +87,8 @@ void LabicCV::generateDepthImage(uint16_t *depth, cv::Mat depthMat) {
     int x, y, i;
     int depthValue;
     
+    clock_t t = clock();
+    
     for (i=0; i<width*height; i++) {
         y = i/width;
         x = i%width;
@@ -95,12 +97,10 @@ void LabicCV::generateDepthImage(uint16_t *depth, cv::Mat depthMat) {
         
         depthMat.at<Vec3b>(y,x) = depth_to_color(depthValue);
     }
+    
+    t = clock() - t;
+    //cout << "[LabicCV] generateDepthImage time: " << 1000*((float)t)/CLOCKS_PER_SEC << " ms " << endl;
 }
-/*
-void LabicCV::registerState(Mat& rgbState, uint16_t *depthState) {
-    rgbState.swap(rgb_image);
-    depthState = (uint16_t*) memcpy(depth_t, depth, sizeof(uint16_t)*width*height);
-}*/
 
 Vec3b LabicCV::depth_to_color(float raw_depth_value) {
     
@@ -192,6 +192,14 @@ void LabicCV::keyboardHandler(int key) {
     }
 }
 
+void LabicCV::showMatchesPreview(const Mat& img1, const vector<KeyPoint>& keypoints1, const Mat& img2, const vector<KeyPoint>& keypoints2, const vector<DMatch>& matches1to2) {
+    Mat outImg;
+    drawMatches(img1, keypoints1, img2, keypoints2, matches1to2, outImg);
+    imshow("RGB matched features", outImg);
+    //while (waitKey() != 27);
+    //destroyWindow("RGB matched features");
+}
+
 void LabicCV::start() {
 	m_Thread = boost::thread(&LabicCV::display, this);
 }
@@ -202,8 +210,11 @@ bool LabicCV::mainLoopPart(const int t) {
 }
 
 void LabicCV::join() {
-//    while (!stop && !window_closed) {
-//        keyboardHandler(waitKey(REFRESH_INTERVAL));
-//    }
     m_Thread.join();
+}
+
+void LabicCV::close() {
+    stop = true;
+    destroyAllWindows();
+    join();
 }

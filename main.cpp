@@ -12,20 +12,10 @@
 
 #include <iostream>
 #include <ctime>
-
 #include "LabicKinect.h"
-
-#if LABIC_ENABLE_CV == ON
 #include "LabicCV.h"
-#endif
-
-#if LABIC_ENABLE_PCL == ON
 #include "LabicPCL.h"
-#endif
-
-#if LABIC_ENABLE_MATCHER == ON
 #include "LabicReconstructor.h"
-#endif
 
 using namespace std;
 using namespace labic;
@@ -39,20 +29,11 @@ using namespace labic;
 int main(int argc, char **argv) {
     Freenect::Freenect freenect;
     Kinect *kinect;
-#if LABIC_ENABLE_CV == ON
 	LabicCV *cv;
-#endif
-#if LABIC_ENABLE_PCL == ON
 	LabicPCL *pcl;
-#endif
-#if LABIC_ENABLE_MATCHER == ON
 	LabicReconstructor *recon;
-#endif
     clock_t t, t1, t2, t3;
     float timeTotal, timeCV, timePCL, timeReconstructor;
-    
-    //	cv::Mat rgbMat(cv::Size(640, 480), CV_8UC3, cv::Scalar(0));
-    //    uint16_t *depth = (uint16_t*) malloc(sizeof(uint16_t)*640*480);
 	
 	cout << "[main] Initializing Kinect device..." << endl;
 	
@@ -70,29 +51,21 @@ int main(int argc, char **argv) {
 		cout << "[main] Kinect ERROR: " << e.what() << endl;
 		return 1;
 	}
-    
-    //	boost::thread frameCatcher(kinectLoop);
-	
-#if LABIC_ENABLE_MATCHER == ON
+    	
 	recon = new LabicReconstructor(100,500);
-#endif
     
 	// OpenCV thread
-#if LABIC_ENABLE_CV == ON
 	cv = new LabicCV(kinect, 640, 480); // TODO const
-#if LABIC_ENABLE_MATCHER == ON
 	recon->cv = cv;
-#endif
+#if LABIC_ENABLE_CV == ON
     cv->init();
 	cv->start();
 #endif
 	
     // PCL thread
-#if LABIC_ENABLE_PCL == ON
 	pcl = new LabicPCL(kinect, 640, 480);
-#if LABIC_ENABLE_MATCHER == ON
 	recon->pcl = pcl;
-#endif
+#if LABIC_ENABLE_PCL == ON
 	pcl->start();
 	//pcl->display();
 #endif
@@ -114,20 +87,19 @@ int main(int argc, char **argv) {
         t3 = clock();
         if (!recon->mainLoopPart(REFRESH_INTERVAL)) break;
         t3 = clock() - t3;
-        
         t = clock() - t;
         
         timeTotal = 1000*((float)t)/CLOCKS_PER_SEC;
         timePCL = 1000*((float)t1)/CLOCKS_PER_SEC;
         timeCV = 1000*((float)t2)/CLOCKS_PER_SEC;
         timeReconstructor = 1000*((float)t3)/CLOCKS_PER_SEC;
-        
+        /*
         cout << "[main] Iteration time: "
         << timeTotal << "ms ("
         << "CV: " << timeCV << "ms "
         << "PCL: " << timePCL << "ms "
         << "Rec: " << timeReconstructor << "ms)" <<
-        endl;
+        endl;*/
         
     }
     
@@ -135,13 +107,13 @@ int main(int argc, char **argv) {
 	
 	// Wait for threads to finish
 #if LABIC_ENABLE_CV == ON
-	cv->join();
+	cv->close();
 #endif
 #if LABIC_ENABLE_PCL == ON
-	pcl->join();
+	pcl->close();
 #endif
 #if LABIC_ENABLE_MATCHER == ON
-	recon->join();
+	recon->close();
 #endif
 	
     //	frameCatcher.join();

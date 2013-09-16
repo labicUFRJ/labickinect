@@ -18,19 +18,19 @@ LabicPCL::LabicPCL(Kinect *_kinect, int _width, int _height) {
 	height = _height;
     
     viewPort = 1;
+    stop = false;
     
     std::cout << "[LabicPCL] Viewer initialized\n";
 }
 
 bool LabicPCL::mainLoopPart(const int t) {
-    if (!viewer.wasStopped()) {
-		viewer.spinOnce(100);
-		//boost::this_thread::sleep (boost::posix_time::microseconds (100000));
+    if (!viewer.wasStopped() && !stop) {
+		viewer.spinOnce(t);
         return true;
     } else {
         cout << "[LabicPCL] User closed PCLVisualizer window" << endl;
 
-        viewer.close();
+        close();
         
         cout << "[LabicPCL] mainLoopPart finished" << endl;
         return false;
@@ -38,25 +38,34 @@ bool LabicPCL::mainLoopPart(const int t) {
 }
 
 void LabicPCL::display() {
+    uint16_t *depth = (uint16_t*) malloc(sizeof(uint16_t)*640*480);
+    cv::Mat rgb(cv::Size(640, 480), CV_8UC3, cv::Scalar(0));
+    
 	std::cout << "[LabicPCL] Display started\n";
     
     viewer.addCoordinateSystem(0.1);
     viewer.initCameraParameters();
     viewer.setCameraPosition(0.0, 0.0, -1.0, 0.0, -1.0, 0.0);
-    //viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3);
     viewer.addText("Live PointCloud", 10, 10);    
     
+    bool savedPLY(false);
     
-    while (!viewer.wasStopped()) {
-        if (!kinect->getPointCloud(liveCloud, 4)) continue;
+    while (!viewer.wasStopped() && !stop) {
+        if (stop) break;
+        if (!kinect->getFrame(rgb, depth)) continue;
+        if (!kinect->frameToPointCloud(rgb, depth, liveCloud, 4)) continue;
+        
+        if (!savedPLY) { pcl::io::savePLYFileASCII("cloud.ply", liveCloud); savedPLY = true; }
         
         if (!viewer.updatePointCloud(liveCloud.makeShared())) {
             viewer.addPointCloud<PointXYZRGB>(liveCloud.makeShared());
 			viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3);
         }
 	}
+    
     viewer.close();
-	std::cout << "[LabicPCL] Display finished\n";
+	
+    std::cout << "[LabicPCL] Display finished\n";
 }
 
 void LabicPCL::generateDepthCloud(uint16_t *depth) {
@@ -124,7 +133,7 @@ void LabicPCL::updateCloud(std::vector< cv::Point3d >& objPoints, cv::Mat img) {
         if (objPoints[i].x == 0 && objPoints[i].y == 0 && objPoints[i].z == 0) {
             
             cloud.points[i].r = cloud.points[i].g = cloud.points[i].b = 255;
-
+            
         } else {
         
             imgx = i/640;
@@ -144,6 +153,13 @@ void LabicPCL::start() {
 }
 
 void LabicPCL::join() {
-    m_Thread.join();
+    if (m_Thread.joinable()) m_Thread.join();
+}
+
+void LabicPCL::close() {
+//    cout << "[LabicPCL] Asked to close PCL" << endl;
+    stop = true;
+    viewer.close();
+    join();
 }
 
