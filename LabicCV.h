@@ -31,8 +31,6 @@ namespace labic {
         bool window_closed;
 		int width;
 		int height;
-		/*cv::Mat rgb_image;
-		cv::Mat depth_image;*/
 		uint16_t t_gamma[2048];
         bool previousSet, currentSet;
         
@@ -63,7 +61,7 @@ namespace labic {
         void display();
         const bool isReady() const { return previousSet && currentSet; }
         void restartState() { previousSet = currentSet = false; }
-        void showMatchesPreview(const cv::Mat& img1, const std::vector<cv::KeyPoint>& keypoints1, const cv::Mat& img2, const std::vector<cv::KeyPoint>& keypoints2, const std::vector<cv::DMatch>& matches1to2);
+        static void showMatchesPreview(const cv::Mat& img1, const std::vector<cv::KeyPoint>& keypoints1, const cv::Mat& img2, const std::vector<cv::KeyPoint>& keypoints2, const std::vector<cv::DMatch>& matches1to2);
 
     };
 }

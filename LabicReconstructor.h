@@ -2,6 +2,7 @@
 #define __LabicReconstructor__
 
 #include <iostream>
+#include <algorithm>
 #include <cassert>
 #include <boost/thread.hpp>
 #include "LabicKinect.h"
@@ -14,6 +15,7 @@
 #include "opencv2/contrib/contrib.hpp"
 #include <pcl/common/common.h>
 #include <pcl/common/distances.h>
+#include <pcl/common/eigen.h>
 #include <pcl/registration/transformation_estimation_svd.h>
 #include <pcl/registration/transformation_estimation_lm.h>
 #include <pcl/io/ply_io.h>
@@ -58,6 +60,13 @@ namespace labic {
         static double getAlignmentError(const pcl::PointCloud<pcl::PointXYZRGB>& cloud1,
                                         const pcl::PointCloud<pcl::PointXYZRGB>& cloud2,
                                         const std::vector<int> inliersIndexes);
+        
+        template <typename PointSource, typename PointTarget> void
+        estimateRigidTransformationSVD (const pcl::PointCloud<PointSource> &cloud_src,
+                                                            const std::vector<int> &indices_src,
+                                                            const pcl::PointCloud<PointTarget> &cloud_tgt,
+                                                            const std::vector<int> &indices_tgt,
+                                                            Eigen::Matrix4f &transformation_matrix);
 		
 	public:
 		LabicCV *cv;

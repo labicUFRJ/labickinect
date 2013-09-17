@@ -194,6 +194,7 @@ void LabicCV::keyboardHandler(int key) {
 
 void LabicCV::showMatchesPreview(const Mat& img1, const vector<KeyPoint>& keypoints1, const Mat& img2, const vector<KeyPoint>& keypoints2, const vector<DMatch>& matches1to2) {
     Mat outImg;
+    namedWindow("RGB matched features");
     drawMatches(img1, keypoints1, img2, keypoints2, matches1to2, outImg);
     imshow("RGB matched features", outImg);
     //while (waitKey() != 27);

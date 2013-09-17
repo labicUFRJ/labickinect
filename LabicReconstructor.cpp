@@ -13,7 +13,7 @@ LabicReconstructor::LabicReconstructor(int _minFeature, int _maxFeature) {
 	maxFeatures     = _maxFeature;
 	maxDetectionIte = 100;
 	minMatches      = 10;
-	maxMatchDistance = 10;
+	maxMatchDistance = 5;
 	
 	adjuster  = new FastAdjuster(100, true);
 	extractor = new BriefDescriptorExtractor();
@@ -68,7 +68,7 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 	
 	// 2. Get relationship (matches) between features from both images
 	matchFeatures(featuresPrevious, descriptorsPrevious, featuresCurrent, descriptorsCurrent, relatedFeatures);
-    cv->showMatchesPreview(rgbCurrent, featuresCurrent, rgbPrevious, featuresPrevious, relatedFeatures);
+    LabicCV::showMatchesPreview(rgbPrevious, featuresPrevious, rgbCurrent, featuresCurrent, relatedFeatures);
     featurePointsPrevious.reserve(relatedFeatures.size());
     featurePointsCurrent.reserve(relatedFeatures.size());
     for (int i=0; i<relatedFeatures.size(); i++) {
@@ -144,7 +144,7 @@ void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 	cout << "[LabicReconstructor::matchFeatures] matching features\n";
 	vector<DMatch> matches;
 	
-	matcher2->match(_descriptors_q, _descriptors_t, matches);
+	matcher->match(_descriptors_q, _descriptors_t, matches);
 	cout << "[LabicReconstructor::matchFeatures] Inital matched features: " << matches.size() << endl;
 		
 	_matches.clear();
@@ -195,16 +195,20 @@ void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& c
 		
 		// Determine random sample (maybe)
         cout << "       maybeIndexes/consensusSetIndexes = [";
-		for (int i=0; i<nSamples; i++) {
+		for (int i=0; i<nSamples; ) {
             int randomSample = rand() % cloudCurrent.size();
             cout << randomSample << ", ";
-            maybeIndexes.push_back(randomSample);
-			consensusSetIndexes.push_back(randomSample);
+            if (find(maybeIndexes.begin(), maybeIndexes.end(), randomSample) == maybeIndexes.end()) {
+                maybeIndexes.push_back(randomSample);
+                consensusSetIndexes.push_back(randomSample);
+                i++;
+            }
 		}
         cout << "]" << endl;
         
         // Estimate transformation from maybe set (size = nSamples)
-        estimatorLM.estimateRigidTransformation(cloudCurrent, maybeIndexes, cloudPrevious, maybeIndexes, maybeTransform);
+        //estimatorSVD.estimateRigidTransformation(cloudCurrent, maybeIndexes, cloudPrevious, maybeIndexes, maybeTransform);
+        estimateRigidTransformationSVD(cloudCurrent, maybeIndexes, cloudPrevious, maybeIndexes, maybeTransform);
         
         cout << "       maybeTransform = " << endl << maybeTransform << endl;
         
@@ -246,7 +250,8 @@ void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& c
             cout << "           (ok! we may have found a good transformation. comparing to the best..." << endl;
             
 			// Recalculate transformation from new consensus set
-            estimatorLM.estimateRigidTransformation(cloudPrevious, consensusSetIndexes, cloudCurrent, consensusSetIndexes, thisTransform);
+            //estimatorSVD.estimateRigidTransformation(cloudPrevious, consensusSetIndexes, cloudCurrent, consensusSetIndexes, thisTransform);
+            estimateRigidTransformationSVD(cloudPrevious, consensusSetIndexes, cloudCurrent, consensusSetIndexes, thisTransform);
             
             cout << "       thisTransform = " << endl << thisTransform << endl;
             
@@ -376,4 +381,56 @@ void LabicReconstructor::join() {
 void LabicReconstructor::close() {
     // Extra code if need to 
     join();
+}
+
+template <typename PointSource, typename PointTarget> void
+LabicReconstructor::estimateRigidTransformationSVD (const pcl::PointCloud<PointSource> &cloud_src,
+                                     const std::vector<int> &indices_src,
+                                     const pcl::PointCloud<PointTarget> &cloud_tgt,
+                                     const std::vector<int> &indices_tgt,
+                                     Eigen::Matrix4f &transformation_matrix)
+{/*
+    if (indices_src.size () != indices_tgt.size ())
+    {
+        PCL_ERROR ("[pcl::estimateRigidTransformationSVD] Number or points in source (%lu) differs than target (%lu)!\n", (unsigned long)indices_src.size (), (unsigned long)indices_tgt.size ());
+        return;
+    }
+    
+    // <cloud_src,cloud_src> is the source dataset
+    transformation_matrix.setIdentity ();
+    
+    Eigen::Vector4f centroid_src, centroid_tgt;
+    // Estimate the centroids of source, target
+    compute3DCentroid (cloud_src, indices_src, centroid_src);
+    compute3DCentroid (cloud_tgt, indices_tgt, centroid_tgt);
+    
+    // Subtract the centroids from source, target
+    Eigen::MatrixXf cloud_src_demean;
+    demeanPointCloud (cloud_src, indices_src, centroid_src, cloud_src_demean);
+    
+    Eigen::MatrixXf cloud_tgt_demean;
+    demeanPointCloud (cloud_tgt, indices_tgt, centroid_tgt, cloud_tgt_demean);
+    
+    // Assemble the correlation matrix H = source * target'
+    Eigen::Matrix3f H = (cloud_src_demean * cloud_tgt_demean.transpose ()).topLeftCorner<3, 3>();
+    
+    // Compute the Singular Value Decomposition
+    Eigen::JacobiSVD<Eigen::Matrix3f> svd (H, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::Matrix3f u = svd.matrixU ();
+    Eigen::Matrix3f v = svd.matrixV ();
+    
+    // Compute R = V * U'
+    if (u.determinant () * v.determinant () < 0)
+    {
+        for (int x = 0; x < 3; ++x)
+            v (x, 2) *= -1;
+    }
+    
+    Eigen::Matrix<Scalar, 3, 3> R = v * u.transpose ();
+    
+    // Return the correct transformation
+    transformation_matrix.topLeftCorner(3, 3) = R;
+    Eigen::Vector3f Rc = R * centroid_src.head(3);
+   // const Eigen::Matrix<pcl::Scalar, 3, 1> Rc (R * centroid_src.head(3));
+    transformation_matrix.block(0, 3, 3, 1) = centroid_tgt.head(3) - Rc;*/
 }
