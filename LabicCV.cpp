@@ -12,6 +12,13 @@ using namespace std;
 using namespace cv;
 using namespace labic;
 
+const string LabicCV::input_window = "Kinect Input";
+const string LabicCV::rgb_window = "RGB camera";
+const string LabicCV::rgb_t_window = "Target RGB camera";
+const string LabicCV::rgb_s_window = "Source RGB camera";
+const string LabicCV::depth_window = "Depth camera";
+const string LabicCV::rgbd_window = "RGBD Video";
+
 LabicCV::LabicCV(Kinect *_kinect, int _width, int _height) {
     kinect = _kinect;
 	width = _width;

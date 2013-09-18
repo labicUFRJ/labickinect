@@ -14,12 +14,14 @@
 #include <vector>
 #include <cmath>
 #include <pthread.h>
-#include <cv.h>
-#include <cxcore.h>
-#include <highgui.h>
 #include <pcl/common/common_headers.h>
 #include <ctime>
 #include <boost/thread.hpp>
+#include "opencv2/core/core.hpp"
+#include "opencv2/nonfree/features2d.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 
 namespace labic {
 	

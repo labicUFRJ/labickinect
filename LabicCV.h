@@ -34,12 +34,12 @@ namespace labic {
 		uint16_t t_gamma[2048];
         bool previousSet, currentSet;
         
-		std::string input_window = "Kinect Input";
-		std::string rgb_window = "RGB camera";
-		std::string rgb_t_window = "Target RGB camera";
-		std::string rgb_s_window = "Source RGB camera";
-		std::string depth_window = "Depth camera";
-		std::string rgbd_window = "RGBD Video";
+		static const std::string input_window;
+		static const std::string rgb_window;
+		static const std::string rgb_t_window;
+		static const std::string rgb_s_window;
+		static const std::string depth_window;
+		static const std::string rgbd_window;
         static const int DEPTH_RAW = 1;
         static const int DEPTH_MM = 2;
 		static const int WINDOW_FLAGS = CV_WINDOW_AUTOSIZE;

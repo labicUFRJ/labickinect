@@ -178,8 +178,8 @@ void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& c
     Eigen::Matrix4f bestTransform, maybeTransform, thisTransform;
 	vector<int> maybeIndexes, notMaybeIndexes, bestConsensusSetIndexes, consensusSetIndexes;
     
-    pcl::registration::TransformationEstimationSVD<PointXYZRGB, PointXYZRGB, float> estimatorSVD;
-    pcl::registration::TransformationEstimationLM<PointXYZRGB, PointXYZRGB, float> estimatorLM;
+    pcl::registration::TransformationEstimationSVD<PointXYZRGB, PointXYZRGB, float> estimator;
+//    pcl::registration::TransformationEstimationLM<PointXYZRGB, PointXYZRGB, float> estimator;
 	
 	srand(time(NULL));
 	
@@ -207,8 +207,8 @@ void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& c
         cout << "]" << endl;
         
         // Estimate transformation from maybe set (size = nSamples)
-        //estimatorSVD.estimateRigidTransformation(cloudCurrent, maybeIndexes, cloudPrevious, maybeIndexes, maybeTransform);
-        estimateRigidTransformationSVD(cloudCurrent, maybeIndexes, cloudPrevious, maybeIndexes, maybeTransform);
+        estimator.estimateRigidTransformation(cloudCurrent, maybeIndexes, cloudPrevious, maybeIndexes, maybeTransform);
+        //estimateRigidTransformationSVD(cloudCurrent, maybeIndexes, cloudPrevious, maybeIndexes, maybeTransform);
         
         cout << "       maybeTransform = " << endl << maybeTransform << endl;
         
@@ -250,8 +250,8 @@ void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& c
             cout << "           (ok! we may have found a good transformation. comparing to the best..." << endl;
             
 			// Recalculate transformation from new consensus set
-            //estimatorSVD.estimateRigidTransformation(cloudPrevious, consensusSetIndexes, cloudCurrent, consensusSetIndexes, thisTransform);
-            estimateRigidTransformationSVD(cloudPrevious, consensusSetIndexes, cloudCurrent, consensusSetIndexes, thisTransform);
+            estimator.estimateRigidTransformation(cloudPrevious, consensusSetIndexes, cloudCurrent, consensusSetIndexes, thisTransform);
+            //estimateRigidTransformationSVD(cloudPrevious, consensusSetIndexes, cloudCurrent, consensusSetIndexes, thisTransform);
             
             cout << "       thisTransform = " << endl << thisTransform << endl;
             
@@ -382,17 +382,18 @@ void LabicReconstructor::close() {
     // Extra code if need to 
     join();
 }
-
+/*
 template <typename PointSource, typename PointTarget> void
 LabicReconstructor::estimateRigidTransformationSVD (const pcl::PointCloud<PointSource> &cloud_src,
                                      const std::vector<int> &indices_src,
                                      const pcl::PointCloud<PointTarget> &cloud_tgt,
                                      const std::vector<int> &indices_tgt,
                                      Eigen::Matrix4f &transformation_matrix)
-{/*
+{
     if (indices_src.size () != indices_tgt.size ())
     {
-        PCL_ERROR ("[pcl::estimateRigidTransformationSVD] Number or points in source (%lu) differs than target (%lu)!\n", (unsigned long)indices_src.size (), (unsigned long)indices_tgt.size ());
+		cout << "[LabicReconstructor::estimateRigidTransformationSVD] Number or points in source (%lu) differs than target (%lu)!" << endl;
+        //PCL_ERROR ("[pcl::estimateRigidTransformationSVD] Number or points in source (%lu) differs than target (%lu)!\n", (unsigned long)indices_src.size (), (unsigned long)indices_tgt.size ());
         return;
     }
     
@@ -432,5 +433,6 @@ LabicReconstructor::estimateRigidTransformationSVD (const pcl::PointCloud<PointS
     transformation_matrix.topLeftCorner(3, 3) = R;
     Eigen::Vector3f Rc = R * centroid_src.head(3);
    // const Eigen::Matrix<pcl::Scalar, 3, 1> Rc (R * centroid_src.head(3));
-    transformation_matrix.block(0, 3, 3, 1) = centroid_tgt.head(3) - Rc;*/
+    transformation_matrix.block(0, 3, 3, 1) = centroid_tgt.head(3) - Rc;
 }
+*/

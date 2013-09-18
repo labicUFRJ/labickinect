@@ -20,20 +20,14 @@
 using namespace std;
 using namespace labic;
 
-//void kinectLoop(Kinect *kinect, cv::Mat rgbMat, uint16_t *depth) {
-//	while (!kinect->stop) {
-//		kinect->getFrame(rgbMat, depth);
-//	}
-//}
-
 int main(int argc, char **argv) {
-    Freenect::Freenect freenect;
-    Kinect *kinect;
+	Freenect::Freenect freenect;
+	Kinect *kinect;
 	LabicCV *cv;
 	LabicPCL *pcl;
 	LabicReconstructor *recon;
-    clock_t t, t1, t2, t3;
-    float timeTotal, timeCV, timePCL, timeReconstructor;
+	clock_t t, t1, t2, t3;
+	float timeTotal, timeCV, timePCL, timeReconstructor;
 	
 	cout << "[main] Initializing Kinect device..." << endl;
 	
@@ -41,24 +35,24 @@ int main(int argc, char **argv) {
 		kinect = &freenect.createDevice<Kinect>(0);
 		
 		cout << "[main] Kinect initialized." << endl
-        << "[main] Starting streams..." << endl;
+		<< "[main] Starting streams..." << endl;
 		
 		kinect->startVideo();
 		kinect->startDepth();
 		
 		cout << "[main] Streams started." << endl;
 	} catch (runtime_error &e) {
-		cout << "[main] Kinect ERROR: " << e.what() << endl;
+		cout << "[main] Connection error: " << e.what() << endl;
 		return 1;
 	}
-    	
+	
 	recon = new LabicReconstructor(100,500);
-    
+	
 	// OpenCV thread
 	cv = new LabicCV(kinect, 640, 480); // TODO const
 	recon->cv = cv;
 #if LABIC_ENABLE_CV == ON
-    cv->init();
+	cv->init();
 	cv->start();
 #endif
 	
@@ -67,43 +61,47 @@ int main(int argc, char **argv) {
 	recon->pcl = pcl;
 #if LABIC_ENABLE_PCL == ON
 	pcl->start();
-	//pcl->display();
 #endif
-    
+	
     // Reconstructor thread
 #if LABIC_ENABLE_MATCHER == ON
 	recon->start();
 #endif
-    
-    // TODO add ifdef
-    while (1) {
-        t = clock();
-        t1 = clock();
-        if (!pcl->mainLoopPart(REFRESH_INTERVAL)) break;
-        t1 = clock() - t1;
-        t2 = clock();
-        if (!cv->mainLoopPart(REFRESH_INTERVAL)) break;
-        t2 = clock() - t2;
-        t3 = clock();
-        if (!recon->mainLoopPart(REFRESH_INTERVAL)) break;
-        t3 = clock() - t3;
-        t = clock() - t;
-        
-        timeTotal = 1000*((float)t)/CLOCKS_PER_SEC;
-        timePCL = 1000*((float)t1)/CLOCKS_PER_SEC;
-        timeCV = 1000*((float)t2)/CLOCKS_PER_SEC;
-        timeReconstructor = 1000*((float)t3)/CLOCKS_PER_SEC;
+	
+	while (1) {
+		t = clock();
+		t1 = clock();
+#if LABIC_ENABLE_PCL == ON
+		if (!pcl->mainLoopPart(REFRESH_INTERVAL)) break;
+#endif
+		t1 = clock() - t1;
+		t2 = clock();
+#if LABIC_ENABLE_CV == ON
+		if (!cv->mainLoopPart(REFRESH_INTERVAL)) break;
+#endif
+		t2 = clock() - t2;
+		t3 = clock();
+#if LABIC_ENABLE_MATCHER == ON
+		if (!recon->mainLoopPart(REFRESH_INTERVAL)) break;
+#endif
+		t3 = clock() - t3;
+		t = clock() - t;
+		
+		timeTotal = 1000*((float)t)/CLOCKS_PER_SEC;
+		timePCL = 1000*((float)t1)/CLOCKS_PER_SEC;
+		timeCV = 1000*((float)t2)/CLOCKS_PER_SEC;
+		timeReconstructor = 1000*((float)t3)/CLOCKS_PER_SEC;
         /*
-        cout << "[main] Iteration time: "
-        << timeTotal << "ms ("
-        << "CV: " << timeCV << "ms "
-        << "PCL: " << timePCL << "ms "
-        << "Rec: " << timeReconstructor << "ms)" <<
-        endl;*/
-        
-    }
-    
-    cout << "[main] Stop requested. Joining threads..." << endl;
+		 cout << "[main] Iteration time: "
+		 << timeTotal << "ms ("
+		 << "CV: " << timeCV << "ms "
+		 << "PCL: " << timePCL << "ms "
+		 << "Rec: " << timeReconstructor << "ms)" <<
+		 endl;*/
+		
+	}
+	
+	cout << "[main] Stop requested. Joining threads..." << endl;
 	
 	// Wait for threads to finish
 #if LABIC_ENABLE_CV == ON
@@ -116,17 +114,13 @@ int main(int argc, char **argv) {
 	recon->close();
 #endif
 	
-    //	frameCatcher.join();
-	
-    
 	cout << "[main] All threads have finished. Closing Kinect..." << endl;
 	
-    kinect->stopVideo();
+	kinect->stopVideo();
 	kinect->stopDepth();
-    kinect->close();
+	kinect->close();
 	
-	cout << "[main] Kinect closed." << endl
-    << "[main] Finishing main. Bye!" << endl;
-    
+	cout << "[main] Kinect closed. Bye!" << endl;
+	
 	return 0;
 }
