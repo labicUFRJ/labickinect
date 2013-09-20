@@ -13,9 +13,16 @@ add_definitions(${PCL_DEFINITIONS})
 add_executable (labickinect main.cpp LabicKinect.cpp LabicKinect.h LabicCV.cpp LabicCV.h LabicReconstructor.cpp LabicReconstructor.h LabicPCL.cpp LabicPCL.h libfreenect.h)
 
 # to supress pcl libraries warnings
-SET(GCC_COVERAGE_COMPILE_FLAGS "-Wno-deprecated -Wno-invalid-offsetof -Qunused-arguments")
+SET(GCC_COVERAGE_COMPILE_FLAGS "-Wno-deprecated -Wno-invalid-offsetof ")
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS "-framework OpenGL -framework GLUT")
 
-target_link_libraries (labickinect ${PCL_LIBRARIES} ${OpenCV_LIBS} ${CMAKE_THREAD_LIBS_INIT} freenect)
+if(APPLE)
+	set(CMAKE_EXE_LINKER_FLAGS "-framework OpenGL -framework GLUT")
+	target_link_libraries (labickinect freenect ${PCL_LIBRARIES} ${OpenCV_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+else()
+	find_package(Threads REQUIRED)
+	include_directories(${USB_INCLUDE_DIRS})
+	link_directories(/usr/local/lib64)
+	target_link_libraries(labickinect freenect ${PCL_LIBRARIES} ${OpenCV_LIBS} ${CMAKE_THREAD_LIBS_INIT} ${MATH_LIB})
+endif()

@@ -5,9 +5,9 @@
 //  www.labic.nce.ufrj.br
 //
 
-#define LABIC_ENABLE_CV      ON
-#define LABIC_ENABLE_PCL     ON
-#define LABIC_ENABLE_MATCHER ON
+#define LABIC_ENABLE_CV      1
+#define LABIC_ENABLE_PCL 	 1
+#define LABIC_ENABLE_MATCHER 1
 #define REFRESH_INTERVAL     1
 
 #include <iostream>
@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 	// OpenCV thread
 	cv = new LabicCV(kinect, 640, 480); // TODO const
 	recon->cv = cv;
-#if LABIC_ENABLE_CV == ON
+#if LABIC_ENABLE_CV
 	cv->init();
 	cv->start();
 #endif
@@ -59,29 +59,30 @@ int main(int argc, char **argv) {
     // PCL thread
 	pcl = new LabicPCL(kinect, 640, 480);
 	recon->pcl = pcl;
-#if LABIC_ENABLE_PCL == ON
+#if LABIC_ENABLE_PCL
 	pcl->start();
+	//pcl->display();
 #endif
 	
     // Reconstructor thread
-#if LABIC_ENABLE_MATCHER == ON
+#if LABIC_ENABLE_MATCHER
 	recon->start();
 #endif
 	
 	while (1) {
 		t = clock();
 		t1 = clock();
-#if LABIC_ENABLE_PCL == ON
+#if LABIC_ENABLE_PCL
 		if (!pcl->mainLoopPart(REFRESH_INTERVAL)) break;
 #endif
 		t1 = clock() - t1;
 		t2 = clock();
-#if LABIC_ENABLE_CV == ON
+#if LABIC_ENABLE_CV
 		if (!cv->mainLoopPart(REFRESH_INTERVAL)) break;
 #endif
 		t2 = clock() - t2;
 		t3 = clock();
-#if LABIC_ENABLE_MATCHER == ON
+#if LABIC_ENABLE_MATCHER
 		if (!recon->mainLoopPart(REFRESH_INTERVAL)) break;
 #endif
 		t3 = clock() - t3;
@@ -104,13 +105,13 @@ int main(int argc, char **argv) {
 	cout << "[main] Stop requested. Joining threads..." << endl;
 	
 	// Wait for threads to finish
-#if LABIC_ENABLE_CV == ON
+#if LABIC_ENABLE_CV
 	cv->close();
 #endif
-#if LABIC_ENABLE_PCL == ON
+#if LABIC_ENABLE_PCL
 	pcl->close();
 #endif
-#if LABIC_ENABLE_MATCHER == ON
+#if LABIC_ENABLE_MATCHER
 	recon->close();
 #endif
 	
