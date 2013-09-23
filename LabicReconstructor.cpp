@@ -128,20 +128,23 @@ void LabicReconstructor::extractRGBFeatures(const Mat& img, const uint16_t* dept
 	for (i=0; i<maxDetectionIte; i++) {
 		adjuster->detect(imgBlackWhite, keypoints);
 		extractor->compute(imgBlackWhite, keypoints, descriptors);
-
+        
 		// Filter features to garantee depth information
+        pointsDropped = 0;
 		for (j=0; j<keypoints.size(); j++) {
 			int keypointIndex = 640*keypoints[j].pt.y + keypoints[j].pt.x;
 			float keypointDepth = depth[keypointIndex];
 			// If point is in origin, it does not have depth information available
 			// Therefore, it should not be considered a keypoint
 			if (keypointDepth == 0) {
-				cout << "[LabicReconstructor::extractRGBFeatures] Dropping point (" << keypoints[j].pt.x
-					<< ", " << keypoints[j].pt.y << ") with depth " << keypointDepth << "." << endl;
+				/*cout << "[LabicReconstructor::extractRGBFeatures] Dropping point (" << keypoints[j].pt.x
+					<< ", " << keypoints[j].pt.y << ") with depth " << keypointDepth << "." << endl;*/
 				pointsDropped++;
 			}
 		}
 		
+        cout << "[LabicReconstructor::extractRGBFeatures] Iteration " << i << " found " << keypoints.size() << " points and dropped " << pointsDropped << " points" << endl;
+        
 		if (keypoints.size()-pointsDropped < minFeatures){
 			adjuster->tooFew (minFeatures, keypoints.size());
 		} else if (keypoints.size()-pointsDropped > maxFeatures) {
