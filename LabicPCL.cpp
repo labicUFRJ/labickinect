@@ -53,7 +53,7 @@ void LabicPCL::display() {
     while (!viewer.wasStopped() && !stop) {
         if (stop) break;
         if (!kinect->getFrame(rgb, depth)) continue;
-        if (!kinect->frameToPointCloud(rgb, depth, liveCloud, 4)) continue;
+        if (!kinect->frameToPointCloud(rgb, depth, liveCloud)) continue;
         
         if (!savedPLY) { pcl::io::savePLYFileASCII("cloud.ply", liveCloud); savedPLY = true; }
         

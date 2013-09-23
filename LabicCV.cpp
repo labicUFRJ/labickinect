@@ -162,13 +162,15 @@ void LabicCV::keyboardHandler(int key) {
             destroyAllWindows();
             break;
         case '1':
-            previousSet = kinect->getVideoMat(rgbPrevious);
-            previousSet &= kinect->getDepth(depthPrevious);
+            // previousSet = kinect->getVideoMat(rgbPrevious);
+            // previousSet &= kinect->getDepth(depthPrevious);
+            previousSet = kinect->getFrame(rgbPrevious, depthPrevious);
             if (previousSet) cout << "[LabicCV] Previous state set" << endl;
             break;
         case '2':
-            currentSet = kinect->getVideoMat(rgbCurrent);
-            currentSet &= kinect->getDepth(depthCurrent);
+            // currentSet = kinect->getVideoMat(rgbCurrent);
+            // currentSet &= kinect->getDepth(depthCurrent);
+            currentSet = kinect->getFrame(rgbCurrent, depthCurrent);
             if (currentSet) cout << "[LabicCV] Current state set" << endl;
             break;
         case 'w':

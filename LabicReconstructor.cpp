@@ -58,10 +58,30 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 	vector<DMatch> relatedFeatures;
     vector<Point2f> featurePointsCurrent, featurePointsPrevious;
 	PointCloud<PointXYZRGB> cloudCurrent, cloudPrevious, featureCloudCurrent, featureCloudPrevious, transformedCloudCurrent;
-	//pcl::registration::TransformationEstimationSVD<PointXYZRGB, PointXYZRGB, float> estimator;
+	pcl::registration::TransformationEstimationSVD<PointXYZRGB, PointXYZRGB, float> estimator;
 	Eigen::Matrix4f transform = Eigen::Matrix4f::Zero();
     vector<int> consensusSetIndexes;
-	
+    pcl::visualization::PCLVisualizer vissvd;
+
+    // int v1(0);
+    // int v2(0);
+
+    // vissvd.createViewPort(0.0, 0.0, -1.0, 0.0, v1);
+    // vissvd.createViewPort(0.0, 0.0, -1.0, 0.0, v2);
+    // vissvd.addText("Viewport 0 previous", 10, 10, "v0 text", v1);
+    // vissvd.addText("Viewport 1 current", 10, 10, "v1 text", v2);
+
+    Kinect::frameToPointCloud(rgbPrevious, depthPrevious, cloudPrevious);
+    Kinect::frameToPointCloud(rgbCurrent, depthCurrent, cloudCurrent);
+    // vissvd.addPointCloud(cloudPrevious.makeShared(), "previous", v1);
+    // vissvd.addPointCloud(cloudCurrent.makeShared(), "current", v2);
+
+
+    pcl::io::savePLYFileASCII("cloudPrevious.ply", cloudPrevious);
+    pcl::io::savePLYFileASCII("cloudCurrent.ply", cloudCurrent);
+
+    // vissvd.spin();
+
 	// 1. Extract features from both images
 	extractRGBFeatures(rgbPrevious, depthPrevious, featuresPrevious, descriptorsPrevious);
 	extractRGBFeatures(rgbCurrent, depthCurrent, featuresCurrent, descriptorsCurrent);
@@ -78,22 +98,27 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
     for (int i=0; i<relatedFeatures.size(); i++) {
         int previousIndex = relatedFeatures[i].trainIdx;
         int currentIndex = relatedFeatures[i].queryIdx;
-        featurePointsPrevious.push_back(featuresPrevious[previousIndex].pt);
-        featurePointsCurrent.push_back(featuresCurrent[currentIndex].pt);
+        Point2f previousPoint = featuresPrevious[previousIndex].pt;
+        Point2f currentPoint = featuresCurrent[currentIndex].pt;
+        // Discard matches that do not have depth information
+        if (depthPrevious[(int)(640*previousPoint.y + previousPoint.x)] > 0 &&
+        	depthCurrent[(int)(640*currentPoint.y + currentPoint.x)] > 0) {
+        	featurePointsPrevious.push_back(previousPoint);
+        	featurePointsCurrent.push_back(currentPoint);
+        }
     }
 	
-	// 3. Generate PointClouds of related features (pointcloudsrc, pointcloudtgt)
-    Kinect::frameToPointCloud(rgbPrevious, depthPrevious, featureCloudPrevious, 1, featurePointsPrevious);
-    Kinect::frameToPointCloud(rgbCurrent, depthCurrent, featureCloudCurrent, 1, featurePointsCurrent);
+    cout << "[LabicReconstructor::performLoop] featurePointsPrevious: " << featurePointsPrevious << " points" << endl
+    << "[LabicReconstructor::performLoop] featurePointsCurrent: " << featurePointsCurrent << " points" << endl;
     
-    cout << "[LabicReconstructor::performLoop] cloudPrevious with " << featureCloudPrevious.size() << " points" << endl
-    << "[LabicReconstructor::performLoop] cloudCurrent with " << featureCloudCurrent.size() << " points" << endl;
-    /*
-    pcl::io::savePLYFileASCII("cloudPrevious.ply", featureCloudPrevious);
-    pcl::io::savePLYFileASCII("cloudCurrent.ply", featureCloudCurrent);
-	*/
+	// 3. Generate PointClouds of related features (pointcloudsrc, pointcloudtgt)
+    Kinect::frameToPointCloud(rgbPrevious, depthPrevious, featureCloudPrevious, featurePointsPrevious);
+    Kinect::frameToPointCloud(rgbCurrent, depthCurrent, featureCloudCurrent, featurePointsCurrent);
+    
+    pcl::io::savePLYFileASCII("featureCloudPrevious.ply", featureCloudPrevious);
+    pcl::io::savePLYFileASCII("featureCloudCurrent.ply", featureCloudCurrent);
+	
 	// 4. Alignment detection
-	// TODO ransac loop
     cout << "[LabicReconstructor::performLoop] transformation matrix before estimate:" << endl << transform << endl;
 
 	//estimator.estimateRigidTransformation(featureCloudPrevious, featureCloudCurrent, transform);
@@ -102,14 +127,18 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
     cout << "[LabicReconstructor::performLoop] final transformation matrix:" << endl << transform << endl;
 	
 	// 5. Apply transformation to all frame points
-    Kinect::frameToPointCloud(rgbPrevious, depthPrevious, cloudPrevious);
-    Kinect::frameToPointCloud(rgbCurrent, depthCurrent, cloudCurrent);
     transformPointCloud(cloudCurrent, transformedCloudCurrent, transform);
+    pcl::io::savePLYFileASCII("transformedCloudCurrent.ply", transformedCloudCurrent);
     
-    pcl::visualization::PCLVisualizer vissvd;
-    vissvd.addPointCloud(cloudPrevious.makeShared(),"previous");
-    vissvd.addPointCloud(transformedCloudCurrent.makeShared(),"transformedCurrent");
-    vissvd.resetCamera();
+    vissvd.addCoordinateSystem(0.1);
+    vissvd.initCameraParameters();
+    vissvd.setCameraPosition(0.0, 0.0, -1.0, 0.0, -1.0, 0.0);
+    vissvd.addPointCloud(cloudPrevious.makeShared());
+    vissvd.addPointCloud(transformedCloudCurrent.makeShared());
+    
+    cout << "[LabicReconstructor::performLoop] Displaying total of " << cloudPrevious.size() + transformedCloudCurrent.size() << " points" << endl;
+
+
     vissvd.spin();
     
 	// return updated world pointcloud
@@ -146,7 +175,7 @@ void LabicReconstructor::extractRGBFeatures(const Mat& img, const uint16_t* dept
         cout << "[LabicReconstructor::extractRGBFeatures] Iteration " << i << " found " << keypoints.size() << " points and dropped " << pointsDropped << " points" << endl;
         
 		if (keypoints.size()-pointsDropped < minFeatures){
-			adjuster->tooFew (minFeatures, keypoints.size());
+			adjuster->tooFew(minFeatures, keypoints.size());
 		} else if (keypoints.size()-pointsDropped > maxFeatures) {
 			adjuster->tooMany(maxFeatures, keypoints.size());
 		} else {
@@ -190,10 +219,10 @@ void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& c
                                                Eigen::Matrix4f& _bestTransform) {
 	
 	// RANSAC initial parameters
-	int maxIterations = 5; // k
+	int maxIterations = 100; // k
 	int nSamples = 3; // number of maybe_inliers (random samples)
-	float threshold = 3.0; // max error
-    int minInliers = 10;
+	float threshold = 30.0; // max error
+    int minInliers = 5;
 	
 	double bestError = INFINITY, thisError;
     Eigen::Matrix4f bestTransform, maybeTransform, thisTransform;
@@ -203,7 +232,8 @@ void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& c
 //    pcl::registration::TransformationEstimationLM<PointXYZRGB, PointXYZRGB, float> estimator;
 	
 	srand(time(NULL));
-	
+	bestTransform.setIdentity();
+
     int iterations = 0;
 
 	while (iterations < maxIterations) {
