@@ -63,11 +63,15 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
     vector<int> consensusSetIndexes;
 	
 	// 1. Extract features from both images
-	extractRGBFeatures(rgbPrevious, featuresPrevious, descriptorsPrevious);
-	extractRGBFeatures(rgbCurrent, featuresCurrent, descriptorsCurrent);
+	extractRGBFeatures(rgbPrevious, depthPrevious, featuresPrevious, descriptorsPrevious);
+	extractRGBFeatures(rgbCurrent, depthCurrent, featuresCurrent, descriptorsCurrent);
 	
 	// 2. Get relationship (matches) between features from both images
 	matchFeatures(featuresPrevious, descriptorsPrevious, featuresCurrent, descriptorsCurrent, relatedFeatures);
+	if (relatedFeatures.size() < minMatches) {
+		cout << "[LabicReconstructor::performLoop] IMAGES DO NOT MATCH! ABORTING RECONSTRUCTION" << endl;
+		return;
+	}
     LabicCV::showMatchesPreview(rgbPrevious, featuresPrevious, rgbCurrent, featuresCurrent, relatedFeatures);
     featurePointsPrevious.reserve(relatedFeatures.size());
     featurePointsCurrent.reserve(relatedFeatures.size());
@@ -112,27 +116,44 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 	
 }
 
-void LabicReconstructor::extractRGBFeatures(const Mat& img, vector<KeyPoint>& keypoints, Mat& descriptors) {
+void LabicReconstructor::extractRGBFeatures(const Mat& img, const uint16_t* depth, vector<KeyPoint>& keypoints, Mat& descriptors) {
 	cout << "[LabicReconstructor::extractRGBFeatures] computing features" << endl;
 	
     Mat imgBlackWhite;
+
+    int pointsDropped = 0;
+    int i, j;
     cvtColor(img, imgBlackWhite, CV_RGB2GRAY);
     
-	for (int i=0; i<maxDetectionIte; i++) {
+	for (i=0; i<maxDetectionIte; i++) {
 		adjuster->detect(imgBlackWhite, keypoints);
 		extractor->compute(imgBlackWhite, keypoints, descriptors);
+
+		// Filter features to garantee depth information
+		for (j=0; j<keypoints.size(); j++) {
+			int keypointIndex = 640*keypoints[j].pt.y + keypoints[j].pt.x;
+			float keypointDepth = depth[keypointIndex];
+			// If point is in origin, it does not have depth information available
+			// Therefore, it should not be considered a keypoint
+			if (keypointDepth == 0) {
+				cout << "[LabicReconstructor::extractRGBFeatures] Dropping point (" << keypoints[j].pt.x
+					<< ", " << keypoints[j].pt.y << ") with depth " << keypointDepth << "." << endl;
+				pointsDropped++;
+			}
+		}
 		
-		if ( keypoints.size() < minFeatures){
+		if (keypoints.size()-pointsDropped < minFeatures){
 			adjuster->tooFew (minFeatures, keypoints.size());
-		} else if ( keypoints.size() > maxFeatures) {
+		} else if (keypoints.size()-pointsDropped > maxFeatures) {
 			adjuster->tooMany(maxFeatures, keypoints.size());
 		} else {
-			cout << "[LabicReconstructor::extractRGBFeatures] the number of features: " << keypoints.size()
-			<< "(target range: " << minFeatures << " to " << maxFeatures
-			<< ", iteration: " << i << ")" << endl;
-			return;
+			break;
 		}
 	}
+
+	cout << "[LabicReconstructor::extractRGBFeatures] the number of features: " << keypoints.size()
+	<< "(target range: " << minFeatures << " to " << maxFeatures
+	<< ", iteration: " << i << ")" << " (dropped " << pointsDropped << " points)" << endl;
 };
 
 void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
@@ -158,9 +179,6 @@ void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 	
 	cout << "[LabicReconstructor::matchFeatures] Final matched features after threshold: " << _matches.size() << endl;
 	
-	if (_matches.size() < minMatches){
-		cout << "[LabicReconstructor::matchFeatures] IMAGES DO NOT MATCH!" << endl;
-	}
 }
 
 void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& cloudCurrent,
@@ -214,7 +232,7 @@ void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& c
         
         // Create vector of points that are not in maybeInliers
         // notMaybeIndexes = cloudCurrent \ maybeIndexes
-        //cout << "       notMaybeIndexes = [";
+        cout << "       notMaybeIndexes = [";
         for (int i=0; i<cloudCurrent.size(); i++) {
             bool isInMaybeIndexes = false;
             for (int j=0; j<maybeIndexes.size(); j++) {
@@ -224,10 +242,10 @@ void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& c
                 }
             }
             if (isInMaybeIndexes) continue;
-            //cout << i << ", ";
+            cout << i << ", ";
             notMaybeIndexes.push_back(i);
         }
-        //cout << "]" << endl;
+        cout << "]" << endl;
 
 		// Test transformation with other points that are not in maybeIndexes
 		for (int i=0; i<notMaybeIndexes.size(); i++) {

@@ -46,6 +46,7 @@ namespace labic {
 						 const uint16_t* depthCurrent,
 						 const uint16_t* depthPrevious);
 		void extractRGBFeatures(const cv::Mat&               img,
+								const uint16_t* 			 depth,
 								std::vector<cv::KeyPoint>&   keypoints,
 								cv::Mat&                     descriptors);
 		void matchFeatures(std::vector<cv::KeyPoint>&   _keypoints_q,

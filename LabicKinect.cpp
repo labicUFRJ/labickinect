@@ -210,6 +210,9 @@ bool Kinect::frameToPointCloud(const cv::Mat& rgb, const uint16_t* depth, pcl::P
             y = i/640;
             x = i%640;
             
+            // If point has no depth available, skip it
+            if (depth[i] == 0) continue;
+
             pt = ptToPointXYZRGB(x, y, depth[i]);
             ptRGB = rgb.at<cv::Vec3b>(y,x);
             pt.r = ptRGB[2];
@@ -223,6 +226,9 @@ bool Kinect::frameToPointCloud(const cv::Mat& rgb, const uint16_t* depth, pcl::P
             y = pts[i].y;
             x = pts[i].x;
             int index = y*640 + x;
+            
+            // If point has no depth available, skip it
+            if (depth[i] == 0) continue;
             
             pt = ptToPointXYZRGB(x, y, depth[index]);
             ptRGB = rgb.at<cv::Vec3b>(y,x);
