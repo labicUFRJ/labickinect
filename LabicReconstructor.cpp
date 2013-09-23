@@ -108,13 +108,16 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
         }
     }
 	
-    cout << "[LabicReconstructor::performLoop] featurePointsPrevious: " << featurePointsPrevious << " points" << endl
-    << "[LabicReconstructor::performLoop] featurePointsCurrent: " << featurePointsCurrent << " points" << endl;
+    cout << "[LabicReconstructor::performLoop] featurePointsPrevious: " << featurePointsPrevious << " " << endl
+    << "[LabicReconstructor::performLoop] featurePointsCurrent: " << featurePointsCurrent << " " << endl;
     
 	// 3. Generate PointClouds of related features (pointcloudsrc, pointcloudtgt)
     Kinect::frameToPointCloud(rgbPrevious, depthPrevious, featureCloudPrevious, featurePointsPrevious);
     Kinect::frameToPointCloud(rgbCurrent, depthCurrent, featureCloudCurrent, featurePointsCurrent);
     
+    cout << "[LabicReconstructor::performLoop] featureCloudPrevious: " << featureCloudPrevious.size() << " points" << endl
+    << "[LabicReconstructor::performLoop] featureCloudCurrent: " << featureCloudCurrent.size() << " points" << endl;
+
     pcl::io::savePLYFileASCII("featureCloudPrevious.ply", featureCloudPrevious);
     pcl::io::savePLYFileASCII("featureCloudCurrent.ply", featureCloudCurrent);
 	
