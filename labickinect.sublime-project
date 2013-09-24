@@ -1,0 +1,17 @@
+{
+	"folders":
+	[
+		{
+			"path": "/Users/macecchi/Desktop/labickinect",
+			"folder_exclude_patterns": ["build", "xcode", "eclipse"]
+		}
+	],
+    "build_systems":
+    [
+        {
+            "name": "Make ./build",
+            "cmd": ["make"],
+            "working_dir": "${project_path:${folder:${file_path}}}/build"
+        }
+    ]
+}
