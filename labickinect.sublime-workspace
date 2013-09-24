@@ -1,0 +1,544 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"num",
+				"numLinhas"
+			],
+			[
+				"cur",
+				"curso_idade_minima"
+			],
+			[
+				"text",
+				"text-decoration"
+			],
+			[
+				"padd",
+				"padding-left"
+			],
+			[
+				"qu",
+				"quality"
+			],
+			[
+				"timt",
+				"timthumb_url"
+			],
+			[
+				"repons",
+				"response_urls"
+			],
+			[
+				"con",
+				"continue"
+			],
+			[
+				"pthre",
+				"pthread_t"
+			],
+			[
+				"reques",
+				"requests_sent_total"
+			],
+			[
+				"call",
+				"call_result"
+			],
+			[
+				"requ",
+				"requests_sent"
+			],
+			[
+				"request",
+				"requests_ok"
+			],
+			[
+				"req",
+				"requests_sent"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "LabicReconstructor.cpp",
+			"settings":
+			{
+				"buffer_size": 16994,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "//\n//  LabicKinect\n//  Author: Mario Cecchi <macecchi@gmail.com>\n//  Laboratorio de Inteligencia Computacional\n//  www.labic.nce.ufrj.br\n//\n\n#define LABIC_ENABLE_CV      ON\n#define LABIC_ENABLE_PCL     ON\n#define LABIC_ENABLE_MATCHER ON\n#define REFRESH_INTERVAL     1\n\n#include <iostream>\n#include <ctime>\n#include \"LabicKinect.h\"\n#include \"LabicCV.h\"\n#include \"LabicPCL.h\"\n#include \"LabicReconstructor.h\"\n\nusing namespace std;\nusing namespace labic;\n\nint main(int argc, char **argv) {\n	Freenect::Freenect freenect;\n	Kinect *kinect;\n	LabicCV *cv;\n	LabicPCL *pcl;\n	LabicReconstructor *recon;\n	clock_t t, t1, t2, t3;\n	float timeTotal, timeCV, timePCL, timeReconstructor;\n	\n	cout << \"[main] Initializing Kinect device...\" << endl;\n	\n	try {\n		kinect = &freenect.createDevice<Kinect>(0);\n		\n		cout << \"[main] Kinect initialized.\" << endl\n		<< \"[main] Starting streams...\" << endl;\n		\n		kinect->startVideo();\n		kinect->startDepth();\n		\n		cout << \"[main] Streams started.\" << endl;\n	} catch (runtime_error &e) {\n		cout << \"[main] Connection error: \" << e.what() << endl;\n		return 1;\n	}\n\n	recon = new LabicReconstructor(100,500);\n\n	// OpenCV thread\n	cv = new LabicCV(kinect, 640, 480); // TODO const\n	recon->cv = cv;\n#if LABIC_ENABLE_CV == ON\n	cv->init();\n	cv->start();\n#endif\n	\n    // PCL thread\n	pcl = new LabicPCL(kinect, 640, 480);\n	recon->pcl = pcl;\n#if LABIC_ENABLE_PCL == ON\n	pcl->start();\n#endif\n\n    // Reconstructor thread\n#if LABIC_ENABLE_MATCHER == ON\n	recon->start();\n#endif\n\n	while (1) {\n		t = clock();\n		t1 = clock();\n#if LABIC_ENABLE_PCL == ON\n		if (!pcl->mainLoopPart(REFRESH_INTERVAL)) break;\n#endif\n		t1 = clock() - t1;\n		t2 = clock();\n#if LABIC_ENABLE_CV == ON\n		if (!cv->mainLoopPart(REFRESH_INTERVAL)) break;\n#endif\n		t2 = clock() - t2;\n		t3 = clock();\n#if LABIC_ENABLE_MATCHER == ON\n		if (!recon->mainLoopPart(REFRESH_INTERVAL)) break;\n#endif\n		t3 = clock() - t3;\n		t = clock() - t;\n\n		timeTotal = 1000*((float)t)/CLOCKS_PER_SEC;\n		timePCL = 1000*((float)t1)/CLOCKS_PER_SEC;\n		timeCV = 1000*((float)t2)/CLOCKS_PER_SEC;\n		timeReconstructor = 1000*((float)t3)/CLOCKS_PER_SEC;\n        /*\n        cout << \"[main] Iteration time: \"\n        << timeTotal << \"ms (\"\n        << \"CV: \" << timeCV << \"ms \"\n        << \"PCL: \" << timePCL << \"ms \"\n        << \"Rec: \" << timeReconstructor << \"ms)\" <<\n        endl;*/\n\n}\n\ncout << \"[main] Stop requested. Joining threads...\" << endl;\n\n	// Wait for threads to finish\n#if LABIC_ENABLE_CV == ON\n	cv->close();\n#endif\n#if LABIC_ENABLE_PCL == ON\n	pcl->close();\n#endif\n#if LABIC_ENABLE_MATCHER == ON\n	recon->close();\n#endif\n\ncout << \"[main] All threads have finished. Closing Kinect...\" << endl;\n\nkinect->stopVideo();\nkinect->stopDepth();\nkinect->close();\n\ncout << \"[main] Kinect closed. Bye!\" << endl;\n\nreturn 0;\n}",
+			"file": "main.cpp",
+			"file_size": 2775,
+			"file_write_time": 1379465317000000,
+			"settings":
+			{
+				"buffer_size": 2756,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "LabicKinect.h",
+			"settings":
+			{
+				"buffer_size": 2241,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "LabicCV.cpp",
+			"settings":
+			{
+				"buffer_size": 5688,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "LabicCV.h",
+			"settings":
+			{
+				"buffer_size": 1938,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "LabicReconstructor.h",
+			"settings":
+			{
+				"buffer_size": 3675,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "LabicPCL.cpp",
+			"settings":
+			{
+				"buffer_size": 4639,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "LabicPCL.h",
+			"settings":
+			{
+				"buffer_size": 1248,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "Make ./build",
+	"command_palette":
+	{
+		"height": 107.0,
+		"selected_items":
+		[
+		],
+		"width": 404.0
+	},
+	"console":
+	{
+		"height": 125.0
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/Users/macecchi/Desktop/labickinect/labickinect.sublime-project",
+		"/Users/macecchi/Desktop/labickinect/CMakeLists.txt",
+		"/Users/macecchi/Library/Application Support/Sublime Text 2/Packages/Default/Preferences.sublime-settings",
+		"/Users/macecchi/Desktop/labickinect/labickinect.sublime-workspace",
+		"/Users/macecchi/Desktop/labickinect/eclipse/CMakeFiles/TargetDirectories.txt",
+		"/Users/macecchi/Desktop/labickinect/PseudocodigoLabicKinect.rtf",
+		"/Volumes/www/twitter/elisa.php",
+		"/Volumes/www/status.php",
+		"/Users/macecchi/Dropbox/KPBR Arquivos/Hot Site - Especial 5 Anos/index.html",
+		"/private/var/folders/bc/7bbh90nj2bs_51zdz6g8k9h00000gn/T/c3793c6b-a82d-4c4a-8afb-821c62c53fc6/roar/.htaccess",
+		"/private/var/folders/bc/7bbh90nj2bs_51zdz6g8k9h00000gn/T/c3793c6b-a82d-4c4a-8afb-821c62c53fc6/roar/ (10:08:13 18:21).htaccess",
+		"/private/var/folders/bc/7bbh90nj2bs_51zdz6g8k9h00000gn/T/c3793c6b-a82d-4c4a-8afb-821c62c53fc6/especial5anos/index.html",
+		"/Users/macecchi/Dropbox/KPBR Arquivos (1)/Mutirao Roar/index.html",
+		"/Users/macecchi/Dropbox/Documentos/NF iPhone Mapfre 2.jpg",
+		"/Library/WebServer/Documents/bd_insert_numeros.php",
+		"/Users/macecchi/Dropbox/Documentos/toggle0.sh",
+		"/Library/WebServer/Documents/bd_insert_gol.php",
+		"/Library/WebServer/Documents/wp/twitter.html",
+		"/Users/macecchi/Desktop/detectmobilebrowser.php",
+		"/Library/WebServer/Documents/wp/wp-content/themes/charm/sidebar.php",
+		"/Library/WebServer/Documents/wp/wp-content/themes/charm/jquery.scrollto.min.js",
+		"/private/var/folders/bc/7bbh90nj2bs_51zdz6g8k9h00000gn/T/0da67911-f97d-434d-aff2-eeddc4daba70/wp-content/themes/focka.2012/custom.css",
+		"/Library/WebServer/Documents/wp/wp-config.php",
+		"/Library/WebServer/Documents/wp/wp-config-sample.php",
+		"/Users/macecchi/Desktop/http.c",
+		"/Users/macecchi/Dropbox/Dev/DDoS/list.txt"
+	],
+	"find":
+	{
+		"height": 35.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"build",
+			"<span>Katy Perry - Roar</span>",
+			"                    ",
+			"                      ",
+			"                      ",
+			"<hr align=\"left\" width=\"95%\" />",
+			"<hr align=\"left\" width=\"95%\" />\n<hr align=\"left\" width=\"95%\" />",
+			"265",
+			"<span\">",
+			"style=\"text-align: left;\"",
+			"Enter the code exactly as you see it",
+			"Name*",
+			"name:",
+			" style=\"font-family: 'Trebuchet MS', Arial, Helvetica, sans-serif;",
+			"../assets",
+			"str",
+			"pagena",
+			"fórum",
+			"hover-menu",
+			"attribute",
+			"attribute_escape",
+			"attri",
+			"attr",
+			"attribu",
+			"enqueue",
+			"randheaders.Append",
+			"useragents.Append",
+			"numt"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": true,
+		"replace_history":
+		[
+			"<span>Katy Perry - Roar</span><br><br>",
+			"",
+			"95%",
+			"<span>",
+			"",
+			"Digite o código ao lado",
+			"Seu nome",
+			"",
+			"bootstrap",
+			""
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 1,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "LabicReconstructor.cpp",
+					"settings":
+					{
+						"buffer_size": 16994,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								431,
+								431
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "main.cpp",
+					"settings":
+					{
+						"buffer_size": 2756,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2319,
+								2319
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 968.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "LabicKinect.h",
+					"settings":
+					{
+						"buffer_size": 2241,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								508,
+								508
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 256.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "LabicCV.cpp",
+					"settings":
+					{
+						"buffer_size": 5688,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								83,
+								83
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 3.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "LabicCV.h",
+					"settings":
+					{
+						"buffer_size": 1938,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								774,
+								774
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 328.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "LabicReconstructor.h",
+					"settings":
+					{
+						"buffer_size": 3675,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "LabicPCL.cpp",
+					"settings":
+					{
+						"buffer_size": 4639,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "LabicPCL.h",
+					"settings":
+					{
+						"buffer_size": 1248,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 0.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 215.0
+	},
+	"replace":
+	{
+		"height": 64.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 241.0,
+	"status_bar_visible": true
+}
