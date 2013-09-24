@@ -6,7 +6,7 @@
 //
 
 #define LABIC_ENABLE_CV      1
-#define LABIC_ENABLE_PCL 	 1
+#define LABIC_ENABLE_PCL 	 0
 #define LABIC_ENABLE_MATCHER 1
 #define REFRESH_INTERVAL     1
 

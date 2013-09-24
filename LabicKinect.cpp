@@ -51,9 +51,12 @@ bool Kinect::getVideo(std::vector<uint8_t> &buffer) {
 }
 
 bool Kinect::getDepth(uint16_t* buffer) {
+    uint16_t* tmp;
     m_depth_mutex.lock();
     if(m_new_depth_frame) {
+        tmp = buffer;
         buffer = depth_buffer;
+        depth_buffer = tmp;
         //std::copy(depth_buffer, depth_buffer + 480*640, buffer);
         m_new_depth_frame = false;
         m_depth_mutex.unlock();
@@ -96,6 +99,8 @@ bool Kinect::getFrame(cv::Mat &video, uint16_t *depth) {
 		cout << "[LabicKinect::getFrame] depth not allocated" << endl;
 		return false;
 	}
+
+    uint16_t* tmp;
 	
     m_rgb_mutex.lock();
     m_depth_mutex.lock();
@@ -103,8 +108,13 @@ bool Kinect::getFrame(cv::Mat &video, uint16_t *depth) {
     if (m_new_rgb_frame && m_new_depth_frame) {
         //depth = (uint16_t*) malloc(sizeof(uint16_t)*640*480);
         //depth = depth_buffer;
+        tmp = depth;
+        //depth = depth_buffer;
 		std::copy(depth_buffer, depth_buffer + 480*640, depth);
+        depth_buffer = tmp;
         cvtColor(rgbMat, video, CV_RGB2BGR);
+        m_new_rgb_frame = false;
+        m_new_depth_frame = false;
         m_rgb_mutex.unlock();
         m_depth_mutex.unlock();
 		return true;
@@ -164,7 +174,7 @@ pcl::PointXYZRGB Kinect::ptToPointXYZRGB(float cgx, float cgy, float cgz) {
     return pt;
 }
 
-bool Kinect::frameToPointCloud(const cv::Mat& rgb, const uint16_t* depth, pcl::PointCloud<pcl::PointXYZRGB>& _cloud, const int nThreads, const vector<cv::Point2f> pts) {
+bool Kinect::frameToPointCloud(const cv::Mat& rgb, const uint16_t* depth, pcl::PointCloud<pcl::PointXYZRGB>& _cloud, const vector<cv::Point2f> pts) {
     pcl::PointCloud<pcl::PointXYZRGB> cloud;
     pcl::PointXYZRGB pt;
 /*    uint16_t *depth;
@@ -210,27 +220,33 @@ bool Kinect::frameToPointCloud(const cv::Mat& rgb, const uint16_t* depth, pcl::P
             y = i/640;
             x = i%640;
             
-            pt = ptToPointXYZRGB(x, y, depth[i]);
-            ptRGB = rgb.at<cv::Vec3b>(y,x);
-            pt.r = ptRGB[2];
-            pt.g = ptRGB[1];
-            pt.b = ptRGB[0];
-            
-            cloud.push_back(pt);
+            // If point has no depth available, skip it
+            if (depth[i] > 0) {
+                pt = ptToPointXYZRGB(x, y, depth[i]);
+                ptRGB = rgb.at<cv::Vec3b>(y,x);
+                pt.r = ptRGB[2];
+                pt.g = ptRGB[1];
+                pt.b = ptRGB[0];
+                
+                cloud.push_back(pt);
+            }
         }
     } else {
         for (i=0; i<pts.size(); i++) {
             y = pts[i].y;
             x = pts[i].x;
             int index = y*640 + x;
-            
-            pt = ptToPointXYZRGB(x, y, depth[index]);
-            ptRGB = rgb.at<cv::Vec3b>(y,x);
-            pt.r = ptRGB[2];
-            pt.g = ptRGB[1];
-            pt.b = ptRGB[0];
-            
-            cloud.push_back(pt);
+
+            // If point has no depth available, skip it
+            if (depth[i] > 0) {
+                pt = ptToPointXYZRGB(x, y, depth[index]);
+                ptRGB = rgb.at<cv::Vec3b>(y,x);
+                pt.r = ptRGB[2];
+                pt.g = ptRGB[1];
+                pt.b = ptRGB[0];
+                
+                cloud.push_back(pt);
+            }
         }
     }
     
