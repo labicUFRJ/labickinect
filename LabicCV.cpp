@@ -30,7 +30,7 @@ LabicCV::LabicCV(Kinect *_kinect, int _width, int _height) {
     
     for (unsigned int i=0; i<2048; i++) {
 		float v = i/2048.0;
-		v = powf(v, 3)* 6;
+		v = pow(v, 3)* 6;
 		t_gamma[i] = v*6*256;
 	}
     
@@ -61,7 +61,7 @@ void LabicCV::display() {
         cout << "[LabicCV] ERROR: did not call init(). Display finished" << endl;
         return;
     }
-    
+
     do {
 		if (depth != NULL) free(depth);
         depth = (uint16_t*) malloc(sizeof(uint16_t)*width*height);
@@ -73,8 +73,6 @@ void LabicCV::display() {
 		kinect->getFrame(rgbMat, depth);
         
         generateDepthImage(depth, depthMat);
-        
-		
         
         rgbMat.copyTo(left);
         depthMat.copyTo(right);

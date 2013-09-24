@@ -238,7 +238,7 @@ bool Kinect::frameToPointCloud(const cv::Mat& rgb, const uint16_t* depth, pcl::P
             int index = y*640 + x;
 
             // If point has no depth available, skip it
-            if (depth[i] > 0) {
+            if (depth[index] > 0) {
                 pt = ptToPointXYZRGB(x, y, depth[index]);
                 ptRGB = rgb.at<cv::Vec3b>(y,x);
                 pt.r = ptRGB[2];

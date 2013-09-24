@@ -45,19 +45,28 @@ namespace labic {
 						 const cv::Mat& rgbPrevious,
 						 const uint16_t* depthCurrent,
 						 const uint16_t* depthPrevious);
+
 		void extractRGBFeatures(const cv::Mat&               img,
 								const uint16_t* 			 depth,
 								std::vector<cv::KeyPoint>&   keypoints,
 								cv::Mat&                     descriptors);
+
 		void matchFeatures(std::vector<cv::KeyPoint>&   _keypoints_q,
 						   const cv::Mat&               _descriptors_q,
 						   std::vector<cv::KeyPoint>&   _keypoints_t,
 						   const cv::Mat&               _descriptors_t,
 						   std::vector<cv::DMatch>&     _matches) const;
+
 		cv::Mat filterMatches(std::vector<cv::KeyPoint>&   _keypoints_q,
 							  std::vector<cv::KeyPoint>&   _keypoints_t,
 							  std::vector<cv::DMatch>&     _matches,
 							  bool                         _giveID);
+
+		void performRansacAlignment(const pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious,
+                					const pcl::PointCloud<pcl::PointXYZRGB>& cloudCurrent,
+                                    std::vector<int>& _inliersIndexes,
+                                    Eigen::Matrix4f& _bestTransform);
+
         static double getAlignmentError(const pcl::PointCloud<pcl::PointXYZRGB>& cloud1,
                                         const pcl::PointCloud<pcl::PointXYZRGB>& cloud2,
                                         const std::vector<int> inliersIndexes);
@@ -79,12 +88,6 @@ namespace labic {
         bool mainLoopPart(const int t);
 		void join();
         void close();
-		
-		void performRansacAlignment(const pcl::PointCloud<pcl::PointXYZRGB>& cloudCurrent,
-                                    const pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious,
-                                    std::vector<int>& _inliersIndexes,
-                                    Eigen::Matrix4f& _bestTransform);
-		
 		
 		void matchImages2(std::vector<cv::KeyPoint>&   _keypoints_q,
 						  const cv::Mat&               _descriptors_q,

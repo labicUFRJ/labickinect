@@ -56,31 +56,19 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 	vector<KeyPoint> featuresCurrent, featuresPrevious;
 	Mat descriptorsCurrent, descriptorsPrevious;
 	vector<DMatch> relatedFeatures;
-    vector<Point2f> featurePointsCurrent, featurePointsPrevious;
+    vector<Point2f> selectedFeaturePointsCurrent, selectedFeaturePointsPrevious;
 	PointCloud<PointXYZRGB> cloudCurrent, cloudPrevious, featureCloudCurrent, featureCloudPrevious, transformedCloudCurrent;
-	pcl::registration::TransformationEstimationSVD<PointXYZRGB, PointXYZRGB, float> estimator;
+//	pcl::registration::TransformationEstimationSVD<PointXYZRGB, PointXYZRGB, float> estimator;
 	Eigen::Matrix4f transform = Eigen::Matrix4f::Zero();
     vector<int> consensusSetIndexes;
     pcl::visualization::PCLVisualizer vissvd;
 
-    // int v1(0);
-    // int v2(0);
-
-    // vissvd.createViewPort(0.0, 0.0, -1.0, 0.0, v1);
-    // vissvd.createViewPort(0.0, 0.0, -1.0, 0.0, v2);
-    // vissvd.addText("Viewport 0 previous", 10, 10, "v0 text", v1);
-    // vissvd.addText("Viewport 1 current", 10, 10, "v1 text", v2);
-
+    // 0. Get PointCloud from previous and current states
     Kinect::frameToPointCloud(rgbPrevious, depthPrevious, cloudPrevious);
     Kinect::frameToPointCloud(rgbCurrent, depthCurrent, cloudCurrent);
-    // vissvd.addPointCloud(cloudPrevious.makeShared(), "previous", v1);
-    // vissvd.addPointCloud(cloudCurrent.makeShared(), "current", v2);
-
 
     pcl::io::savePLYFileASCII("cloudPrevious.ply", cloudPrevious);
     pcl::io::savePLYFileASCII("cloudCurrent.ply", cloudCurrent);
-
-    // vissvd.spin();
 
 	// 1. Extract features from both images
 	extractRGBFeatures(rgbPrevious, depthPrevious, featuresPrevious, descriptorsPrevious);
@@ -89,12 +77,11 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 	// 2. Get relationship (matches) between features from both images
 	matchFeatures(featuresPrevious, descriptorsPrevious, featuresCurrent, descriptorsCurrent, relatedFeatures);
 	if (relatedFeatures.size() < minMatches) {
-		cout << "[LabicReconstructor::performLoop] IMAGES DO NOT MATCH! ABORTING RECONSTRUCTION" << endl;
+		cerr << "[LabicReconstructor::performLoop] IMAGES DO NOT MATCH! ABORTING RECONSTRUCTION" << endl;
 		return;
 	}
-    LabicCV::showMatchesPreview(rgbPrevious, featuresPrevious, rgbCurrent, featuresCurrent, relatedFeatures);
-    featurePointsPrevious.reserve(relatedFeatures.size());
-    featurePointsCurrent.reserve(relatedFeatures.size());
+    //LabicCV::showMatchesPreview(rgbPrevious, featuresPrevious, rgbCurrent, featuresCurrent, relatedFeatures);
+
     for (int i=0; i<relatedFeatures.size(); i++) {
         int previousIndex = relatedFeatures[i].trainIdx;
         int currentIndex = relatedFeatures[i].queryIdx;
@@ -103,43 +90,49 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
         // Discard matches that do not have depth information
         if (depthPrevious[(int)(640*previousPoint.y + previousPoint.x)] > 0 &&
         	depthCurrent[(int)(640*currentPoint.y + currentPoint.x)] > 0) {
-        	featurePointsPrevious.push_back(previousPoint);
-        	featurePointsCurrent.push_back(currentPoint);
+        	selectedFeaturePointsPrevious.push_back(previousPoint);
+        	selectedFeaturePointsCurrent.push_back(currentPoint);
         }
     }
 	
-    cout << "[LabicReconstructor::performLoop] featurePointsPrevious: " << featurePointsPrevious << " " << endl
-    << "[LabicReconstructor::performLoop] featurePointsCurrent: " << featurePointsCurrent << " " << endl;
+    cout << "[LabicReconstructor::performLoop] selectedFeatureIndexesPrevious: " << selectedFeaturePointsPrevious.size() << " poins" << endl
+    << "[LabicReconstructor::performLoop] selectedFeatureIndexesCurrent: " << selectedFeaturePointsCurrent.size() << " points" << endl;
     
 	// 3. Generate PointClouds of related features (pointcloudsrc, pointcloudtgt)
-    Kinect::frameToPointCloud(rgbPrevious, depthPrevious, featureCloudPrevious, featurePointsPrevious);
-    Kinect::frameToPointCloud(rgbCurrent, depthCurrent, featureCloudCurrent, featurePointsCurrent);
+    Kinect::frameToPointCloud(rgbPrevious, depthPrevious, featureCloudPrevious, selectedFeaturePointsPrevious);
+    Kinect::frameToPointCloud(rgbCurrent, depthCurrent, featureCloudCurrent, selectedFeaturePointsCurrent);
     
     cout << "[LabicReconstructor::performLoop] featureCloudPrevious: " << featureCloudPrevious.size() << " points" << endl
     << "[LabicReconstructor::performLoop] featureCloudCurrent: " << featureCloudCurrent.size() << " points" << endl;
-
-    pcl::io::savePLYFileASCII("featureCloudPrevious.ply", featureCloudPrevious);
-    pcl::io::savePLYFileASCII("featureCloudCurrent.ply", featureCloudCurrent);
+//
+//    pcl::io::savePLYFileASCII("featureCloudPrevious.ply", featureCloudPrevious);
+//    pcl::io::savePLYFileASCII("featureCloudCurrent.ply", featureCloudCurrent);
 	
 	// 4. Alignment detection
-    cout << "[LabicReconstructor::performLoop] transformation matrix before estimate:" << endl << transform << endl;
+    cout << "[LabicReconstructor::performLoop] Transformation matrix before RANSAC:" << endl << transform << endl;
 
 	//estimator.estimateRigidTransformation(featureCloudPrevious, featureCloudCurrent, transform);
     performRansacAlignment(featureCloudPrevious, featureCloudCurrent, consensusSetIndexes, transform);
+//    performRansacAlignment(cloudPrevious, selectedFeaturePointsPrevious, cloudCurrent, selectedFeaturePointsCurrent, consensusSetIndexes, transform);
 	
-    cout << "[LabicReconstructor::performLoop] final transformation matrix:" << endl << transform << endl;
+    cout << "[LabicReconstructor::performLoop] Final transformation matrix:" << endl << transform << endl;
+
+    cout << "[LabicReconstructor::performLoop] calling transformpointcloud on cloudcurrent with size " << cloudCurrent.size() << endl << endl;
 	
 	// 5. Apply transformation to all frame points
     transformPointCloud(cloudCurrent, transformedCloudCurrent, transform);
-    pcl::io::savePLYFileASCII("transformedCloudCurrent.ply", transformedCloudCurrent);
+    //pcl::io::savePLYFileASCII("transformedCloudCurrent.ply", transformedCloudCurrent);
+
+    cout << "[LabicReconstructor::performLoop] Total transformed PointCloud: " << cloudPrevious.size() + transformedCloudCurrent.size() << " points" << endl
+    		<< "Displaying..." << endl;
     
     vissvd.addCoordinateSystem(0.1);
     vissvd.initCameraParameters();
     vissvd.setCameraPosition(0.0, 0.0, -1.0, 0.0, -1.0, 0.0);
-    vissvd.addPointCloud(cloudPrevious.makeShared());
-    vissvd.addPointCloud(transformedCloudCurrent.makeShared());
+    vissvd.addPointCloud(cloudPrevious.makeShared(), "previous");
+    vissvd.addPointCloud(transformedCloudCurrent.makeShared(), "transformedCurrent");
+    vissvd.addText("Final transformed pointcloud", 10, 10);
     
-    cout << "[LabicReconstructor::performLoop] Displaying total of " << cloudPrevious.size() + transformedCloudCurrent.size() << " points" << endl;
 
 
     vissvd.spin();
@@ -216,16 +209,17 @@ void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 	
 }
 
-void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& cloudCurrent,
-											   const PointCloud<PointXYZRGB>& cloudPrevious,
+void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& cloudPrevious,
+											   const PointCloud<PointXYZRGB>& cloudCurrent,
 											   vector<int>& _inliersIndexes,
                                                Eigen::Matrix4f& _bestTransform) {
 	
 	// RANSAC initial parameters
 	int maxIterations = 100; // k
 	int nSamples = 3; // number of maybe_inliers (random samples)
-	float threshold = 30.0; // max error
-    int minInliers = 5;
+	float threshold = 2.0; // max error
+    int minInliers = 20;
+    int numFeatures = cloudCurrent.size();
 	
 	double bestError = INFINITY, thisError;
     Eigen::Matrix4f bestTransform, maybeTransform, thisTransform;
@@ -234,10 +228,12 @@ void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& c
     pcl::registration::TransformationEstimationSVD<PointXYZRGB, PointXYZRGB, float> estimator;
 //    pcl::registration::TransformationEstimationLM<PointXYZRGB, PointXYZRGB, float> estimator;
 	
+    assert(cloudCurrent.size() == cloudPrevious.size());
 	srand(time(NULL));
 	bestTransform.setIdentity();
 
     int iterations = 0;
+    int bestIteration = 0;
 
 	while (iterations < maxIterations) {
         cout << ">>> RANSAC iteration " << iterations+1 << endl;
@@ -250,7 +246,7 @@ void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& c
 		// Determine random sample (maybe)
         cout << "       maybeIndexes/consensusSetIndexes = [";
 		for (int i=0; i<nSamples; ) {
-            int randomSample = rand() % cloudCurrent.size();
+            int randomSample = rand() % numFeatures;
             cout << randomSample << ", ";
             if (find(maybeIndexes.begin(), maybeIndexes.end(), randomSample) == maybeIndexes.end()) {
                 maybeIndexes.push_back(randomSample);
@@ -269,7 +265,7 @@ void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& c
         // Create vector of points that are not in maybeInliers
         // notMaybeIndexes = cloudCurrent \ maybeIndexes
         cout << "       notMaybeIndexes = [";
-        for (int i=0; i<cloudCurrent.size(); i++) {
+        for (int i=0; i<numFeatures; i++) {
             bool isInMaybeIndexes = false;
             for (int j=0; j<maybeIndexes.size(); j++) {
                 if (i == maybeIndexes[j]) {
@@ -286,22 +282,23 @@ void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& c
 		// Test transformation with other points that are not in maybeIndexes
 		for (int i=0; i<notMaybeIndexes.size(); i++) {
             int pointIndex = notMaybeIndexes[i];
+            // creating pointcloud just to test transformation with a single point
             PointCloud<PointXYZRGB> transformedPoint;
             transformedPoint.push_back(cloudCurrent.points[pointIndex]);
             transformPointCloud(transformedPoint, transformedPoint, maybeTransform);
-            double transformedDistance = euclideanDistance(transformedPoint.points[0], cloudPrevious.points[pointIndex]);
+            float transformedDistance = euclideanDistance(transformedPoint.points[0], cloudPrevious.points[pointIndex]);
             
-            cout << "       Point " << i << " distance = " << transformedDistance;
-			if (transformedDistance <= threshold) {
+            //cout << "       Point " << i << " distance = " << transformedDistance;
+			if (transformedDistance < threshold) {
 				consensusSetIndexes.push_back(pointIndex);
-                cout << " (added to consensus set!)";
+                //cout << " (added to consensus set!)";
 			}
-            cout << endl;
+            //cout << endl;
 		}
 		
         cout << "       consensusSet has " << consensusSetIndexes.size() << " points" << endl;
-		if (consensusSetIndexes.size() >= minInliers) {
-            cout << "           (ok! we may have found a good transformation. comparing to the best..." << endl;
+		if (consensusSetIndexes.size() > minInliers) {
+            cout << "           (Consensus set has more than minInliers. Finding new transformation and comparing it to the best..." << endl;
             
 			// Recalculate transformation from new consensus set
             estimator.estimateRigidTransformation(cloudPrevious, consensusSetIndexes, cloudCurrent, consensusSetIndexes, thisTransform);
@@ -317,7 +314,8 @@ void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& c
 			
             cout << "       thisError = " << thisError;
 			if (thisError < bestError) {
-                cout << " (great! best error so far. updating best parameters)";
+                cout << " (Great! best error so far. updating best parameters)";
+                bestIteration = iterations;
 				bestTransform = thisTransform;
 				bestError = thisError;
 				bestConsensusSetIndexes = consensusSetIndexes;
@@ -326,7 +324,7 @@ void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& c
 		}
 		
 		// TODO test to stop if found error < ok_error
-		cout << endl;
+		cout << ">>> Best iteration was " << bestIteration << " (bestError is " << bestError << ")" << endl;
 		iterations++;
 	}
 	

@@ -59,7 +59,7 @@ namespace labic {
         void close();
         void init();
         void display();
-        const bool isReady() const { return previousSet && currentSet; }
+        const bool isReady() const { return (previousSet && currentSet); }
         void restartState() { previousSet = currentSet = false; }
         static void showMatchesPreview(const cv::Mat& img1, const std::vector<cv::KeyPoint>& keypoints1, const cv::Mat& img2, const std::vector<cv::KeyPoint>& keypoints2, const std::vector<cv::DMatch>& matches1to2);
 
