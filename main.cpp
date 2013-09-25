@@ -34,8 +34,7 @@ int main(int argc, char **argv) {
 	try {
 		kinect = &freenect.createDevice<Kinect>(0);
 		
-		cout << "[main] Kinect initialized." << endl
-		<< "[main] Starting streams..." << endl;
+		cout << "[main] Starting streams..." << endl;
 		
 		kinect->startVideo();
 		kinect->startDepth();

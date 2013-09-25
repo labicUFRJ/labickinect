@@ -20,8 +20,16 @@ LabicReconstructor::LabicReconstructor(int _minFeature, int _maxFeature) {
 	matcher   = new BFMatcher(NORM_HAMMING, true); // gives infinite distance between matchings
 	matcher2  = new BFMatcher(NORM_HAMMING, false);
 	
-	RANSACDist = 2.0;
-	RANSACConf = .99;
+	ransac = new RANSACAligner();
+	ransac->setDistanceThreshold(2.0);
+	ransac->setMaxIterations(100);
+	ransac->setMinInliers(10);
+	ransac->setNumSamples(3);
+
+	minInliersToValidateTransformation = 10;
+	reconstructionsGenerated = 0;
+	reconstructionsAccepted = 0;
+
 };
 
 bool LabicReconstructor::mainLoopPart(const int t) {
@@ -58,23 +66,24 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 	vector<DMatch> relatedFeatures;
     vector<Point2f> selectedFeaturePointsCurrent, selectedFeaturePointsPrevious;
 	PointCloud<PointXYZRGB> cloudCurrent, cloudPrevious, featureCloudCurrent, featureCloudPrevious, transformedCloudCurrent;
-//	pcl::registration::TransformationEstimationSVD<PointXYZRGB, PointXYZRGB, float> estimator;
 	Eigen::Matrix4f transform = Eigen::Matrix4f::Zero();
-    vector<int> consensusSetIndexes;
-    pcl::visualization::PCLVisualizer vissvd;
+    vector<int> transformationInliersIndexes;
 
     // 0. Get PointCloud from previous and current states
     Kinect::frameToPointCloud(rgbPrevious, depthPrevious, cloudPrevious);
     Kinect::frameToPointCloud(rgbCurrent, depthCurrent, cloudCurrent);
 
-    pcl::io::savePLYFileASCII("cloudPrevious.ply", cloudPrevious);
-    pcl::io::savePLYFileASCII("cloudCurrent.ply", cloudCurrent);
+    // Initialize world with first cloud
+    if (world.empty()) {
+    	world = cloudPrevious;
+    	pcl::io::savePLYFileASCII("world0.ply", world);
+    }
 
 	// 1. Extract features from both images
 	extractRGBFeatures(rgbPrevious, depthPrevious, featuresPrevious, descriptorsPrevious);
 	extractRGBFeatures(rgbCurrent, depthCurrent, featuresCurrent, descriptorsCurrent);
 	
-	// 2. Get relationship (matches) between features from both images
+	// 2. Get related features (matches) between features from both images
 	matchFeatures(featuresPrevious, descriptorsPrevious, featuresCurrent, descriptorsCurrent, relatedFeatures);
 	if (relatedFeatures.size() < minMatches) {
 		cerr << "[LabicReconstructor::performLoop] IMAGES DO NOT MATCH! ABORTING RECONSTRUCTION" << endl;
@@ -104,40 +113,36 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
     
     cout << "[LabicReconstructor::performLoop] featureCloudPrevious: " << featureCloudPrevious.size() << " points" << endl
     << "[LabicReconstructor::performLoop] featureCloudCurrent: " << featureCloudCurrent.size() << " points" << endl;
-//
-//    pcl::io::savePLYFileASCII("featureCloudPrevious.ply", featureCloudPrevious);
-//    pcl::io::savePLYFileASCII("featureCloudCurrent.ply", featureCloudCurrent);
 	
 	// 4. Alignment detection
     cout << "[LabicReconstructor::performLoop] Transformation matrix before RANSAC:" << endl << transform << endl;
 
-	//estimator.estimateRigidTransformation(featureCloudPrevious, featureCloudCurrent, transform);
-    performRansacAlignment(featureCloudPrevious, featureCloudCurrent, consensusSetIndexes, transform);
-//    performRansacAlignment(cloudPrevious, selectedFeaturePointsPrevious, cloudCurrent, selectedFeaturePointsCurrent, consensusSetIndexes, transform);
+    ransac->estimate(featureCloudPrevious, featureCloudCurrent);
+    transform = ransac->getFinalTransform();
+    transformationInliersIndexes = ransac->getFinalInliers();
 	
-    cout << "[LabicReconstructor::performLoop] Final transformation matrix:" << endl << transform << endl;
+    cout << "[LabicReconstructor::performLoop] Final transformation matrix resulted in " << transformationInliersIndexes.size() << " inliers: " << endl << transform << endl;
 
-    cout << "[LabicReconstructor::performLoop] calling transformpointcloud on cloudcurrent with size " << cloudCurrent.size() << endl << endl;
+    reconstructionsGenerated++;
+
+    // Check if transformation generated the correct set of inliers
+    if (transformationInliersIndexes.size() < minInliersToValidateTransformation) {
+    	cout << "[LabicReconstructor::performLoop] Final transformation did not generate the mininum of inliers." << endl;
+    	return;
+    }
+
+    reconstructionsAccepted++;
+
+    cout << "[LabicReconstructor::performLoop] Transformation accepted. Transforming cloud to world " << endl;
 	
 	// 5. Apply transformation to all frame points
     transformPointCloud(cloudCurrent, transformedCloudCurrent, transform);
-    //pcl::io::savePLYFileASCII("transformedCloudCurrent.ply", transformedCloudCurrent);
-
-    cout << "[LabicReconstructor::performLoop] Total transformed PointCloud: " << cloudPrevious.size() + transformedCloudCurrent.size() << " points" << endl
-    		<< "Displaying..." << endl;
     
-    vissvd.addCoordinateSystem(0.1);
-    vissvd.initCameraParameters();
-    vissvd.setCameraPosition(0.0, 0.0, -1.0, 0.0, -1.0, 0.0);
-    vissvd.addPointCloud(cloudPrevious.makeShared(), "previous");
-    vissvd.addPointCloud(transformedCloudCurrent.makeShared(), "transformedCurrent");
-    vissvd.addText("Final transformed pointcloud", 10, 10);
-    
-
-
-    vissvd.spin();
-    
-	// return updated world pointcloud
+    world += transformedCloudCurrent;
+    cout << "[LabicReconstructor::performLoop] WORLD UPDATED - " << world.size() << " points (+" << transformedCloudCurrent.size() << " added)" << endl;
+    char filename[15];
+    sprintf(filename, "world%d.ply", reconstructionsAccepted);
+    pcl::io::savePLYFileASCII(filename, world);
 	
 }
 
@@ -209,152 +214,13 @@ void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 	
 }
 
-void LabicReconstructor::performRansacAlignment(const PointCloud<PointXYZRGB>& cloudPrevious,
-											   const PointCloud<PointXYZRGB>& cloudCurrent,
-											   vector<int>& _inliersIndexes,
-                                               Eigen::Matrix4f& _bestTransform) {
-	
-	// RANSAC initial parameters
-	int maxIterations = 100; // k
-	int nSamples = 3; // number of maybe_inliers (random samples)
-	float threshold = 2.0; // max error
-    int minInliers = 20;
-    int numFeatures = cloudCurrent.size();
-	
-	double bestError = INFINITY, thisError;
-    Eigen::Matrix4f bestTransform, maybeTransform, thisTransform;
-	vector<int> maybeIndexes, notMaybeIndexes, bestConsensusSetIndexes, consensusSetIndexes;
-    
-    pcl::registration::TransformationEstimationSVD<PointXYZRGB, PointXYZRGB, float> estimator;
-//    pcl::registration::TransformationEstimationLM<PointXYZRGB, PointXYZRGB, float> estimator;
-	
-    assert(cloudCurrent.size() == cloudPrevious.size());
-	srand(time(NULL));
-	bestTransform.setIdentity();
-
-    int iterations = 0;
-    int bestIteration = 0;
-
-	while (iterations < maxIterations) {
-        cout << ">>> RANSAC iteration " << iterations+1 << endl;
-        
-        maybeIndexes.clear();
-        notMaybeIndexes.clear();
-        consensusSetIndexes.clear();
-        maybeTransform = Eigen::Matrix4f::Zero();
-		
-		// Determine random sample (maybe)
-        cout << "       maybeIndexes/consensusSetIndexes = [";
-		for (int i=0; i<nSamples; ) {
-            int randomSample = rand() % numFeatures;
-            cout << randomSample << ", ";
-            if (find(maybeIndexes.begin(), maybeIndexes.end(), randomSample) == maybeIndexes.end()) {
-                maybeIndexes.push_back(randomSample);
-                consensusSetIndexes.push_back(randomSample);
-                i++;
-            }
-		}
-        cout << "]" << endl;
-        
-        // Estimate transformation from maybe set (size = nSamples)
-        estimator.estimateRigidTransformation(cloudCurrent, maybeIndexes, cloudPrevious, maybeIndexes, maybeTransform);
-        //estimateRigidTransformationSVD(cloudCurrent, maybeIndexes, cloudPrevious, maybeIndexes, maybeTransform);
-        
-        cout << "       maybeTransform = " << endl << maybeTransform << endl;
-        
-        // Create vector of points that are not in maybeInliers
-        // notMaybeIndexes = cloudCurrent \ maybeIndexes
-        cout << "       notMaybeIndexes = [";
-        for (int i=0; i<numFeatures; i++) {
-            bool isInMaybeIndexes = false;
-            for (int j=0; j<maybeIndexes.size(); j++) {
-                if (i == maybeIndexes[j]) {
-                    isInMaybeIndexes = true;
-                    break;
-                }
-            }
-            if (isInMaybeIndexes) continue;
-            cout << i << ", ";
-            notMaybeIndexes.push_back(i);
-        }
-        cout << "]" << endl;
-
-		// Test transformation with other points that are not in maybeIndexes
-		for (int i=0; i<notMaybeIndexes.size(); i++) {
-            int pointIndex = notMaybeIndexes[i];
-            // creating pointcloud just to test transformation with a single point
-            PointCloud<PointXYZRGB> transformedPoint;
-            transformedPoint.push_back(cloudCurrent.points[pointIndex]);
-            transformPointCloud(transformedPoint, transformedPoint, maybeTransform);
-            float transformedDistance = euclideanDistance(transformedPoint.points[0], cloudPrevious.points[pointIndex]);
-            
-            //cout << "       Point " << i << " distance = " << transformedDistance;
-			if (transformedDistance < threshold) {
-				consensusSetIndexes.push_back(pointIndex);
-                //cout << " (added to consensus set!)";
-			}
-            //cout << endl;
-		}
-		
-        cout << "       consensusSet has " << consensusSetIndexes.size() << " points" << endl;
-		if (consensusSetIndexes.size() > minInliers) {
-            cout << "           (Consensus set has more than minInliers. Finding new transformation and comparing it to the best..." << endl;
-            
-			// Recalculate transformation from new consensus set
-            estimator.estimateRigidTransformation(cloudPrevious, consensusSetIndexes, cloudCurrent, consensusSetIndexes, thisTransform);
-            //estimateRigidTransformationSVD(cloudPrevious, consensusSetIndexes, cloudCurrent, consensusSetIndexes, thisTransform);
-            
-            cout << "       thisTransform = " << endl << thisTransform << endl;
-            
-            // Generate the transformed cloud using thisTransform
-            // Note that this cloud will include points that are not in consensus set, be careful
-            PointCloud<PointXYZRGB> transformedCloudCurrent;
-            transformPointCloud(cloudCurrent, transformedCloudCurrent, thisTransform);
-            thisError = getAlignmentError(transformedCloudCurrent, cloudPrevious, consensusSetIndexes);
-			
-            cout << "       thisError = " << thisError;
-			if (thisError < bestError) {
-                cout << " (Great! best error so far. updating best parameters)";
-                bestIteration = iterations;
-				bestTransform = thisTransform;
-				bestError = thisError;
-				bestConsensusSetIndexes = consensusSetIndexes;
-			}
-            cout << endl;
-		}
-		
-		// TODO test to stop if found error < ok_error
-		cout << ">>> Best iteration was " << bestIteration << " (bestError is " << bestError << ")" << endl;
-		iterations++;
-	}
-	
-    _inliersIndexes = bestConsensusSetIndexes;
-    _bestTransform = bestTransform;
-
-}
-
-double LabicReconstructor::getAlignmentError(const PointCloud<PointXYZRGB>& cloud1,
-                                             const PointCloud<PointXYZRGB>& cloud2,
-                                             const vector<int> inliersIndexes) {
-    // Check if two clouds have the same size
-    assert(cloud1.size() == cloud2.size());
-    double error = 0;
-    
-    for (int i=0; i<inliersIndexes.size(); i++) {
-        int inlierIndex = inliersIndexes[i];
-        
-        error += squaredEuclideanDistance(cloud1.points[inlierIndex], cloud2.points[inlierIndex]);
-    }
-    
-    error /= inliersIndexes.size();
-    return error;
-}
-
 Mat LabicReconstructor::filterMatches(vector<KeyPoint>&   _keypoints_q,
 									  vector<KeyPoint>&   _keypoints_t,
 									  vector<DMatch>&     _matches,
 									  bool                         _giveID) {
-	
+
+	double RANSACDist = 2.0;
+	double RANSACConf = .99;
 	vector<Point2d>    imgPoints_q, imgPoints_t;
 	
 	for (vector<DMatch>::const_iterator it = _matches.begin();
@@ -434,57 +300,3 @@ void LabicReconstructor::close() {
     // Extra code if need to 
     join();
 }
-/*
-template <typename PointSource, typename PointTarget> void
-LabicReconstructor::estimateRigidTransformationSVD (const pcl::PointCloud<PointSource> &cloud_src,
-                                     const std::vector<int> &indices_src,
-                                     const pcl::PointCloud<PointTarget> &cloud_tgt,
-                                     const std::vector<int> &indices_tgt,
-                                     Eigen::Matrix4f &transformation_matrix)
-{
-    if (indices_src.size () != indices_tgt.size ())
-    {
-		cout << "[LabicReconstructor::estimateRigidTransformationSVD] Number or points in source (%lu) differs than target (%lu)!" << endl;
-        //PCL_ERROR ("[pcl::estimateRigidTransformationSVD] Number or points in source (%lu) differs than target (%lu)!\n", (unsigned long)indices_src.size (), (unsigned long)indices_tgt.size ());
-        return;
-    }
-    
-    // <cloud_src,cloud_src> is the source dataset
-    transformation_matrix.setIdentity ();
-    
-    Eigen::Vector4f centroid_src, centroid_tgt;
-    // Estimate the centroids of source, target
-    compute3DCentroid (cloud_src, indices_src, centroid_src);
-    compute3DCentroid (cloud_tgt, indices_tgt, centroid_tgt);
-    
-    // Subtract the centroids from source, target
-    Eigen::MatrixXf cloud_src_demean;
-    demeanPointCloud (cloud_src, indices_src, centroid_src, cloud_src_demean);
-    
-    Eigen::MatrixXf cloud_tgt_demean;
-    demeanPointCloud (cloud_tgt, indices_tgt, centroid_tgt, cloud_tgt_demean);
-    
-    // Assemble the correlation matrix H = source * target'
-    Eigen::Matrix3f H = (cloud_src_demean * cloud_tgt_demean.transpose ()).topLeftCorner<3, 3>();
-    
-    // Compute the Singular Value Decomposition
-    Eigen::JacobiSVD<Eigen::Matrix3f> svd (H, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    Eigen::Matrix3f u = svd.matrixU ();
-    Eigen::Matrix3f v = svd.matrixV ();
-    
-    // Compute R = V * U'
-    if (u.determinant () * v.determinant () < 0)
-    {
-        for (int x = 0; x < 3; ++x)
-            v (x, 2) *= -1;
-    }
-    
-    Eigen::Matrix<Scalar, 3, 3> R = v * u.transpose ();
-    
-    // Return the correct transformation
-    transformation_matrix.topLeftCorner(3, 3) = R;
-    Eigen::Vector3f Rc = R * centroid_src.head(3);
-   // const Eigen::Matrix<pcl::Scalar, 3, 1> Rc (R * centroid_src.head(3));
-    transformation_matrix.block(0, 3, 3, 1) = centroid_tgt.head(3) - Rc;
-}
-*/

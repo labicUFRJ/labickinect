@@ -10,7 +10,7 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable (labickinect main.cpp LabicKinect.cpp LabicKinect.h LabicCV.cpp LabicCV.h LabicReconstructor.cpp LabicReconstructor.h LabicPCL.cpp LabicPCL.h libfreenect.h)
+add_executable (labickinect main.cpp LabicKinect.cpp LabicKinect.h LabicCV.cpp LabicCV.h LabicReconstructor.cpp LabicReconstructor.h RANSACAligner.cpp RANSACAligner.h LabicPCL.cpp LabicPCL.h libfreenect.h)
 
 # to supress pcl libraries warnings
 SET(GCC_COVERAGE_COMPILE_FLAGS "-Wno-deprecated -Wno-invalid-offsetof ")

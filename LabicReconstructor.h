@@ -8,6 +8,7 @@
 #include "LabicKinect.h"
 #include "LabicCV.h"
 #include "LabicPCL.h"
+#include "RANSACAligner.h"
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/features2d/features2d.hpp"
@@ -23,7 +24,24 @@
 namespace labic {
 	
 	class LabicReconstructor {
+	public:
+		LabicCV *cv;
+		LabicPCL *pcl;
+
+		LabicReconstructor(int _minFeature, int _maxFeature);
+
+		void start();
+        bool mainLoopPart(const int t);
+		void join();
+        void close();
 		
+		void matchImages2(std::vector<cv::KeyPoint>&   _keypoints_q,
+						  const cv::Mat&               _descriptors_q,
+						  std::vector<cv::KeyPoint>&   _keypoints_t,
+						  const cv::Mat&               _descriptors_t,
+						  std::vector<cv::DMatch>&     _matches,
+						  cv::Mat&                     _mask);
+
 	private:
         boost::thread m_Thread;
 		unsigned int ID;
@@ -32,12 +50,15 @@ namespace labic {
 		int     maxDetectionIte;
 		int     minMatches;
 		float   maxMatchDistance;
-		double  RANSACDist;
-		double  RANSACConf;
+		int 	minInliersToValidateTransformation;
+		int		reconstructionsGenerated;
+		int		reconstructionsAccepted;
+		RANSACAligner* ransac;
 		cv::Ptr<cv::FastAdjuster>         adjuster;
 		cv::Ptr<cv::DescriptorMatcher>    matcher;
 		cv::Ptr<cv::DescriptorMatcher>    matcher2;
 		cv::Ptr<cv::DescriptorExtractor>  extractor;
+		pcl::PointCloud<pcl::PointXYZRGB> world;
         
 		void reconstruct();
         
@@ -61,40 +82,6 @@ namespace labic {
 							  std::vector<cv::KeyPoint>&   _keypoints_t,
 							  std::vector<cv::DMatch>&     _matches,
 							  bool                         _giveID);
-
-		void performRansacAlignment(const pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious,
-                					const pcl::PointCloud<pcl::PointXYZRGB>& cloudCurrent,
-                                    std::vector<int>& _inliersIndexes,
-                                    Eigen::Matrix4f& _bestTransform);
-
-        static double getAlignmentError(const pcl::PointCloud<pcl::PointXYZRGB>& cloud1,
-                                        const pcl::PointCloud<pcl::PointXYZRGB>& cloud2,
-                                        const std::vector<int> inliersIndexes);
-        
-        template <typename PointSource, typename PointTarget> void
-        estimateRigidTransformationSVD (const pcl::PointCloud<PointSource> &cloud_src,
-                                                            const std::vector<int> &indices_src,
-                                                            const pcl::PointCloud<PointTarget> &cloud_tgt,
-                                                            const std::vector<int> &indices_tgt,
-                                                            Eigen::Matrix4f &transformation_matrix);
-		
-	public:
-		LabicCV *cv;
-		LabicPCL *pcl;
-		
-		LabicReconstructor(int _minFeature, int _maxFeature);
-		
-		void start();
-        bool mainLoopPart(const int t);
-		void join();
-        void close();
-		
-		void matchImages2(std::vector<cv::KeyPoint>&   _keypoints_q,
-						  const cv::Mat&               _descriptors_q,
-						  std::vector<cv::KeyPoint>&   _keypoints_t,
-						  const cv::Mat&               _descriptors_t,
-						  std::vector<cv::DMatch>&     _matches,
-						  cv::Mat&                     _mask);
 		
 	};
 }
