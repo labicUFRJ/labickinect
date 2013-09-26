@@ -12,13 +12,8 @@ using namespace pcl;
 using namespace pcl::visualization;
 using namespace labic;
 
-LabicPCL::LabicPCL(Kinect *_kinect, int _width, int _height) {
-    kinect = _kinect;
-	width = _width;
-	height = _height;
-    
+LabicPCL::LabicPCL(Kinect *_kinect, bool& _stop, int _width, int _height)  : kinect(_kinect), stop(_stop), width(_width), height(_height) {
     viewPort = 1;
-    stop = false;
     
     std::cout << "[LabicPCL] Viewer initialized\n";
 }
@@ -51,7 +46,6 @@ void LabicPCL::display() {
     bool savedPLY(false);
     
     while (!viewer.wasStopped() && !stop) {
-        if (stop) break;
         if (!kinect->getFrame(rgb, depth)) continue;
         if (!kinect->frameToPointCloud(rgb, depth, liveCloud)) continue;
         

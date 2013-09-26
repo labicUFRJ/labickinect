@@ -35,7 +35,7 @@ namespace labic {
         pcl::PointCloud<pcl::PointXYZRGB> liveCloud;
         int viewPort;
         
-        LabicPCL(Kinect *_kinect, int _width, int _height);
+        LabicPCL(Kinect *_kinect, bool& _stop, int _width, int _height);
 		void start();
         bool mainLoopPart(const int t);
 		void join();

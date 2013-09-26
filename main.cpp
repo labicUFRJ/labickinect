@@ -27,6 +27,7 @@ int main(int argc, char **argv) {
 	LabicPCL *pcl;
 	LabicReconstructor *recon;
 	clock_t t, t1, t2, t3;
+	bool stop;
 	float timeTotal, timeCV, timePCL, timeReconstructor;
 	
 	cout << "[main] Initializing Kinect device..." << endl;
@@ -45,20 +46,20 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	
-	recon = new LabicReconstructor(100,500);
+	recon = new LabicReconstructor(stop);
 	
 	// OpenCV thread
-	cv = new LabicCV(kinect, 640, 480); // TODO const
+	cv = new LabicCV(kinect, stop, 640, 480); // TODO const
 	recon->cv = cv;
 #if LABIC_ENABLE_CV
 	cv->init();
 	cv->start();
 #endif
-	
-    // PCL thread
-	pcl = new LabicPCL(kinect, 640, 480);
-	recon->pcl = pcl;
+
 #if LABIC_ENABLE_PCL
+    // PCL thread
+	pcl = new LabicPCL(kinect, stop, 640, 480);
+	recon->pcl = pcl;
 	pcl->start();
 	//pcl->display();
 #endif
@@ -68,22 +69,22 @@ int main(int argc, char **argv) {
 	recon->start();
 #endif
 	
-	while (1) {
+	while (!stop) {
 		t = clock();
 		t1 = clock();
 #if LABIC_ENABLE_PCL
-		if (!pcl->mainLoopPart(REFRESH_INTERVAL)) break;
+		pcl->mainLoopPart(REFRESH_INTERVAL);
 #endif
 		t1 = clock() - t1;
 		t2 = clock();
 #if LABIC_ENABLE_CV
-		if (!cv->mainLoopPart(REFRESH_INTERVAL)) break;
+		cv->mainLoopPart(REFRESH_INTERVAL);
 #endif
 		t2 = clock() - t2;
 		t3 = clock();
-#if LABIC_ENABLE_MATCHER
-		if (!recon->mainLoopPart(REFRESH_INTERVAL)) break;
-#endif
+/*#if LABIC_ENABLE_MATCHER
+		recon->mainLoopPart(REFRESH_INTERVAL);
+#endif*/
 		t3 = clock() - t3;
 		t = clock() - t;
 		

@@ -19,12 +19,7 @@ const string LabicCV::rgb_s_window = "Source RGB camera";
 const string LabicCV::depth_window = "Depth camera";
 const string LabicCV::rgbd_window = "RGBD Video";
 
-LabicCV::LabicCV(Kinect *_kinect, int _width, int _height) {
-    kinect = _kinect;
-	width = _width;
-	height = _height;
-    
-    stop = false;
+LabicCV::LabicCV(Kinect *_kinect, bool& _stop, int _width, int _height) : kinect(_kinect), stop(_stop), width(_width), height(_height) {
     window_closed = false;
     initialized = false;
     
@@ -55,6 +50,7 @@ void LabicCV::display() {
     Mat right(cameras, Rect(width, 0, width, height));
 
     uint16_t *depth = NULL;
+    //namedWindow(input_window, WINDOW_FLAGS);
     
 	cout << "[LabicCV] Display started" << endl;
     if (!initialized) {
@@ -66,10 +62,6 @@ void LabicCV::display() {
 		if (depth != NULL) free(depth);
         depth = (uint16_t*) malloc(sizeof(uint16_t)*width*height);
         
-		/*
-        kinect->getVideoMat(rgbMat);
-        kinect->getDepth(depth);
-		*/
 		kinect->getFrame(rgbMat, depth);
         
         generateDepthImage(depth, depthMat);
@@ -77,10 +69,10 @@ void LabicCV::display() {
         rgbMat.copyTo(left);
         depthMat.copyTo(right);
         
-        putText(cameras, "W,S,X -> ADJUST TILT", Point(20,30), CV_FONT_HERSHEY_PLAIN, 0.8f, Scalar::all(0), 1, 8);
+        //putText(cameras, "W,S,X -> ADJUST TILT", Point(20,30), CV_FONT_HERSHEY_PLAIN, 0.8f, Scalar::all(0), 1, 8);
         
-        if (!stop) imshow(input_window, cameras);
-        
+        imshow(input_window, cameras);
+        keyboardHandler(waitKey(1));
     } while (!stop);
     
     window_closed = true;
@@ -160,14 +152,10 @@ void LabicCV::keyboardHandler(int key) {
             destroyAllWindows();
             break;
         case '1':
-            // previousSet = kinect->getVideoMat(rgbPrevious);
-            // previousSet &= kinect->getDepth(depthPrevious);
             previousSet = kinect->getFrame(rgbPrevious, depthPrevious);
             if (previousSet) cout << "[LabicCV] Previous state set" << endl;
             break;
         case '2':
-            // currentSet = kinect->getVideoMat(rgbCurrent);
-            // currentSet &= kinect->getDepth(depthCurrent);
             currentSet = kinect->getFrame(rgbCurrent, depthCurrent);
             if (currentSet) cout << "[LabicCV] Current state set" << endl;
             break;
@@ -213,7 +201,7 @@ void LabicCV::start() {
 }
 
 bool LabicCV::mainLoopPart(const int t) {
-    keyboardHandler(waitKey(t));
+    //keyboardHandler(waitKey(t));
     return !(stop || window_closed);
 }
 

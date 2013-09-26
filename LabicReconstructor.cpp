@@ -5,12 +5,12 @@ using namespace pcl;
 using namespace cv;
 using namespace labic;
 
-LabicReconstructor::LabicReconstructor(int _minFeature, int _maxFeature) {
+LabicReconstructor::LabicReconstructor(bool& _stop) : stop(_stop) {
 	
 	ID = 0;
 	
-	minFeatures     = _minFeature;
-	maxFeatures     = _maxFeature;
+	minFeatures     = 100;
+	maxFeatures     = 500;
 	maxDetectionIte = 100;
 	minMatches      = 10;
 	maxMatchDistance = 5;
@@ -21,7 +21,7 @@ LabicReconstructor::LabicReconstructor(int _minFeature, int _maxFeature) {
 	matcher2  = new BFMatcher(NORM_HAMMING, false);
 	
 	ransac = new RANSACAligner();
-	ransac->setDistanceThreshold(2.0);
+	ransac->setDistanceThreshold(1.0);
 	ransac->setMaxIterations(100);
 	ransac->setMinInliers(10);
 	ransac->setNumSamples(3);
@@ -48,12 +48,23 @@ bool LabicReconstructor::mainLoopPart(const int t) {
 
 void LabicReconstructor::reconstruct() {
     cout << "[LabicReconstructor] Reconstructor initialized" << endl;
-    /*
-    while (!cv->isReady()) {
-        // wait...
-    }*/
+
+    while (!stop) {
+    	if (cv->isReady()) {
+			cout << endl << "[LabicReconstructor] Reconstructor got frames. Reconstructing..." << endl;
+
+			performLoop(cv->rgbCurrent, cv->rgbPrevious, cv->depthCurrent, cv->depthPrevious);
+
+			cout << "[LabicReconstructor] Finished reconstruction loop" << endl << endl;
+
+			cv->restartState();
+		}
+    	else {
+    		boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+    	}
+    }
     
-    //cout << "[LabicReconstructor] Ready! Starting reconstructor" << endl;
+    cout << "[LabicReconstructor] Reconstructor finished" << endl;
 }
 
 void LabicReconstructor::performLoop(const Mat& rgbCurrent,
@@ -66,7 +77,7 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 	vector<DMatch> relatedFeatures;
     vector<Point2f> selectedFeaturePointsCurrent, selectedFeaturePointsPrevious;
 	PointCloud<PointXYZRGB> cloudCurrent, cloudPrevious, featureCloudCurrent, featureCloudPrevious, transformedCloudCurrent;
-	Eigen::Matrix4f transform = Eigen::Matrix4f::Zero();
+	Eigen::Matrix4d transform = Eigen::Matrix4d::Zero();
     vector<int> transformationInliersIndexes;
 
     // 0. Get PointCloud from previous and current states

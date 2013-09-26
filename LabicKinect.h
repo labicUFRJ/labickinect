@@ -70,7 +70,6 @@ namespace labic {
 		static void getPointCloudThread(pcl::PointCloud<pcl::PointXYZRGB> &_cloud, cv::Mat &rgb, uint16_t *depth, int start, int end);
 		void teste();
 		double tilt;
-		bool stop;
 		static const int DEPTH_BLANK = 2047;
         
 	private:

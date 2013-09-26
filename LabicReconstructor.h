@@ -28,7 +28,7 @@ namespace labic {
 		LabicCV *cv;
 		LabicPCL *pcl;
 
-		LabicReconstructor(int _minFeature, int _maxFeature);
+		LabicReconstructor(bool& _stop);
 
 		void start();
         bool mainLoopPart(const int t);
@@ -53,6 +53,7 @@ namespace labic {
 		int 	minInliersToValidateTransformation;
 		int		reconstructionsGenerated;
 		int		reconstructionsAccepted;
+		bool	stop;
 		RANSACAligner* ransac;
 		cv::Ptr<cv::FastAdjuster>         adjuster;
 		cv::Ptr<cv::DescriptorMatcher>    matcher;

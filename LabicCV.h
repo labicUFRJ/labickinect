@@ -27,12 +27,12 @@ namespace labic {
 		boost::thread m_Thread;
         Kinect *kinect;
 		bool initialized;
-        bool stop;
         bool window_closed;
 		int width;
 		int height;
 		uint16_t t_gamma[2048];
         bool previousSet, currentSet;
+        bool stop;
         
 		static const std::string input_window;
 		static const std::string rgb_window;
@@ -52,7 +52,7 @@ namespace labic {
         cv::Mat rgbCurrent, rgbPrevious;
         uint16_t *depthCurrent, *depthPrevious;
         
-        LabicCV(Kinect *_kinect, int _width, int _height);
+        LabicCV(Kinect *_kinect, bool& _stop, int _width, int _height);
 		void start();
         bool mainLoopPart(const int t);
 		void join();

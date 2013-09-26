@@ -8,10 +8,8 @@ Kinect::Kinect(freenect_context *_ctx, int _index)
 depthMat(cv::Size(640,480),CV_16UC1), rgbMat(cv::Size(640,480),CV_8UC3,cv::Scalar(0)), ownMat(cv::Size(640,480),CV_8UC3,cv::Scalar(0))
 {
     tilt = 0;
-	stop = false;
     setLed(LED_RED);
 	depth_buffer = (uint16_t*) malloc(sizeof(uint16_t)*640*480);
-    // ...
 }
 
 void Kinect::close() {
