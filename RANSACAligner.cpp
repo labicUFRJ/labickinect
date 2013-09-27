@@ -16,6 +16,7 @@ RANSACAligner::RANSACAligner() : maxIterations(100), nSamples(3), inlierThreshol
 }
 
 void RANSACAligner::getRandomSamples(std::vector<int>& maybeIndexes, std::vector<int>& notMaybeIndexes) const {
+	cout << "	maybeIndexes[";
 	for (int i=0; i<nSamples; ) {
 		int randomSample = rand() % numFeatures;
 		cout << randomSample << ", ";
@@ -24,7 +25,7 @@ void RANSACAligner::getRandomSamples(std::vector<int>& maybeIndexes, std::vector
 			i++;
 		}
 	}
-
+	cout << "]" << endl << "	not[";
 	for (int i=0; i<numFeatures; i++) {
 		bool isInMaybeIndexes = false;
 		for (int j=0; j<maybeIndexes.size(); j++) {
@@ -37,6 +38,7 @@ void RANSACAligner::getRandomSamples(std::vector<int>& maybeIndexes, std::vector
 		cout << i << ", ";
 		notMaybeIndexes.push_back(i);
 	}
+	cout << "]" << endl;
 
 }
 
@@ -47,8 +49,8 @@ double RANSACAligner::getAlignmentError(const PointCloud<PointXYZRGB>& transform
 
     for (int i=0; i<inliersIndexes.size(); i++) {
         int inlierIndex = inliersIndexes[i];
-
-        error += squaredEuclideanDistance(transformedCloud.points[inlierIndex], cloudPrevious.points[inlierIndex]);
+        // TODO squaredEuclideanDistance
+        error += euclideanDistance(transformedCloud.points[inlierIndex], cloudPrevious.points[inlierIndex]);
     }
 
     error /= inliersIndexes.size();
@@ -78,13 +80,13 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 		// Determine random sample (maybe)
 		getRandomSamples(maybeIndexes, notMaybeIndexes);
 		consensusSetIndexes = maybeIndexes;
-		cout << "       maybeIndexes size = " << maybeIndexes.size() << endl;
-		cout << "       notMaybeIndexes size = " << notMaybeIndexes.size() << endl;
+//		cout << "       maybeIndexes size = " << maybeIndexes.size() << endl;
+//		cout << "       notMaybeIndexes size = " << notMaybeIndexes.size() << endl;
 
 		// Estimate transformation from maybe set (size = nSamples)
 		estimator->estimateRigidTransformation(cloudCurrent, maybeIndexes, cloudPrevious, maybeIndexes, maybeTransform);
 
-		cout << "       maybeTransform = " << endl << maybeTransform << endl;
+//		cout << "       maybeTransform = " << endl << maybeTransform << endl;
 
 		// Test transformation with other points that are not in maybeIndexes
 		for (int i=0; i<notMaybeIndexes.size(); i++) {
@@ -111,7 +113,7 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 			// Recalculate transformation from new consensus set
 			estimator->estimateRigidTransformation(cloudPrevious, consensusSetIndexes, cloudCurrent, consensusSetIndexes, thisTransform);
 
-			cout << "       thisTransform = " << endl << thisTransform << endl;
+//			cout << "       thisTransform = " << endl << thisTransform << endl;
 
 			// Generate the transformed cloud using thisTransform
 			// Note that this cloud will include points that are not in consensus set, be careful
@@ -119,15 +121,14 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 			transformPointCloud(cloudCurrent, transformedCloudCurrent, thisTransform);
 			thisError = getAlignmentError(transformedCloudCurrent, cloudPrevious, consensusSetIndexes);
 
-			cout << "       thisError = " << thisError;
+//			cout << "       thisError = " << thisError;
 			if (thisError < bestError) {
-				cout << " (Great! best error so far. updating best parameters)";
+				cout << " (Great! best error so far. updating best parameters)" << endl;
 				bestIteration = iterations;
 				bestTransform = thisTransform;
 				bestError = thisError;
 				bestConsensusSetIndexes = consensusSetIndexes;
 			}
-			cout << endl;
 		}
 
 		// TODO test to stop if found error < ok_error

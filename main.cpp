@@ -29,25 +29,25 @@ int main(int argc, char **argv) {
 	clock_t t, t1, t2, t3;
 	bool stop;
 	float timeTotal, timeCV, timePCL, timeReconstructor;
-	
+
 	cout << "[main] Initializing Kinect... ";
-	
+
 	try {
 		kinect = &freenect.createDevice<Kinect>(0);
-		
+
 		cout << "Done" << endl << "[main] Starting streams... ";
-		
+
 		kinect->startVideo();
 		kinect->startDepth();
-		
+
 		cout << "Done" << endl;
 	} catch (runtime_error &e) {
 		cout << "Connection error: " << e.what() << endl;
 		return 1;
 	}
-	
+
 	recon = new LabicReconstructor(&stop);
-	
+
 	// OpenCV thread
 	cv = new LabicCV(kinect, &stop, 640, 480); // TODO const
 	recon->cv = cv;
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
 #if LABIC_ENABLE_MATCHER
 	recon->start();
 #endif
-	
+
 	while (!stop) {
 #if LABIC_ENABLE_PCL
 		pcl->mainLoopPart(REFRESH_INTERVAL);
@@ -77,9 +77,9 @@ int main(int argc, char **argv) {
 		cv->mainLoopPart(REFRESH_INTERVAL);
 #endif
 	}
-	
+
 	cout << "[main] Stop requested. Joining threads..." << endl;
-	
+
 	// Wait for threads to finish
 #if LABIC_ENABLE_CV
 	cv->close();
@@ -90,13 +90,13 @@ int main(int argc, char **argv) {
 #if LABIC_ENABLE_MATCHER
 	recon->close();
 #endif
-	
+
 	cout << "[main] All threads have finished. Closing Kinect..." << endl;
-	
+
 	kinect->stopVideo();
 	kinect->stopDepth();
 	kinect->close();
-	
+
 	cout << "[main] Everything closed. Bye!" << endl;
 	
 	return 0;

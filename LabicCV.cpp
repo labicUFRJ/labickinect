@@ -38,8 +38,7 @@ LabicCV::LabicCV(Kinect *_kinect, bool* _stop, int _width, int _height) : kinect
 
     namedWindow(input_window);
     initialized = true;
-
-    cout << "Passed stop: " << _stop << " stored stop: " << stop << *stop << endl;
+    framesSaved = 0;
 }
 
 void LabicCV::init() {
@@ -154,15 +153,39 @@ void LabicCV::keyboardHandler(int key) {
             destroyAllWindows();
             break;
         case '1':
-            previousSet = kinect->getFrame(rgbPrevious, depthPrevious);
+            while (!previousSet) {
+            	previousSet = kinect->getFrame(rgbPrevious, depthPrevious);
+            }
+
             if (previousSet) cout << "[LabicCV] Previous state set" << endl;
             cout << "previousSet=" << previousSet << " currentSet=" << currentSet << " isReady=" << isReady() << endl;
+            /*
+            FILE *f;
+            f = fopen("rgbPrevious.bin", "wb");
+            if (f == NULL) cerr << "Error opening rgbPrevious file" << endl;
+            fwrite(&rgbPrevious, sizeof(Mat),sizeof(rgbPrevious), f);
+            fclose(f);
+            f = fopen("depthPrevious.bin", "wb");
+            if (f == NULL) cerr << "Error opening depthPrevious file" << endl;
+            fwrite(depthPrevious, sizeof(uint16_t),sizeof(uint16_t)*640*480, f);
+            fclose(f);*/
             break;
         case '2':
-            currentSet = kinect->getFrame(rgbCurrent, depthCurrent);
+        	while (!currentSet) {
+        		currentSet = kinect->getFrame(rgbCurrent, depthCurrent);
+        	}
+
             if (currentSet) cout << "[LabicCV] Current state set" << endl;
             cout << "previousSet=" << previousSet << " currentSet=" << currentSet << " isReady=" << isReady() << endl;
-
+            /*
+            f = fopen("rgbCurrent.bin", "wb");
+            if (f == NULL) cerr << "Error opening rgbCurrent file" << endl;
+            fwrite(&rgbCurrent, sizeof(Mat),sizeof(rgbCurrent), f);
+            fclose(f);
+            f = fopen("depthCurrent.bin", "wb");
+            if (f == NULL) cerr << "Error opening depthCurrent file" << endl;
+            fwrite(depthCurrent, sizeof(uint16_t),sizeof(uint16_t)*640*480, f);
+            fclose(f);*/
             break;
         case 'w':
             kinect->setTilt(+1.0);
@@ -174,7 +197,11 @@ void LabicCV::keyboardHandler(int key) {
             kinect->setTilt(-1.0);
             break;
         case ' ':
-            
+			while (!currentSet) {
+				currentSet = kinect->getFrame(rgbCurrent, depthCurrent);
+			}
+			framesSaved++;
+			cout << "[LabicCV] " << framesSaved << " frames saved" << endl;
             break;
         default:
         	break;

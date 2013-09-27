@@ -12,8 +12,8 @@ LabicReconstructor::LabicReconstructor(bool* _stop) : stop(_stop) {
 	minFeatures     = 100;
 	maxFeatures     = 500;
 	maxDetectionIte = 100;
-	minMatches      = 10;
-	maxMatchDistance = 5;
+	minMatches      = 25;
+	maxMatchDistance = 10;
 	
 	adjuster  = new FastAdjuster(100, true);
 	extractor = new BriefDescriptorExtractor();
@@ -21,7 +21,7 @@ LabicReconstructor::LabicReconstructor(bool* _stop) : stop(_stop) {
 	matcher2  = new BFMatcher(NORM_HAMMING, false);
 	
 	ransac = new RANSACAligner();
-	ransac->setDistanceThreshold(1.0);
+	ransac->setDistanceThreshold(0.5); // 1.0
 	ransac->setMaxIterations(100);
 	ransac->setMinInliers(10);
 	ransac->setNumSamples(3);
@@ -30,19 +30,38 @@ LabicReconstructor::LabicReconstructor(bool* _stop) : stop(_stop) {
 	reconstructionsGenerated = 0;
 	reconstructionsAccepted = 0;
 
-};
+}
 
 void LabicReconstructor::reconstruct() {
     cout << "[LabicReconstructor] Reconstructor initialized" << endl;
 
     while (!*stop) {
     	if (cv->isReady()) {
-			cout << endl << "[LabicReconstructor] Reconstructor got frames. Reconstructing..." << endl;
+    		// If this is the first frame received, just save it
+    		if (world.empty()) {
+    		    cout << "[LabicReconstructor] Preparing first frame" << endl;
+    			rgbPrevious = cv->rgbCurrent;
+    			depthPrevious = cv->depthCurrent;
+    			//cv->rgbCurrent.copyTo(rgbPrevious);
+    			//copy(cv->depthCurrent, cv->depthCurrent + sizeof(uint16_t)*640*480, depthPrevious);
 
-			performLoop(cv->rgbCurrent, cv->rgbPrevious, cv->depthCurrent, cv->depthPrevious);
+    		    Kinect::frameToPointCloud(rgbPrevious, depthPrevious, alignedCloudPrevious);
+    			extractRGBFeatures(rgbPrevious, depthPrevious, featuresPrevious, descriptorsPrevious);
 
-			cout << "[LabicReconstructor] Finished reconstruction loop" << endl << endl;
+    			world = alignedCloudPrevious;
+    			transformPrevious.setIdentity();
 
+    			pcl::io::savePLYFileASCII("world0.ply", world);
+
+				cout << endl << "[LabicReconstructor] Initial frame saved" << endl;
+
+    		} else {
+				cout << endl << "[LabicReconstructor] Reconstructor got frames. Reconstructing..." << endl;
+
+				performLoop(cv->rgbCurrent, cv->depthCurrent);
+
+				cout << "[LabicReconstructor] Finished reconstruction loop" << endl << endl;
+    		}
 			cv->restartState();
 		}
     	else {
@@ -54,30 +73,22 @@ void LabicReconstructor::reconstruct() {
 }
 
 void LabicReconstructor::performLoop(const Mat& rgbCurrent,
-								  const Mat& rgbPrevious,
-								  const uint16_t* depthCurrent,
-								  const uint16_t* depthPrevious) {
+								 	 const uint16_t* depthCurrent) {
 	
-	vector<KeyPoint> featuresCurrent, featuresPrevious;
-	Mat descriptorsCurrent, descriptorsPrevious;
+	vector<KeyPoint> featuresCurrent;
+	Mat descriptorsCurrent, matchesMat;
 	vector<DMatch> relatedFeatures;
     vector<Point2f> selectedFeaturePointsCurrent, selectedFeaturePointsPrevious;
-	PointCloud<PointXYZRGB> cloudCurrent, cloudPrevious, featureCloudCurrent, featureCloudPrevious, transformedCloudCurrent;
+	PointCloud<PointXYZRGB> cloudCurrent, featureCloudCurrent, featureCloudPrevious, alignedCloudCurrent;
 	Eigen::Matrix4d transform = Eigen::Matrix4d::Zero();
     vector<int> transformationInliersIndexes;
 
     // 0. Get PointCloud from previous and current states
-    Kinect::frameToPointCloud(rgbPrevious, depthPrevious, cloudPrevious);
     Kinect::frameToPointCloud(rgbCurrent, depthCurrent, cloudCurrent);
 
-    // Initialize world with first cloud
-    if (world.empty()) {
-    	world = cloudPrevious;
-    	pcl::io::savePLYFileASCII("world0.ply", world);
-    }
+    pcl::io::savePLYFileASCII("cloudCurrent.ply", world);
 
 	// 1. Extract features from both images
-	extractRGBFeatures(rgbPrevious, depthPrevious, featuresPrevious, descriptorsPrevious);
 	extractRGBFeatures(rgbCurrent, depthCurrent, featuresCurrent, descriptorsCurrent);
 	
 	// 2. Get related features (matches) between features from both images
@@ -86,7 +97,7 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 		cerr << "[LabicReconstructor::performLoop] IMAGES DO NOT MATCH! ABORTING RECONSTRUCTION" << endl;
 		return;
 	}
-    //LabicCV::showMatchesPreview(rgbPrevious, featuresPrevious, rgbCurrent, featuresCurrent, relatedFeatures);
+	drawMatches(rgbPrevious, featuresPrevious, rgbCurrent, featuresCurrent, relatedFeatures, matchesMat);
 
     for (int i=0; i<relatedFeatures.size(); i++) {
         int previousIndex = relatedFeatures[i].trainIdx;
@@ -101,18 +112,17 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
         }
     }
 	
-    cout << "[LabicReconstructor::performLoop] selectedFeatureIndexesPrevious: " << selectedFeaturePointsPrevious.size() << " poins" << endl
-    << "[LabicReconstructor::performLoop] selectedFeatureIndexesCurrent: " << selectedFeaturePointsCurrent.size() << " points" << endl;
+    cout << "[LabicReconstructor::performLoop] Matches after depth filter: " << selectedFeaturePointsPrevious.size() << " points" << endl;
     
 	// 3. Generate PointClouds of related features (pointcloudsrc, pointcloudtgt)
     Kinect::frameToPointCloud(rgbPrevious, depthPrevious, featureCloudPrevious, selectedFeaturePointsPrevious);
     Kinect::frameToPointCloud(rgbCurrent, depthCurrent, featureCloudCurrent, selectedFeaturePointsCurrent);
+    // As the previous frame already had a transformation, apply it to the featureCloud so it matches the previous alignment
+    transformPointCloud(featureCloudPrevious, featureCloudPrevious, transformPrevious);
     
-    cout << "[LabicReconstructor::performLoop] featureCloudPrevious: " << featureCloudPrevious.size() << " points" << endl
-    << "[LabicReconstructor::performLoop] featureCloudCurrent: " << featureCloudCurrent.size() << " points" << endl;
-	
+    cout << "[LabicReconstructor::performLoop] Feature cloud being transformed with " << featureCloudPrevious.size() << " points" << endl;
 	// 4. Alignment detection
-    cout << "[LabicReconstructor::performLoop] Transformation matrix before RANSAC:" << endl << transform << endl;
+//    cout << "[LabicReconstructor::performLoop] Transformation matrix before RANSAC:" << endl << transform << endl;
 
     ransac->estimate(featureCloudPrevious, featureCloudCurrent);
     transform = ransac->getFinalTransform();
@@ -124,7 +134,7 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 
     // Check if transformation generated the correct set of inliers
     if (transformationInliersIndexes.size() < minInliersToValidateTransformation) {
-    	cout << "[LabicReconstructor::performLoop] Final transformation did not generate the mininum of inliers." << endl;
+    	cout << "[LabicReconstructor::performLoop] Final transformation did not generate the mininum of inliers" << endl;
     	return;
     }
 
@@ -133,18 +143,26 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
     cout << "[LabicReconstructor::performLoop] Transformation accepted. Transforming cloud to world " << endl;
 	
 	// 5. Apply transformation to all frame points
-    transformPointCloud(cloudCurrent, transformedCloudCurrent, transform);
+    transformPointCloud(cloudCurrent, alignedCloudCurrent, transform);
     
-    world += transformedCloudCurrent;
-    cout << "[LabicReconstructor::performLoop] WORLD UPDATED - " << world.size() << " points (+" << transformedCloudCurrent.size() << " added)" << endl;
-    char filename[15];
-    sprintf(filename, "world%d.ply", reconstructionsAccepted);
-    pcl::io::savePLYFileASCII(filename, world);
+    alignedCloudPrevious = PointCloud<PointXYZRGB>(alignedCloudCurrent);
+    rgbCurrent.copyTo(rgbPrevious);
+    copy(depthCurrent, depthCurrent + sizeof(uint16_t)*640*480, depthPrevious);
+    featuresPrevious = featuresCurrent;
+    descriptorsCurrent.copyTo(descriptorsPrevious);
+    world += alignedCloudCurrent;
+    cout << "[LabicReconstructor::performLoop] WORLD UPDATED - " << world.size() << " points (+" << alignedCloudCurrent.size() << " added)" << endl;
+
+    char filenamejpg[15], filenameply[15];
+    sprintf(filenamejpg, "matches%d.jpg", reconstructionsAccepted);
+    sprintf(filenameply, "world%d.ply", reconstructionsAccepted);
+    imwrite(filenamejpg, matchesMat);
+    pcl::io::savePLYFileASCII(filenameply, world);
 	
 }
 
 void LabicReconstructor::extractRGBFeatures(const Mat& img, const uint16_t* depth, vector<KeyPoint>& keypoints, Mat& descriptors) {
-	cout << "[LabicReconstructor::extractRGBFeatures] computing features" << endl;
+	cout << "[LabicReconstructor::extractRGBFeatures] Extracting RGB features and descriptors" << endl;
 	
     Mat imgBlackWhite;
 
@@ -170,7 +188,7 @@ void LabicReconstructor::extractRGBFeatures(const Mat& img, const uint16_t* dept
 			}
 		}
 		
-        cout << "[LabicReconstructor::extractRGBFeatures] Iteration " << i << " found " << keypoints.size() << " points and dropped " << pointsDropped << " points" << endl;
+//        cout << "[LabicReconstructor::extractRGBFeatures] Iteration " << i << " found " << keypoints.size() << " points and dropped " << pointsDropped << " points" << endl;
         
 		if (keypoints.size()-pointsDropped < minFeatures){
 			adjuster->tooFew(minFeatures, keypoints.size());
@@ -181,8 +199,8 @@ void LabicReconstructor::extractRGBFeatures(const Mat& img, const uint16_t* dept
 		}
 	}
 
-	cout << "[LabicReconstructor::extractRGBFeatures] the number of features: " << keypoints.size()
-	<< "(target range: " << minFeatures << " to " << maxFeatures
+	cout << "[LabicReconstructor::extractRGBFeatures] Extracted " << keypoints.size()
+	<< " features (target range: " << minFeatures << " to " << maxFeatures
 	<< ", iteration: " << i << ")" << " (dropped " << pointsDropped << " points)" << endl;
 };
 
@@ -192,7 +210,7 @@ void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 									   const Mat&               _descriptors_t,
 									   vector<DMatch>&     _matches) const {
 	
-	cout << "[LabicReconstructor::matchFeatures] matching features\n";
+	cout << "[LabicReconstructor::matchFeatures] Matching features\n";
 	vector<DMatch> matches;
 	
 	matcher->match(_descriptors_q, _descriptors_t, matches);
@@ -207,7 +225,7 @@ void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 		}
 	}
 	
-	cout << "[LabicReconstructor::matchFeatures] Final matched features after threshold: " << _matches.size() << endl;
+	cout << "[LabicReconstructor::matchFeatures] Final matches after matching threshold: " << _matches.size() << endl;
 	
 }
 

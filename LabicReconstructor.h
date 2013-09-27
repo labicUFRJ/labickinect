@@ -33,13 +33,9 @@ namespace labic {
 		void start();
 		void join();
         void close();
-		
-		void matchImages2(std::vector<cv::KeyPoint>&   _keypoints_q,
-						  const cv::Mat&               _descriptors_q,
-						  std::vector<cv::KeyPoint>&   _keypoints_t,
-						  const cv::Mat&               _descriptors_t,
-						  std::vector<cv::DMatch>&     _matches,
-						  cv::Mat&                     _mask);
+
+		void performLoop(const cv::Mat& rgbCurrent,
+						 const uint16_t* depthCurrent);
 
 	private:
         boost::thread m_Thread;
@@ -58,14 +54,14 @@ namespace labic {
 		cv::Ptr<cv::DescriptorMatcher>    matcher;
 		cv::Ptr<cv::DescriptorMatcher>    matcher2;
 		cv::Ptr<cv::DescriptorExtractor>  extractor;
-		pcl::PointCloud<pcl::PointXYZRGB> world;
-        
+		pcl::PointCloud<pcl::PointXYZRGB> world, alignedCloudPrevious, featureCloudPrevious;
+		cv::Mat							  rgbPrevious, descriptorsPrevious;
+		uint16_t*						  depthPrevious;
+		std::vector<cv::KeyPoint>		  featuresPrevious;
+		Eigen::Matrix4d 				  transformPrevious;
+
 		void reconstruct();
         
-		void performLoop(const cv::Mat& rgbCurrent,
-						 const cv::Mat& rgbPrevious,
-						 const uint16_t* depthCurrent,
-						 const uint16_t* depthPrevious);
 
 		void extractRGBFeatures(const cv::Mat&               img,
 								const uint16_t* 			 depth,
