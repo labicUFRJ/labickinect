@@ -12,14 +12,14 @@ using namespace pcl;
 using namespace pcl::visualization;
 using namespace labic;
 
-LabicPCL::LabicPCL(Kinect *_kinect, bool& _stop, int _width, int _height)  : kinect(_kinect), stop(_stop), width(_width), height(_height) {
+LabicPCL::LabicPCL(Kinect *_kinect, bool* _stop, int _width, int _height)  : kinect(_kinect), stop(_stop), width(_width), height(_height) {
     viewPort = 1;
     
     std::cout << "[LabicPCL] Viewer initialized\n";
 }
 
 bool LabicPCL::mainLoopPart(const int t) {
-    if (!viewer.wasStopped() && !stop) {
+    if (!viewer.wasStopped() && !*stop) {
 		viewer.spinOnce(t);
         return true;
     } else {
@@ -45,7 +45,7 @@ void LabicPCL::display() {
     
     bool savedPLY(false);
     
-    while (!viewer.wasStopped() && !stop) {
+    while (!viewer.wasStopped() && !*stop) {
         if (!kinect->getFrame(rgb, depth)) continue;
         if (!kinect->frameToPointCloud(rgb, depth, liveCloud)) continue;
         
@@ -152,7 +152,7 @@ void LabicPCL::join() {
 
 void LabicPCL::close() {
 //    cout << "[LabicPCL] Asked to close PCL" << endl;
-    stop = true;
+    *stop = true;
     viewer.close();
     join();
 }

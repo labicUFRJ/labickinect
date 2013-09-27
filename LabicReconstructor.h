@@ -28,10 +28,9 @@ namespace labic {
 		LabicCV *cv;
 		LabicPCL *pcl;
 
-		LabicReconstructor(bool& _stop);
+		LabicReconstructor(bool* _stop);
 
 		void start();
-        bool mainLoopPart(const int t);
 		void join();
         void close();
 		
@@ -53,7 +52,7 @@ namespace labic {
 		int 	minInliersToValidateTransformation;
 		int		reconstructionsGenerated;
 		int		reconstructionsAccepted;
-		bool	stop;
+		bool*	stop;
 		RANSACAligner* ransac;
 		cv::Ptr<cv::FastAdjuster>         adjuster;
 		cv::Ptr<cv::DescriptorMatcher>    matcher;

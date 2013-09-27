@@ -30,26 +30,26 @@ int main(int argc, char **argv) {
 	bool stop;
 	float timeTotal, timeCV, timePCL, timeReconstructor;
 	
-	cout << "[main] Initializing Kinect device..." << endl;
+	cout << "[main] Initializing Kinect... ";
 	
 	try {
 		kinect = &freenect.createDevice<Kinect>(0);
 		
-		cout << "[main] Starting streams..." << endl;
+		cout << "Done" << endl << "[main] Starting streams... ";
 		
 		kinect->startVideo();
 		kinect->startDepth();
 		
-		cout << "[main] Streams started." << endl;
+		cout << "Done" << endl;
 	} catch (runtime_error &e) {
-		cout << "[main] Connection error: " << e.what() << endl;
+		cout << "Connection error: " << e.what() << endl;
 		return 1;
 	}
 	
-	recon = new LabicReconstructor(stop);
+	recon = new LabicReconstructor(&stop);
 	
 	// OpenCV thread
-	cv = new LabicCV(kinect, stop, 640, 480); // TODO const
+	cv = new LabicCV(kinect, &stop, 640, 480); // TODO const
 	recon->cv = cv;
 #if LABIC_ENABLE_CV
 	cv->init();
@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 
 #if LABIC_ENABLE_PCL
     // PCL thread
-	pcl = new LabicPCL(kinect, stop, 640, 480);
+	pcl = new LabicPCL(kinect, &stop, 640, 480);
 	recon->pcl = pcl;
 	pcl->start();
 	//pcl->display();
@@ -70,36 +70,12 @@ int main(int argc, char **argv) {
 #endif
 	
 	while (!stop) {
-		t = clock();
-		t1 = clock();
 #if LABIC_ENABLE_PCL
 		pcl->mainLoopPart(REFRESH_INTERVAL);
 #endif
-		t1 = clock() - t1;
-		t2 = clock();
 #if LABIC_ENABLE_CV
 		cv->mainLoopPart(REFRESH_INTERVAL);
 #endif
-		t2 = clock() - t2;
-		t3 = clock();
-/*#if LABIC_ENABLE_MATCHER
-		recon->mainLoopPart(REFRESH_INTERVAL);
-#endif*/
-		t3 = clock() - t3;
-		t = clock() - t;
-		
-		timeTotal = 1000*((float)t)/CLOCKS_PER_SEC;
-		timePCL = 1000*((float)t1)/CLOCKS_PER_SEC;
-		timeCV = 1000*((float)t2)/CLOCKS_PER_SEC;
-		timeReconstructor = 1000*((float)t3)/CLOCKS_PER_SEC;
-        /*
-		 cout << "[main] Iteration time: "
-		 << timeTotal << "ms ("
-		 << "CV: " << timeCV << "ms "
-		 << "PCL: " << timePCL << "ms "
-		 << "Rec: " << timeReconstructor << "ms)" <<
-		 endl;*/
-		
 	}
 	
 	cout << "[main] Stop requested. Joining threads..." << endl;
@@ -121,7 +97,7 @@ int main(int argc, char **argv) {
 	kinect->stopDepth();
 	kinect->close();
 	
-	cout << "[main] Kinect closed. Bye!" << endl;
+	cout << "[main] Everything closed. Bye!" << endl;
 	
 	return 0;
 }

@@ -5,7 +5,7 @@ using namespace pcl;
 using namespace cv;
 using namespace labic;
 
-LabicReconstructor::LabicReconstructor(bool& _stop) : stop(_stop) {
+LabicReconstructor::LabicReconstructor(bool* _stop) : stop(_stop) {
 	
 	ID = 0;
 	
@@ -32,24 +32,10 @@ LabicReconstructor::LabicReconstructor(bool& _stop) : stop(_stop) {
 
 };
 
-bool LabicReconstructor::mainLoopPart(const int t) {
-    if (cv->isReady()) {
-        cout << endl << "[LabicReconstructor] Reconstructor got frames. Reconstructing..." << endl;
-        
-        performLoop(cv->rgbCurrent, cv->rgbPrevious, cv->depthCurrent, cv->depthPrevious);
-        
-        cout << "[LabicReconstructor] Finished reconstruction loop" << endl << endl;
-        
-        cv->restartState();
-    }
-    
-    return true;
-}
-
 void LabicReconstructor::reconstruct() {
     cout << "[LabicReconstructor] Reconstructor initialized" << endl;
 
-    while (!stop) {
+    while (!*stop) {
     	if (cv->isReady()) {
 			cout << endl << "[LabicReconstructor] Reconstructor got frames. Reconstructing..." << endl;
 

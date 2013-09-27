@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 #include <ctime>
+#include <cstdio>
 #include "opencv2/core/core.hpp"
 #include "opencv2/nonfree/features2d.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -32,7 +33,8 @@ namespace labic {
 		int height;
 		uint16_t t_gamma[2048];
         bool previousSet, currentSet;
-        bool stop;
+        bool* stop;
+        cv::Mat cameras;
         
 		static const std::string input_window;
 		static const std::string rgb_window;
@@ -52,9 +54,9 @@ namespace labic {
         cv::Mat rgbCurrent, rgbPrevious;
         uint16_t *depthCurrent, *depthPrevious;
         
-        LabicCV(Kinect *_kinect, bool& _stop, int _width, int _height);
+        LabicCV(Kinect *_kinect, bool* _stop, int _width, int _height);
 		void start();
-        bool mainLoopPart(const int t);
+        void mainLoopPart(const int t);
 		void join();
         void close();
         void init();

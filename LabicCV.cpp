@@ -19,7 +19,7 @@ const string LabicCV::rgb_s_window = "Source RGB camera";
 const string LabicCV::depth_window = "Depth camera";
 const string LabicCV::rgbd_window = "RGBD Video";
 
-LabicCV::LabicCV(Kinect *_kinect, bool& _stop, int _width, int _height) : kinect(_kinect), stop(_stop), width(_width), height(_height) {
+LabicCV::LabicCV(Kinect *_kinect, bool* _stop, int _width, int _height) : kinect(_kinect), stop(_stop), width(_width), height(_height) {
     window_closed = false;
     initialized = false;
     
@@ -33,24 +33,25 @@ LabicCV::LabicCV(Kinect *_kinect, bool& _stop, int _width, int _height) : kinect
     depthCurrent = (uint16_t*) malloc(sizeof(uint16_t)*width*height);
     rgbPrevious = Mat(Size(width, height), CV_8UC3, Scalar(0));
     rgbCurrent = Mat(Size(width, height), CV_8UC3, Scalar(0));
+    cameras = Mat(height, width*2, CV_8UC3);
     previousSet = currentSet = false;
+
+    namedWindow(input_window);
+    initialized = true;
+
+    cout << "Passed stop: " << _stop << " stored stop: " << stop << *stop << endl;
 }
 
 void LabicCV::init() {
-    namedWindow(input_window, WINDOW_FLAGS);
-	
-    initialized = true;
 }
 
 void LabicCV::display() {
     Mat rgbMat(Size(width, height), CV_8UC3, Scalar(0));
 	Mat depthMat(Size(width, height), CV_8UC3, Scalar(0));
-    Mat cameras(height, width*2, CV_8UC3);
     Mat left(cameras, Rect(0, 0, width, height));
     Mat right(cameras, Rect(width, 0, width, height));
 
     uint16_t *depth = NULL;
-    //namedWindow(input_window, WINDOW_FLAGS);
     
 	cout << "[LabicCV] Display started" << endl;
     if (!initialized) {
@@ -71,16 +72,18 @@ void LabicCV::display() {
         
         //putText(cameras, "W,S,X -> ADJUST TILT", Point(20,30), CV_FONT_HERSHEY_PLAIN, 0.8f, Scalar::all(0), 1, 8);
         
-        imshow(input_window, cameras);
-        keyboardHandler(waitKey(1));
-    } while (!stop);
+        //imshow(input_window, cameras);
+        //waitKey(1);
+        //keyboardHandler(waitKey(1));
+
+    } while (!*stop);
     
     window_closed = true;
 
 	cout << "[LabicCV] Display finished" << endl;
 }
 
-void LabicCV::generateDepthImage(uint16_t *depth, cv::Mat depthMat) {
+void LabicCV::generateDepthImage(uint16_t *depth, Mat depthMat) {
     int x, y, i;
     int depthValue;
     
@@ -100,7 +103,6 @@ void LabicCV::generateDepthImage(uint16_t *depth, cv::Mat depthMat) {
 }
 
 Vec3b LabicCV::depth_to_color(float raw_depth_value) {
-    
     double r,g,b;
 	int pval = t_gamma[(int)raw_depth_value];
     int lb = pval & 0xff;
@@ -148,16 +150,19 @@ Vec3b LabicCV::depth_to_color(float raw_depth_value) {
 void LabicCV::keyboardHandler(int key) {
     switch (key) {
         case 27:
-            stop = true;
+            *stop = true;
             destroyAllWindows();
             break;
         case '1':
             previousSet = kinect->getFrame(rgbPrevious, depthPrevious);
             if (previousSet) cout << "[LabicCV] Previous state set" << endl;
+            cout << "previousSet=" << previousSet << " currentSet=" << currentSet << " isReady=" << isReady() << endl;
             break;
         case '2':
             currentSet = kinect->getFrame(rgbCurrent, depthCurrent);
             if (currentSet) cout << "[LabicCV] Current state set" << endl;
+            cout << "previousSet=" << previousSet << " currentSet=" << currentSet << " isReady=" << isReady() << endl;
+
             break;
         case 'w':
             kinect->setTilt(+1.0);
@@ -171,18 +176,8 @@ void LabicCV::keyboardHandler(int key) {
         case ' ':
             
             break;
-        case 63235: // right, bigger area
-
-            break;
-        case 63234: // left, smaller area
-
-            break;
-        case 63232: // up, area closer to top
-            
-            break;
-        case 63233: // down, area closer to bottom
-            
-            break;
+        default:
+        	break;
 
     }
 }
@@ -200,9 +195,10 @@ void LabicCV::start() {
 	m_Thread = boost::thread(&LabicCV::display, this);
 }
 
-bool LabicCV::mainLoopPart(const int t) {
-    //keyboardHandler(waitKey(t));
-    return !(stop || window_closed);
+void LabicCV::mainLoopPart(const int t) {
+	if (*stop) return ;
+	imshow(input_window, cameras);
+    keyboardHandler(waitKey(t));
 }
 
 void LabicCV::join() {
@@ -210,7 +206,7 @@ void LabicCV::join() {
 }
 
 void LabicCV::close() {
-    stop = true;
+    *stop = true;
     destroyAllWindows();
     join();
 }
