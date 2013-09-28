@@ -68,6 +68,13 @@ You can test if the Kinect is working by running `sudo glview`.
 	cd build
 	cmake ..
 	make
+If you are using OS X, you can generate project files for Xcode:
+	cmake -G Xcode ..
+You can also generate project files for Eclipse, but please create a new directory outside of the source folder, like a folder `labickinect-eclipse` at the same path of the `labickinect`.
+	mkdir labickinect-eclipse
+	cd labickinect-eclipse
+	cmake -G "Eclipse CDT4 - Unix Makefiles" -D CMAKE_BUILD_TYPE=Debug ../labickinect
+
 
 - - -
 
