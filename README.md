@@ -62,7 +62,7 @@ Please follow to the installation of each library listed below before continuing
 
 You can test if the Kinect is working by running `sudo glview`.
 ## Compiling sources
-	git clone https://macecchi@bitbucket.org/macecchi/labickinect.git
+	git clone https://bitbucket.org/macecchi/labickinect.git
 	cd labickinect
 	mkdir build
 	cd build
