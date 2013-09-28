@@ -11,24 +11,34 @@ RANSACAligner::RANSACAligner() : maxIterations(100), nSamples(3), inlierThreshol
 
 	bestTransform.setIdentity();
 	bestError = INFINITY;
+	bestIteration = 0;
 
 	estimator = &estimatorSVD;
 
-	//srand(time(NULL));
-	srand(5);
+	srand(time(NULL));
+	//srand(5);
 }
 
 void RANSACAligner::getRandomSamples(std::vector<int>& maybeIndexes, std::vector<int>& notMaybeIndexes) const {
+	int i;
+
+	maybeIndexes.clear();
+	notMaybeIndexes.clear();
+
 	cout << "	maybeIndexes[";
-	for (int i=0; i<nSamples; ) {
+	while (maybeIndexes.size() < nSamples) {
 		int randomSample = rand() % numFeatures;
 		cout << randomSample << ", ";
-		if (find(maybeIndexes.begin(), maybeIndexes.end(), randomSample) == maybeIndexes.end()) {
+		for (i=0; i<maybeIndexes.size(); i++) {
+			if (randomSample == maybeIndexes[i]) break;
+		}
+		if (i == maybeIndexes.size()) {
 			maybeIndexes.push_back(randomSample);
-			i++;
 		}
 	}
-	cout << "]" << endl << "	not[";
+	cout << "]" << endl;
+
+	//cout << "	not[";
 	for (int i=0; i<numFeatures; i++) {
 		bool isInMaybeIndexes = false;
 		for (int j=0; j<maybeIndexes.size(); j++) {
@@ -38,10 +48,10 @@ void RANSACAligner::getRandomSamples(std::vector<int>& maybeIndexes, std::vector
 			}
 		}
 		if (isInMaybeIndexes) continue;
-		cout << i << ", ";
+		//cout << i << ", ";
 		notMaybeIndexes.push_back(i);
 	}
-	cout << "]" << endl;
+	//cout << "]" << endl;
 
 }
 
@@ -69,16 +79,13 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 	vector<int> maybeIndexes, notMaybeIndexes, consensusSetIndexes;
 
 	int iterations = 0;
-	bestIteration = 0;
 	numFeatures = cloudCurrent.size();
 
 	while (iterations < maxIterations) {
-		cout << ">>> RANSAC iteration " << iterations+1 << endl;
+		cout << ">>> RANSAC iteration " << iterations << endl;
 
-		maybeIndexes.clear();
-		notMaybeIndexes.clear();
 		consensusSetIndexes.clear();
-		maybeTransform = Eigen::Matrix4d::Zero();
+		maybeTransform.setZero();
 
 		// Determine random sample (maybe)
 		getRandomSamples(maybeIndexes, notMaybeIndexes);
@@ -96,6 +103,7 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 			int pointIndex = notMaybeIndexes[i];
 			// creating pointcloud just to test transformation with a single point
 			PointCloud<PointXYZRGB> transformedPoint;
+			transformedPoint.clear();
 			transformedPoint.push_back(cloudCurrent.points[pointIndex]);
 			transformPointCloud(transformedPoint, transformedPoint, maybeTransform);
 			float transformedDistance = euclideanDistance(transformedPoint.points[0], cloudPrevious.points[pointIndex]);
@@ -108,13 +116,13 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 			//cout << endl;
 		}
 
-		cout << "       consensusSet has " << consensusSetIndexes.size() << " points" << endl;
+		cout << "	Consensus set has " << consensusSetIndexes.size() << " points" << endl;
 
 		if (consensusSetIndexes.size() > minInliers) {
-			cout << "           (Consensus set has more than minInliers. Finding new transformation and comparing it to the best..." << endl;
+			cout << "	Consensus set has more than " << minInliers << " inliers. Finding consensus set transformation" << endl;
 
 			// Recalculate transformation from new consensus set
-			estimator->estimateRigidTransformation(cloudPrevious, consensusSetIndexes, cloudCurrent, consensusSetIndexes, thisTransform);
+			estimator->estimateRigidTransformation(cloudCurrent, consensusSetIndexes, cloudPrevious, consensusSetIndexes, thisTransform);
 
 //			cout << "       thisTransform = " << endl << thisTransform << endl;
 
@@ -126,16 +134,18 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 
 //			cout << "       thisError = " << thisError;
 			if (thisError < bestError) {
-				cout << " (Great! best error so far. updating best parameters)" << endl;
+				cout << "	Great! best error so far (thisError = "  << thisError << "). Updating best parameters." << endl;
 				bestIteration = iterations;
 				bestTransform = thisTransform;
 				bestError = thisError;
 				bestConsensusSetIndexes = consensusSetIndexes;
+			} else {
+				cout << "	Iteration was not the best. thisError = "  << thisError << endl;
 			}
 		}
 
 		// TODO test to stop if found error < ok_error
-		cout << ">>> Best iteration was " << bestIteration << " (bestError is " << bestError << ")" << endl;
+		cout << "	Best iteration so far: " << bestIteration << " (bestError = " << bestError << ")" << endl;
 		iterations++;
 	}
 

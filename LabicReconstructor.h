@@ -40,7 +40,7 @@ namespace labic {
 		cv::Ptr<cv::DescriptorMatcher>    matcher;
 		cv::Ptr<cv::DescriptorMatcher>    matcher2;
 		cv::Ptr<cv::DescriptorExtractor>  extractor;
-		pcl::PointCloud<pcl::PointXYZRGB> world, alignedCloudPrevious, featureCloudPrevious;
+		pcl::PointCloud<pcl::PointXYZRGB> world, alignedCloudPrevious;
 		cv::Mat							  rgbPrevious, descriptorsPrevious;
 		uint16_t*						  depthPrevious;
 		std::vector<cv::KeyPoint>		  featuresPrevious;

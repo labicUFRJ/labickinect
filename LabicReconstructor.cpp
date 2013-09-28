@@ -16,7 +16,7 @@ LabicReconstructor::LabicReconstructor(bool* _stop) : stop(_stop) {
 	
 	ID = 0;
 	
-	minFeatures     = 100;
+	minFeatures     = 150;
 	maxFeatures     = 500;
 	maxDetectionIte = 100;
 	minMatches      = 25;
@@ -31,7 +31,7 @@ LabicReconstructor::LabicReconstructor(bool* _stop) : stop(_stop) {
 	ransac = new RANSACAligner();
 	ransac->setDistanceThreshold(0.5); // 1.0
 	ransac->setMaxIterations(100);
-	ransac->setMinInliers(10);
+	ransac->setMinInliers(20);
 	ransac->setNumSamples(3);
 
 	minInliersToValidateTransformation = 10;
@@ -122,7 +122,7 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 	
     cout << "[LabicReconstructor::performLoop] Matches after depth filter: " << selectedFeaturePointsPrevious.size() << " points" << endl;
     
-	// 3. Generate PointClouds of related features (pointcloudsrc, pointcloudtgt)
+	// 3. Generate PointClouds of related features
     frameToPointCloud(rgbPrevious, depthPrevious, featureCloudPrevious, selectedFeaturePointsPrevious);
     frameToPointCloud(rgbCurrent, depthCurrent, featureCloudCurrent, selectedFeaturePointsCurrent);
     // As the previous frame already had a transformation, apply it to the featureCloud so it matches the previous alignment
@@ -142,15 +142,17 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 
     // Check if transformation generated the correct set of inliers
     if (transformationInliersIndexes.size() < minInliersToValidateTransformation) {
-    	cout << "[LabicReconstructor::performLoop] Final transformation did not generate the mininum of inliers" << endl;
-    	return;
+    	cout << "[LabicReconstructor::performLoop] Transformation NOT accepted (did not generate the mininum of inliers). Using previous transformation:" << endl
+    		 << transformPrevious << endl;
+    	transform = transformPrevious;
+    } else {
+        cout << "[LabicReconstructor::performLoop] Transformation accepted" << endl;
+        reconstructionsAccepted++;
     }
 
-    reconstructionsAccepted++;
-
-    cout << "[LabicReconstructor::performLoop] Transformation accepted. Transforming cloud to world " << endl;
 	
 	// 5. Apply transformation to all frame points
+    cout << "[LabicReconstructor::performLoop] Transforming cloud to world " << endl;
     transformPointCloud(cloudCurrent, alignedCloudCurrent, transform);
     
     alignedCloudPrevious = PointCloud<PointXYZRGB>(alignedCloudCurrent);
