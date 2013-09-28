@@ -6,15 +6,11 @@
 //  Copyright (c) 2013 Mario Cecchi. All rights reserved.
 //
 
-#ifndef __LabicPCL__
-#define __LabicPCL__
+#ifndef __LABICKINECT_PCL_H__
+#define __LABICKINECT_PCL_H__
 
-#include <iostream>
-#include <pcl/common/common_headers.h>
 #include <pcl/visualization/pcl_visualizer.h>
-#include <pcl/io/ply_io.h>
-#include "opencv2/core/core.hpp"
-#include <boost/thread.hpp>
+#include "common.h"
 #include "LabicKinect.h"
 
 namespace labic {
@@ -35,7 +31,7 @@ namespace labic {
         pcl::PointCloud<pcl::PointXYZRGB> liveCloud;
         int viewPort;
         
-        LabicPCL(Kinect *_kinect, bool* _stop, int _width, int _height);
+        LabicPCL(Kinect *_kinect, bool* _stop);
 		void start();
         bool mainLoopPart(const int t);
 		void join();
@@ -51,4 +47,4 @@ namespace labic {
     };
 }
 
-#endif /* __LabicPCL__ */
+#endif /* __LABICKINECT_PCL_H__ */

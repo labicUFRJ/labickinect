@@ -6,7 +6,11 @@
 //
 //
 
+#include <ctime>
 #include "LabicCV.h"
+#include "opencv2/nonfree/features2d.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 
 using namespace std;
 using namespace cv;
@@ -19,7 +23,7 @@ const string LabicCV::rgb_s_window = "Source RGB camera";
 const string LabicCV::depth_window = "Depth camera";
 const string LabicCV::rgbd_window = "RGBD Video";
 
-LabicCV::LabicCV(Kinect *_kinect, bool* _stop, int _width, int _height) : kinect(_kinect), stop(_stop), width(_width), height(_height) {
+LabicCV::LabicCV(Kinect *_kinect, bool* _stop) : kinect(_kinect), stop(_stop) {
     window_closed = false;
     initialized = false;
     
@@ -92,7 +96,7 @@ void LabicCV::generateDepthImage(uint16_t *depth, Mat depthMat) {
         y = i/width;
         x = i%width;
         
-        depthValue = kinect->mmToRaw(depth[i]);
+        depthValue = mmToRaw(depth[i]);
         
         depthMat.at<Vec3b>(y,x) = depth_to_color(depthValue);
     }
@@ -101,9 +105,9 @@ void LabicCV::generateDepthImage(uint16_t *depth, Mat depthMat) {
     //cout << "[LabicCV] generateDepthImage time: " << 1000*((float)t)/CLOCKS_PER_SEC << " ms " << endl;
 }
 
-Vec3b LabicCV::depth_to_color(float raw_depth_value) {
+Vec3b LabicCV::depth_to_color(float rawDepthValue) {
     double r,g,b;
-	int pval = t_gamma[(int)raw_depth_value];
+	int pval = t_gamma[(int)rawDepthValue];
     int lb = pval & 0xff;
     switch (pval>>8) {
         case 0:
@@ -207,15 +211,6 @@ void LabicCV::keyboardHandler(int key) {
         	break;
 
     }
-}
-
-void LabicCV::showMatchesPreview(const Mat& img1, const vector<KeyPoint>& keypoints1, const Mat& img2, const vector<KeyPoint>& keypoints2, const vector<DMatch>& matches1to2) {
-    Mat outImg;
-    namedWindow("RGB matched features");
-    drawMatches(img1, keypoints1, img2, keypoints2, matches1to2, outImg);
-    imshow("RGB matched features", outImg);
-    //while (waitKey() != 27);
-    //destroyWindow("RGB matched features");
 }
 
 void LabicCV::start() {

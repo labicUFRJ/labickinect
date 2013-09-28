@@ -10,7 +10,7 @@
 #define LABIC_ENABLE_MATCHER 1
 #define REFRESH_INTERVAL     1
 
-#include <iostream>
+#include "common.h"
 #include <ctime>
 #include "LabicKinect.h"
 #include "LabicCV.h"
@@ -26,9 +26,7 @@ int main(int argc, char **argv) {
 	LabicCV *cv;
 	LabicPCL *pcl;
 	LabicReconstructor *recon;
-	clock_t t, t1, t2, t3;
 	bool stop;
-	float timeTotal, timeCV, timePCL, timeReconstructor;
 
 	cout << "[main] Initializing Kinect... ";
 
@@ -49,7 +47,7 @@ int main(int argc, char **argv) {
 	recon = new LabicReconstructor(&stop);
 
 	// OpenCV thread
-	cv = new LabicCV(kinect, &stop, 640, 480); // TODO const
+	cv = new LabicCV(kinect, &stop); // TODO const
 	recon->cv = cv;
 #if LABIC_ENABLE_CV
 	cv->init();
@@ -58,7 +56,7 @@ int main(int argc, char **argv) {
 
 #if LABIC_ENABLE_PCL
     // PCL thread
-	pcl = new LabicPCL(kinect, &stop, 640, 480);
+	pcl = new LabicPCL(kinect, &stop);
 	recon->pcl = pcl;
 	pcl->start();
 	//pcl->display();

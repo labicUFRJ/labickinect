@@ -1,4 +1,7 @@
 #include "RANSACAligner.h"
+#include <cassert>
+#include <pcl/common/distances.h>
+#include <pcl/common/eigen.h>
 
 using namespace std;
 using namespace pcl;

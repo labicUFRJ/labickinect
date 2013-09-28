@@ -1,25 +1,11 @@
-#ifndef __LabicReconstructor__
-#define __LabicReconstructor__
+#ifndef __LABICKINECT_RECONSTRUCTOR_H__
+#define __LABICKINECT_RECONSTRUCTOR_H__
 
-#include <iostream>
-#include <algorithm>
-#include <cassert>
-#include <boost/thread.hpp>
-#include "LabicKinect.h"
+#include "common.h"
+#include "opencv2/features2d/features2d.hpp"
 #include "LabicCV.h"
 #include "LabicPCL.h"
 #include "RANSACAligner.h"
-#include "opencv2/core/core.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/features2d/features2d.hpp"
-#include "opencv2/calib3d/calib3d.hpp"
-#include "opencv2/contrib/contrib.hpp"
-#include <pcl/common/common.h>
-#include <pcl/common/distances.h>
-#include <pcl/common/eigen.h>
-#include <pcl/registration/transformation_estimation_svd.h>
-#include <pcl/registration/transformation_estimation_lm.h>
-#include <pcl/io/ply_io.h>
 
 namespace labic {
 	
@@ -73,13 +59,8 @@ namespace labic {
 						   std::vector<cv::KeyPoint>&   _keypoints_t,
 						   const cv::Mat&               _descriptors_t,
 						   std::vector<cv::DMatch>&     _matches) const;
-
-		cv::Mat filterMatches(std::vector<cv::KeyPoint>&   _keypoints_q,
-							  std::vector<cv::KeyPoint>&   _keypoints_t,
-							  std::vector<cv::DMatch>&     _matches,
-							  bool                         _giveID);
 		
 	};
 }
 
-#endif /* __LabicReconstructor__ */
+#endif /* __LABICKINECT_RECONSTRUCTOR_H__ */

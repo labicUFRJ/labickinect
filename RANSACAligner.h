@@ -5,18 +5,13 @@
  *      Author: macecchi
  */
 
-#ifndef RANSACALIGNER_H_
-#define RANSACALIGNER_H_
+#ifndef __LABICKINECT_RANSACALIGNER_H__
+#define __LABICKINECT_RANSACALIGNER_H__
 
-#include <iostream>
-#include <cassert>
-#include <pcl/common/common.h>
-#include <pcl/common/distances.h>
-#include <pcl/common/eigen.h>
+#include "common.h"
 #include <pcl/registration/transformation_estimation.h>
 #include <pcl/registration/transformation_estimation_svd.h>
 #include <pcl/registration/transformation_estimation_lm.h>
-#include <pcl/io/ply_io.h>
 
 namespace labic {
 	class RANSACAligner {
@@ -51,4 +46,4 @@ namespace labic {
 }
 
 
-#endif /* RANSACALIGNER_H_ */
+#endif /* __LABICKINECT_RANSACALIGNER_H__ */

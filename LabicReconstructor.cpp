@@ -1,3 +1,10 @@
+#include <algorithm>
+#include <cassert>
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include <pcl/common/eigen.h>
+#include <pcl/io/ply_io.h>
+#include "LabicKinect.h"
 #include "LabicReconstructor.h"
 
 using namespace std;
@@ -19,6 +26,7 @@ LabicReconstructor::LabicReconstructor(bool* _stop) : stop(_stop) {
 	extractor = new BriefDescriptorExtractor();
 	matcher   = new BFMatcher(NORM_HAMMING, true); // gives infinite distance between matchings
 	matcher2  = new BFMatcher(NORM_HAMMING, false);
+	depthPrevious = (uint16_t*) malloc(sizeof(uint16_t)*width*height);
 	
 	ransac = new RANSACAligner();
 	ransac->setDistanceThreshold(0.5); // 1.0
@@ -40,15 +48,13 @@ void LabicReconstructor::reconstruct() {
     		// If this is the first frame received, just save it
     		if (world.empty()) {
     		    cout << "[LabicReconstructor] Preparing first frame" << endl;
-    			rgbPrevious = cv->rgbCurrent;
-    			depthPrevious = cv->depthCurrent;
-    			//cv->rgbCurrent.copyTo(rgbPrevious);
-    			//copy(cv->depthCurrent, cv->depthCurrent + sizeof(uint16_t)*640*480, depthPrevious);
+    			cv->rgbCurrent.copyTo(rgbPrevious);
+    			copy(cv->depthCurrent, cv->depthCurrent + width*height, depthPrevious);
 
-    		    Kinect::frameToPointCloud(rgbPrevious, depthPrevious, alignedCloudPrevious);
+    		    frameToPointCloud(rgbPrevious, depthPrevious, alignedCloudPrevious);
     			extractRGBFeatures(rgbPrevious, depthPrevious, featuresPrevious, descriptorsPrevious);
 
-    			world = alignedCloudPrevious;
+    			world += alignedCloudPrevious;
     			transformPrevious.setIdentity();
 
     			pcl::io::savePLYFileASCII("world0.ply", world);
@@ -57,7 +63,8 @@ void LabicReconstructor::reconstruct() {
 
     		} else {
 				cout << endl << "[LabicReconstructor] Reconstructor got frames. Reconstructing..." << endl;
-
+				imwrite("rgbPrevious.jpg", rgbPrevious);
+				imwrite("rgbCurrent.jpg", cv->rgbCurrent);
 				performLoop(cv->rgbCurrent, cv->depthCurrent);
 
 				cout << "[LabicReconstructor] Finished reconstruction loop" << endl << endl;
@@ -84,20 +91,21 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
     vector<int> transformationInliersIndexes;
 
     // 0. Get PointCloud from previous and current states
-    Kinect::frameToPointCloud(rgbCurrent, depthCurrent, cloudCurrent);
+    frameToPointCloud(rgbCurrent, depthCurrent, cloudCurrent);
 
-    pcl::io::savePLYFileASCII("cloudCurrent.ply", world);
+    pcl::io::savePLYFileASCII("cloudCurrent.ply", cloudCurrent);
 
 	// 1. Extract features from both images
 	extractRGBFeatures(rgbCurrent, depthCurrent, featuresCurrent, descriptorsCurrent);
 	
 	// 2. Get related features (matches) between features from both images
 	matchFeatures(featuresPrevious, descriptorsPrevious, featuresCurrent, descriptorsCurrent, relatedFeatures);
+	drawMatches(rgbPrevious, featuresPrevious, rgbCurrent, featuresCurrent, relatedFeatures, matchesMat);
 	if (relatedFeatures.size() < minMatches) {
 		cerr << "[LabicReconstructor::performLoop] IMAGES DO NOT MATCH! ABORTING RECONSTRUCTION" << endl;
+		imwrite("matchfailed.jpg", matchesMat);
 		return;
 	}
-	drawMatches(rgbPrevious, featuresPrevious, rgbCurrent, featuresCurrent, relatedFeatures, matchesMat);
 
     for (int i=0; i<relatedFeatures.size(); i++) {
         int previousIndex = relatedFeatures[i].trainIdx;
@@ -105,8 +113,8 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
         Point2f previousPoint = featuresPrevious[previousIndex].pt;
         Point2f currentPoint = featuresCurrent[currentIndex].pt;
         // Discard matches that do not have depth information
-        if (depthPrevious[(int)(640*previousPoint.y + previousPoint.x)] > 0 &&
-        	depthCurrent[(int)(640*currentPoint.y + currentPoint.x)] > 0) {
+        if (depthPrevious[(int)(width*previousPoint.y + previousPoint.x)] > 0 &&
+        	depthCurrent[(int)(width*currentPoint.y + currentPoint.x)] > 0) {
         	selectedFeaturePointsPrevious.push_back(previousPoint);
         	selectedFeaturePointsCurrent.push_back(currentPoint);
         }
@@ -115,8 +123,8 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
     cout << "[LabicReconstructor::performLoop] Matches after depth filter: " << selectedFeaturePointsPrevious.size() << " points" << endl;
     
 	// 3. Generate PointClouds of related features (pointcloudsrc, pointcloudtgt)
-    Kinect::frameToPointCloud(rgbPrevious, depthPrevious, featureCloudPrevious, selectedFeaturePointsPrevious);
-    Kinect::frameToPointCloud(rgbCurrent, depthCurrent, featureCloudCurrent, selectedFeaturePointsCurrent);
+    frameToPointCloud(rgbPrevious, depthPrevious, featureCloudPrevious, selectedFeaturePointsPrevious);
+    frameToPointCloud(rgbCurrent, depthCurrent, featureCloudCurrent, selectedFeaturePointsCurrent);
     // As the previous frame already had a transformation, apply it to the featureCloud so it matches the previous alignment
     transformPointCloud(featureCloudPrevious, featureCloudPrevious, transformPrevious);
     
@@ -147,7 +155,7 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
     
     alignedCloudPrevious = PointCloud<PointXYZRGB>(alignedCloudCurrent);
     rgbCurrent.copyTo(rgbPrevious);
-    copy(depthCurrent, depthCurrent + sizeof(uint16_t)*640*480, depthPrevious);
+    copy(depthCurrent, depthCurrent + width*height, depthPrevious);
     featuresPrevious = featuresCurrent;
     descriptorsCurrent.copyTo(descriptorsPrevious);
     world += alignedCloudCurrent;
@@ -177,7 +185,7 @@ void LabicReconstructor::extractRGBFeatures(const Mat& img, const uint16_t* dept
 		// Filter features to garantee depth information
         pointsDropped = 0;
 		for (j=0; j<keypoints.size(); j++) {
-			int keypointIndex = 640*keypoints[j].pt.y + keypoints[j].pt.x;
+			int keypointIndex = width*keypoints[j].pt.y + keypoints[j].pt.x;
 			float keypointDepth = depth[keypointIndex];
 			// If point is in origin, it does not have depth information available
 			// Therefore, it should not be considered a keypoint
@@ -213,7 +221,7 @@ void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 	cout << "[LabicReconstructor::matchFeatures] Matching features\n";
 	vector<DMatch> matches;
 	
-	matcher->match(_descriptors_q, _descriptors_t, matches);
+	matcher2->match(_descriptors_q, _descriptors_t, matches);
 	cout << "[LabicReconstructor::matchFeatures] Inital matched features: " << matches.size() << endl;
 		
 	_matches.clear();
@@ -228,80 +236,6 @@ void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 	cout << "[LabicReconstructor::matchFeatures] Final matches after matching threshold: " << _matches.size() << endl;
 	
 }
-
-Mat LabicReconstructor::filterMatches(vector<KeyPoint>&   _keypoints_q,
-									  vector<KeyPoint>&   _keypoints_t,
-									  vector<DMatch>&     _matches,
-									  bool                         _giveID) {
-
-	double RANSACDist = 2.0;
-	double RANSACConf = .99;
-	vector<Point2d>    imgPoints_q, imgPoints_t;
-	
-	for (vector<DMatch>::const_iterator it = _matches.begin();
-		 it != _matches.end(); it++) {
-		imgPoints_q.push_back(_keypoints_q[(*it).queryIdx].pt);
-		imgPoints_t.push_back(_keypoints_t[(*it).trainIdx].pt);
-	}
-	
-	// execute RANSAC to detect outliers
-	vector<uchar> inliers(imgPoints_q.size(), 0);
-	findFundamentalMat(imgPoints_t, imgPoints_q, CV_FM_RANSAC,
-					   RANSACDist, RANSACConf, inliers);
-	
-	// remove outliers
-	vector<uchar>::const_iterator itI = inliers.begin();
-	vector<DMatch>::iterator  itM = _matches.begin();
-	vector<Point2d>::iterator itQ = imgPoints_q.begin();
-	vector<Point2d>::iterator itT = imgPoints_t.begin();
-	if (_giveID) {
-		int count1 = 0;
-		int count2 = 0;
-		for (; itI != inliers.end(); itI++){
-			if (!*itI){
-				// remove outlier
-				itM = _matches.erase(itM);
-				itQ = imgPoints_q.erase(itQ);
-				itT = imgPoints_t.erase(itT);
-			} else {
-				// add ID to inlier
-				if (_keypoints_t[itM->trainIdx].class_id == -1) {
-					// newly mathced points
-					_keypoints_q[itM->queryIdx].class_id = _keypoints_t[itM->trainIdx].class_id = ID++;
-					count1++;
-				} else if ( _keypoints_t[itM->trainIdx].class_id > -1 ) {
-					// training keypoint has already been given ID
-					_keypoints_q[itM->queryIdx].class_id = _keypoints_t[itM->trainIdx].class_id;
-					count2++;
-				}
-				itM++;
-				itQ++;
-				itT++;
-			}
-		}
-		cout << "[LabicReconstructor::matchImages] survived matched features: "
-		<< _matches.size() << endl;
-		cout << "[LabicReconstructor::matchImages] merged object points: " << count2 << endl;
-		cout << "[LabicReconstructor::matchImages] new object points: " << count1 << endl;
-	} else {
-		for (; itI != inliers.end(); itI++){
-			if (!*itI){
-				itM = _matches.erase(itM);
-				itQ = imgPoints_q.erase(itQ);
-				itT = imgPoints_t.erase(itT);
-			} else {
-				itM++;
-				itQ++;
-				itT++;
-			}
-		}
-		cout << "[LabicReconstructor::matchImages] survived matched features: "
-		<< _matches.size() << endl;
-	}
-	
-	return findFundamentalMat(imgPoints_t, imgPoints_q, CV_FM_8POINT);
-
-};
 
 void LabicReconstructor::start() {
     m_Thread = boost::thread(&LabicReconstructor::reconstruct, this);

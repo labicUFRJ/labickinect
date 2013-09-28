@@ -7,12 +7,13 @@
 //
 
 #include "LabicPCL.h"
+#include <pcl/io/ply_io.h>
 
 using namespace pcl;
 using namespace pcl::visualization;
 using namespace labic;
 
-LabicPCL::LabicPCL(Kinect *_kinect, bool* _stop, int _width, int _height)  : kinect(_kinect), stop(_stop), width(_width), height(_height) {
+LabicPCL::LabicPCL(Kinect *_kinect, bool* _stop)  : kinect(_kinect), stop(_stop) {
     viewPort = 1;
     
     std::cout << "[LabicPCL] Viewer initialized\n";
@@ -47,7 +48,7 @@ void LabicPCL::display() {
     
     while (!viewer.wasStopped() && !*stop) {
         if (!kinect->getFrame(rgb, depth)) continue;
-        if (!kinect->frameToPointCloud(rgb, depth, liveCloud)) continue;
+        if (!frameToPointCloud(rgb, depth, liveCloud)) continue;
         
         if (!savedPLY) { pcl::io::savePLYFileASCII("cloud.ply", liveCloud); savedPLY = true; }
         
@@ -74,7 +75,7 @@ void LabicPCL::generateDepthCloud(uint16_t *depth) {
         y = i/width;
         x = i%width;
         
-        pt = kinect->ptToPointXYZRGB(x, y, depth[i]);
+        pt = ptToPointXYZRGB(x, y, depth[i]);
         pt.r = pt.g = pt.b = 255;
         
         cloud.points.push_back(pt);
