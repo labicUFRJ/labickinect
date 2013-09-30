@@ -23,6 +23,8 @@ namespace labic {
 		void performLoop(const cv::Mat& rgbCurrent,
 						 const uint16_t* depthCurrent);
 
+		void printStats() const;
+
 	private:
         boost::thread m_Thread;
 		unsigned int ID;
@@ -32,8 +34,14 @@ namespace labic {
 		int     minMatches;
 		float   maxMatchDistance;
 		int 	minInliersToValidateTransformation;
+		int		framesAnalyzed;
 		int		reconstructionsGenerated;
 		int		reconstructionsAccepted;
+		int 	featuresExtracted;
+		int 	featuresMatched;
+		int		matchesDiscarded;
+		int		pointsDetected;
+		clock_t	totalTime;
 		bool*	stop;
 		RANSACAligner* ransac;
 		cv::Ptr<cv::FastAdjuster>         adjuster;
@@ -58,7 +66,7 @@ namespace labic {
 						   const cv::Mat&               _descriptors_q,
 						   std::vector<cv::KeyPoint>&   _keypoints_t,
 						   const cv::Mat&               _descriptors_t,
-						   std::vector<cv::DMatch>&     _matches) const;
+						   std::vector<cv::DMatch>&     _matches);
 		
 	};
 }

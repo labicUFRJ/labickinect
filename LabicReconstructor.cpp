@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <ctime>
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <pcl/common/eigen.h>
@@ -21,6 +22,7 @@ LabicReconstructor::LabicReconstructor(bool* _stop) : stop(_stop) {
 	maxDetectionIte = 100;
 	minMatches      = 25;
 	maxMatchDistance = 10;
+	minInliersToValidateTransformation = 10;
 	
 	adjuster  = new FastAdjuster(100, true);
 	extractor = new BriefDescriptorExtractor();
@@ -34,13 +36,21 @@ LabicReconstructor::LabicReconstructor(bool* _stop) : stop(_stop) {
 	ransac->setMinInliers(20);
 	ransac->setNumSamples(3);
 
-	minInliersToValidateTransformation = 10;
+	cv = pcl = NULL;
+
+	framesAnalyzed = 0;
 	reconstructionsGenerated = 0;
 	reconstructionsAccepted = 0;
+	featuresExtracted = 0;
+	featuresMatched = 0;
+	matchesDiscarded = 0;
+	pointsDetected = 0;
+	totalTime = 0;
 
 }
 
 void LabicReconstructor::reconstruct() {
+	clock_t t;
     cout << "[LabicReconstructor] Reconstructor initialized" << endl;
 
     while (!*stop) {
@@ -58,17 +68,24 @@ void LabicReconstructor::reconstruct() {
     			transformPrevious.setIdentity();
 
     			pcl::io::savePLYFileASCII("world0.ply", world);
+    			pointsDetected += world.size();
 
 				cout << endl << "[LabicReconstructor] Initial frame saved" << endl;
 
     		} else {
 				cout << endl << "[LabicReconstructor] Reconstructor got frames. Reconstructing..." << endl;
+
 				imwrite("rgbPrevious.jpg", rgbPrevious);
 				imwrite("rgbCurrent.jpg", cv->rgbCurrent);
+
+	        	t = clock();
 				performLoop(cv->rgbCurrent, cv->depthCurrent);
+	    		totalTime += clock() - t;
 
 				cout << "[LabicReconstructor] Finished reconstruction loop" << endl << endl;
     		}
+
+			framesAnalyzed++;
 			cv->restartState();
 		}
     	else {
@@ -76,6 +93,8 @@ void LabicReconstructor::reconstruct() {
     	}
     }
     
+    printStats();
+
     cout << "[LabicReconstructor] Reconstructor finished" << endl;
 }
 
@@ -92,6 +111,7 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
 
     // 0. Get PointCloud from previous and current states
     frameToPointCloud(rgbCurrent, depthCurrent, cloudCurrent);
+    pointsDetected += cloudCurrent.size();
 
     pcl::io::savePLYFileASCII("cloudCurrent.ply", cloudCurrent);
 
@@ -117,6 +137,8 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
         	depthCurrent[(int)(width*currentPoint.y + currentPoint.x)] > 0) {
         	selectedFeaturePointsPrevious.push_back(previousPoint);
         	selectedFeaturePointsCurrent.push_back(currentPoint);
+        } else {
+        	matchesDiscarded++;
         }
     }
 	
@@ -209,6 +231,8 @@ void LabicReconstructor::extractRGBFeatures(const Mat& img, const uint16_t* dept
 		}
 	}
 
+	featuresExtracted += keypoints.size();
+
 	cout << "[LabicReconstructor::extractRGBFeatures] Extracted " << keypoints.size()
 	<< " features (target range: " << minFeatures << " to " << maxFeatures
 	<< ", iteration: " << i << ")" << " (dropped " << pointsDropped << " points)" << endl;
@@ -218,7 +242,7 @@ void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 									   const Mat&               _descriptors_q,
 									   vector<KeyPoint>&   _keypoints_t,
 									   const Mat&               _descriptors_t,
-									   vector<DMatch>&     _matches) const {
+									   vector<DMatch>&     _matches) {
 	
 	cout << "[LabicReconstructor::matchFeatures] Matching features\n";
 	vector<DMatch> matches;
@@ -235,8 +259,21 @@ void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 		}
 	}
 	
+	featuresMatched += matches.size();
+
 	cout << "[LabicReconstructor::matchFeatures] Final matches after matching threshold: " << _matches.size() << endl;
 	
+}
+
+void LabicReconstructor::printStats() const {
+	cout << endl << "[LabicReconstructor] STATS" << endl
+		 << "	Frames analyzed: " << framesAnalyzed << endl
+		 << "	Features extracted: " << featuresExtracted << " (avg. " << featuresExtracted/framesAnalyzed << ")" << endl
+		 << "	Features matched: " << featuresMatched << " (avg. " << featuresMatched/(framesAnalyzed-1) << ")" << endl
+		 << "	Matches discarded: " << matchesDiscarded << " (avg. " << matchesDiscarded/(framesAnalyzed-1) << ")" << endl
+		 << "	Points detected: " << pointsDetected << " (avg. " << pointsDetected/framesAnalyzed << ")" << endl
+		 << "	Reconstruction time: " << ((float)totalTime)/CLOCKS_PER_SEC << " secs (avg. " << (((float)totalTime)/CLOCKS_PER_SEC)/(framesAnalyzed-1) << " secs)" << endl
+		 << endl;
 }
 
 void LabicReconstructor::start() {
@@ -248,6 +285,5 @@ void LabicReconstructor::join() {
 }
 
 void LabicReconstructor::close() {
-    // Extra code if need to 
     join();
 }
