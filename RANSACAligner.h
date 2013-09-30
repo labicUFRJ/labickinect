@@ -26,6 +26,7 @@ namespace labic {
 		const std::vector<int>& getFinalInliers() const { return bestConsensusSetIndexes; }
 
 	private:
+		void reset();
 		void getRandomSamples(std::vector<int>& maybe, std::vector<int>& notMaybe) const;
 		double getAlignmentError(const pcl::PointCloud<pcl::PointXYZRGB>& transformedCloud, const pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, const std::vector<int>& inliersIndexes) const;
 

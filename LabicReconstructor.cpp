@@ -36,7 +36,8 @@ LabicReconstructor::LabicReconstructor(bool* _stop) : stop(_stop) {
 	ransac->setMinInliers(20);
 	ransac->setNumSamples(3);
 
-	cv = pcl = NULL;
+	cv = NULL;
+	pcl = NULL;
 
 	framesAnalyzed = 0;
 	reconstructionsGenerated = 0;
@@ -148,7 +149,7 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
     frameToPointCloud(rgbPrevious, depthPrevious, featureCloudPrevious, selectedFeaturePointsPrevious);
     frameToPointCloud(rgbCurrent, depthCurrent, featureCloudCurrent, selectedFeaturePointsCurrent);
     // As the previous frame already had a transformation, apply it to the featureCloud so it matches the previous alignment
-    transformPointCloud(featureCloudPrevious, featureCloudPrevious, transformPrevious);
+    if (reconstructionsGenerated > 0) transformPointCloud(featureCloudPrevious, featureCloudPrevious, transformPrevious);
     
     cout << "[LabicReconstructor::performLoop] Feature cloud being transformed with " << featureCloudPrevious.size() << " points" << endl;
 	// 4. Alignment detection
@@ -169,6 +170,7 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
     	transform = transformPrevious;
     } else {
         cout << "[LabicReconstructor::performLoop] Transformation accepted" << endl;
+        transformPrevious = transform;
         reconstructionsAccepted++;
     }
 

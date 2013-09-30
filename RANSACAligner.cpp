@@ -8,15 +8,19 @@ using namespace pcl;
 using namespace labic;
 
 RANSACAligner::RANSACAligner() : maxIterations(100), nSamples(3), inlierThreshold(5.0), minInliers(10) {
-
-	bestTransform.setIdentity();
-	bestError = INFINITY;
-	bestIteration = 0;
+	reset();
 
 	estimator = &estimatorSVD;
 
 	srand(time(NULL));
 	//srand(5);
+}
+
+void RANSACAligner::reset() {
+	bestTransform.setIdentity();
+	bestError = INFINITY;
+	bestIteration = 0;
+	numFeatures = 0;
 }
 
 void RANSACAligner::getRandomSamples(std::vector<int>& maybeIndexes, std::vector<int>& notMaybeIndexes) const {
@@ -73,6 +77,7 @@ double RANSACAligner::getAlignmentError(const PointCloud<PointXYZRGB>& transform
 
 void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, pcl::PointCloud<pcl::PointXYZRGB>& cloudCurrent) {
     assert(cloudCurrent.size() == cloudPrevious.size());
+    reset();
 
 	double thisError;
 	Eigen::Matrix4d maybeTransform, thisTransform;
