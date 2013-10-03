@@ -12,26 +12,26 @@
 
 #include "common.h"
 #include <ctime>
-#include "LabicKinect.h"
+#include "KinectController.h"
 #include "LabicCV.h"
 #include "LabicPCL.h"
-#include "LabicReconstructor.h"
+#include "Reconstructor.h"
 
 using namespace std;
 using namespace labic;
 
 int main(int argc, char **argv) {
 	Freenect::Freenect freenect;
-	Kinect *kinect;
+	KinectController *kinect;
 	LabicCV *cv;
 	LabicPCL *pcl;
-	LabicReconstructor *recon;
+	Reconstructor *recon;
 	bool stop;
 
 	cout << "[main] Initializing Kinect... ";
 
 	try {
-		kinect = &freenect.createDevice<Kinect>(0);
+		kinect = &freenect.createDevice<KinectController>(0);
 
 		cout << "Done" << endl << "[main] Starting streams... ";
 
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	recon = new LabicReconstructor(&stop);
+	recon = new Reconstructor(&stop);
 
 	// OpenCV thread
 	cv = new LabicCV(kinect, &stop); // TODO const

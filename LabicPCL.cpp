@@ -13,7 +13,7 @@ using namespace pcl;
 using namespace pcl::visualization;
 using namespace labic;
 
-LabicPCL::LabicPCL(Kinect *_kinect, bool* _stop)  : kinect(_kinect), stop(_stop) {
+LabicPCL::LabicPCL(KinectController *_kinect, bool* _stop)  : kinect(_kinect), stop(_stop) {
     viewPort = 1;
     
     std::cout << "[LabicPCL] Viewer initialized\n";
@@ -45,7 +45,7 @@ void LabicPCL::display() {
     viewer.addText("Live PointCloud", 10, 10);    
     
     bool savedPLY(false);
-    
+    /*
     while (!viewer.wasStopped() && !*stop) {
         if (!kinect->getFrame(rgb, depth)) continue;
         if (!frameToPointCloud(rgb, depth, liveCloud)) continue;
@@ -57,6 +57,7 @@ void LabicPCL::display() {
 			viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3);
         }
 	}
+	*/
     
     viewer.close();
 	

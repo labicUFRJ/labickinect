@@ -12,14 +12,15 @@
 #include <string>
 #include "opencv2/highgui/highgui.hpp"
 #include "common.h"
-#include "LabicKinect.h"
+#include "KinectController.h"
+#include "RGBDImage.h"
 
 namespace labic {
 	
     class LabicCV {
     private:
 		boost::thread m_Thread;
-        Kinect *kinect;
+        KinectController *kinect;
 		bool initialized;
         bool window_closed;
 		int framesSaved;
@@ -39,14 +40,14 @@ namespace labic {
 		static const int WINDOW_FLAGS = CV_WINDOW_AUTOSIZE;
         
         void keyboardHandler(int key);
+        void generateDepthImage(const cv::Mat1f& depth, cv::Mat depthMat);
         void generateDepthImage(uint16_t *depth, cv::Mat depthMat);
 		cv::Vec3b depth_to_color(float rawDepthValue);
 		
     public:
-        cv::Mat rgbCurrent, rgbPrevious;
-        uint16_t *depthCurrent, *depthPrevious;
+        RGBDImage rgbdDisplay, rgbdCurrent;
         
-        LabicCV(Kinect *_kinect, bool* _stop);
+        LabicCV(KinectController *_kinect, bool* _stop);
 		void start();
         void mainLoopPart(const int t);
 		void join();

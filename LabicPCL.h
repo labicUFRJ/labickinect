@@ -11,7 +11,7 @@
 
 #include <pcl/visualization/pcl_visualizer.h>
 #include "common.h"
-#include "LabicKinect.h"
+#include "KinectController.h"
 
 namespace labic {
 	
@@ -19,7 +19,7 @@ namespace labic {
 		
 	private:
 		boost::thread m_Thread;
-		Kinect *kinect;
+		KinectController *kinect;
         int width;
         int height;
         bool* stop;
@@ -31,7 +31,7 @@ namespace labic {
         pcl::PointCloud<pcl::PointXYZRGB> liveCloud;
         int viewPort;
         
-        LabicPCL(Kinect *_kinect, bool* _stop);
+        LabicPCL(KinectController *_kinect, bool* _stop);
 		void start();
         bool mainLoopPart(const int t);
 		void join();

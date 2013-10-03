@@ -5,15 +5,15 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <pcl/common/eigen.h>
 #include <pcl/io/ply_io.h>
-#include "LabicKinect.h"
-#include "LabicReconstructor.h"
+#include "KinectController.h"
+#include "Reconstructor.h"
 
 using namespace std;
 using namespace pcl;
 using namespace cv;
 using namespace labic;
 
-LabicReconstructor::LabicReconstructor(bool* _stop) : stop(_stop) {
+Reconstructor::Reconstructor(bool* _stop) : stop(_stop) {
 	
 	ID = 0;
 	
@@ -28,7 +28,6 @@ LabicReconstructor::LabicReconstructor(bool* _stop) : stop(_stop) {
 	extractor = new BriefDescriptorExtractor();
 	matcher   = new BFMatcher(NORM_HAMMING, true); // gives infinite distance between matchings
 	matcher2  = new BFMatcher(NORM_HAMMING, false);
-	depthPrevious = (uint16_t*) malloc(sizeof(uint16_t)*width*height);
 	
 	ransac = new RANSACAligner();
 	ransac->setDistanceThreshold(0.5); // 1.0
@@ -50,7 +49,7 @@ LabicReconstructor::LabicReconstructor(bool* _stop) : stop(_stop) {
 
 }
 
-void LabicReconstructor::reconstruct() {
+void Reconstructor::reconstruct() {
 	clock_t t;
     cout << "[LabicReconstructor] Reconstructor initialized" << endl;
 
@@ -59,11 +58,10 @@ void LabicReconstructor::reconstruct() {
     		// If this is the first frame received, just save it
     		if (world.empty()) {
     		    cout << "[LabicReconstructor] Preparing first frame" << endl;
-    			cv->rgbCurrent.copyTo(rgbPrevious);
-    			copy(cv->depthCurrent, cv->depthCurrent + width*height, depthPrevious);
+    			rgbdPrevious = cv->rgbdCurrent;
 
-    		    frameToPointCloud(rgbPrevious, depthPrevious, alignedCloudPrevious);
-    			extractRGBFeatures(rgbPrevious, depthPrevious, featuresPrevious, descriptorsPrevious);
+    			alignedCloudPrevious = rgbdPrevious.pointCloud();
+    			extractRGBFeatures(rgbdPrevious, featuresPrevious, descriptorsPrevious);
 
     			world += alignedCloudPrevious;
     			transformPrevious.setIdentity();
@@ -76,11 +74,11 @@ void LabicReconstructor::reconstruct() {
     		} else {
 				cout << endl << "[LabicReconstructor] Reconstructor got frames. Reconstructing..." << endl;
 
-				imwrite("rgbPrevious.jpg", rgbPrevious);
-				imwrite("rgbCurrent.jpg", cv->rgbCurrent);
+				imwrite("rgbPrevious.jpg", rgbdPrevious.rgb());
+				imwrite("rgbCurrent.jpg", cv->rgbdCurrent.rgb());
 
 	        	t = clock();
-				performLoop(cv->rgbCurrent, cv->depthCurrent);
+	        	performLoop(cv->rgbdCurrent);
 	    		totalTime += clock() - t;
 
 				cout << "[LabicReconstructor] Finished reconstruction loop" << endl << endl;
@@ -99,9 +97,8 @@ void LabicReconstructor::reconstruct() {
     cout << "[LabicReconstructor] Reconstructor finished" << endl;
 }
 
-void LabicReconstructor::performLoop(const Mat& rgbCurrent,
-								 	 const uint16_t* depthCurrent) {
-	
+void Reconstructor::performLoop(const RGBDImage& rgbdCurrent) {
+
 	vector<KeyPoint> featuresCurrent;
 	Mat descriptorsCurrent, matchesMat;
 	vector<DMatch> relatedFeatures;
@@ -111,17 +108,17 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
     vector<int> transformationInliersIndexes;
 
     // 0. Get PointCloud from previous and current states
-    frameToPointCloud(rgbCurrent, depthCurrent, cloudCurrent);
+    cloudCurrent = rgbdCurrent.pointCloud();
     pointsDetected += cloudCurrent.size();
 
     pcl::io::savePLYFileASCII("cloudCurrent.ply", cloudCurrent);
 
 	// 1. Extract features from both images
-	extractRGBFeatures(rgbCurrent, depthCurrent, featuresCurrent, descriptorsCurrent);
-	
+	extractRGBFeatures(rgbdCurrent, featuresCurrent, descriptorsCurrent);
+
 	// 2. Get related features (matches) between features from both images
 	matchFeatures(featuresPrevious, descriptorsPrevious, featuresCurrent, descriptorsCurrent, relatedFeatures);
-	drawMatches(rgbPrevious, featuresPrevious, rgbCurrent, featuresCurrent, relatedFeatures, matchesMat);
+	drawMatches(rgbdPrevious.rgb(), featuresPrevious, rgbdCurrent.rgb(), featuresCurrent, relatedFeatures, matchesMat);
 	if (relatedFeatures.size() < minMatches) {
 		cerr << "[LabicReconstructor::performLoop] IMAGES DO NOT MATCH! ABORTING RECONSTRUCTION" << endl;
 		imwrite("matchfailed.jpg", matchesMat);
@@ -134,31 +131,30 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
         Point2f previousPoint = featuresPrevious[previousIndex].pt;
         Point2f currentPoint = featuresCurrent[currentIndex].pt;
         // Discard matches that do not have depth information
-        if (depthPrevious[(int)(width*previousPoint.y + previousPoint.x)] > 0 &&
-        	depthCurrent[(int)(width*currentPoint.y + currentPoint.x)] > 0) {
+        if (rgbdPrevious.rgbPixelHasDepth(previousPoint.y, previousPoint.x) &&
+        	rgbdCurrent.rgbPixelHasDepth(currentPoint.y, currentPoint.x)) {
         	selectedFeaturePointsPrevious.push_back(previousPoint);
         	selectedFeaturePointsCurrent.push_back(currentPoint);
         } else {
         	matchesDiscarded++;
         }
     }
-	
+
     cout << "[LabicReconstructor::performLoop] Matches after depth filter: " << selectedFeaturePointsPrevious.size() << " points" << endl;
-    
+
 	// 3. Generate PointClouds of related features
-    frameToPointCloud(rgbPrevious, depthPrevious, featureCloudPrevious, selectedFeaturePointsPrevious);
-    frameToPointCloud(rgbCurrent, depthCurrent, featureCloudCurrent, selectedFeaturePointsCurrent);
+    featureCloudPrevious = rgbdPrevious.pointCloudOfSelection(selectedFeaturePointsPrevious);
+    featureCloudCurrent = rgbdCurrent.pointCloudOfSelection(selectedFeaturePointsCurrent);
     // As the previous frame already had a transformation, apply it to the featureCloud so it matches the previous alignment
     if (reconstructionsGenerated > 0) transformPointCloud(featureCloudPrevious, featureCloudPrevious, transformPrevious);
-    
+
     cout << "[LabicReconstructor::performLoop] Feature cloud being transformed with " << featureCloudPrevious.size() << " points" << endl;
 	// 4. Alignment detection
-//    cout << "[LabicReconstructor::performLoop] Transformation matrix before RANSAC:" << endl << transform << endl;
 
     ransac->estimate(featureCloudPrevious, featureCloudCurrent);
     transform = ransac->getFinalTransform();
     transformationInliersIndexes = ransac->getFinalInliers();
-	
+
     cout << "[LabicReconstructor::performLoop] Final transformation matrix resulted in " << transformationInliersIndexes.size() << " inliers: " << endl << transform << endl;
 
     reconstructionsGenerated++;
@@ -174,14 +170,13 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
         reconstructionsAccepted++;
     }
 
-	
+
 	// 5. Apply transformation to all frame points
     cout << "[LabicReconstructor::performLoop] Transforming cloud to world " << endl;
     transformPointCloud(cloudCurrent, alignedCloudCurrent, transform);
-    
+
     alignedCloudPrevious = PointCloud<PointXYZRGB>(alignedCloudCurrent);
-    rgbCurrent.copyTo(rgbPrevious);
-    copy(depthCurrent, depthCurrent + width*height, depthPrevious);
+    rgbdCurrent.copyTo(rgbdPrevious);
     featuresPrevious = featuresCurrent;
     descriptorsCurrent.copyTo(descriptorsPrevious);
     world += alignedCloudCurrent;
@@ -192,17 +187,17 @@ void LabicReconstructor::performLoop(const Mat& rgbCurrent,
     sprintf(filenameply, "world%d.ply", reconstructionsAccepted);
     imwrite(filenamejpg, matchesMat);
     pcl::io::savePLYFileASCII(filenameply, world);
-	
+
 }
 
-void LabicReconstructor::extractRGBFeatures(const Mat& img, const uint16_t* depth, vector<KeyPoint>& keypoints, Mat& descriptors) {
+void Reconstructor::extractRGBFeatures(const RGBDImage& rgbd, vector<KeyPoint>& keypoints, Mat& descriptors) {
 	cout << "[LabicReconstructor::extractRGBFeatures] Extracting RGB features and descriptors" << endl;
 	
     Mat imgBlackWhite;
 
     int pointsDropped = 0;
     int i, j;
-    cvtColor(img, imgBlackWhite, CV_RGB2GRAY);
+    cvtColor(rgbd.rgb(), imgBlackWhite, CV_RGB2GRAY);
     
 	for (i=0; i<maxDetectionIte; i++) {
 		adjuster->detect(imgBlackWhite, keypoints);
@@ -211,13 +206,7 @@ void LabicReconstructor::extractRGBFeatures(const Mat& img, const uint16_t* dept
 		// Filter features to garantee depth information
         pointsDropped = 0;
 		for (j=0; j<keypoints.size(); j++) {
-			int keypointIndex = width*keypoints[j].pt.y + keypoints[j].pt.x;
-			float keypointDepth = depth[keypointIndex];
-			// If point is in origin, it does not have depth information available
-			// Therefore, it should not be considered a keypoint
-			if (keypointDepth == 0) {
-				/*cout << "[LabicReconstructor::extractRGBFeatures] Dropping point (" << keypoints[j].pt.x
-					<< ", " << keypoints[j].pt.y << ") with depth " << keypointDepth << "." << endl;*/
+			if (!rgbd.rgbPixelHasDepth(keypoints[j].pt.y, keypoints[j].pt.x)) {
 				pointsDropped++;
 			}
 		}
@@ -238,9 +227,9 @@ void LabicReconstructor::extractRGBFeatures(const Mat& img, const uint16_t* dept
 	cout << "[LabicReconstructor::extractRGBFeatures] Extracted " << keypoints.size()
 	<< " features (target range: " << minFeatures << " to " << maxFeatures
 	<< ", iteration: " << i << ")" << " (dropped " << pointsDropped << " points)" << endl;
-};
+}
 
-void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
+void Reconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 									   const Mat&               _descriptors_q,
 									   vector<KeyPoint>&   _keypoints_t,
 									   const Mat&               _descriptors_t,
@@ -267,7 +256,7 @@ void LabicReconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 	
 }
 
-void LabicReconstructor::printStats() const {
+void Reconstructor::printStats() const {
 	cout << endl << "[LabicReconstructor] STATS" << endl
 		 << "	Frames analyzed: " << framesAnalyzed << endl
 		 << "	Features extracted: " << featuresExtracted << " (avg. " << featuresExtracted/framesAnalyzed << ")" << endl
@@ -278,14 +267,14 @@ void LabicReconstructor::printStats() const {
 		 << endl;
 }
 
-void LabicReconstructor::start() {
-    m_Thread = boost::thread(&LabicReconstructor::reconstruct, this);
+void Reconstructor::start() {
+    m_Thread = boost::thread(&Reconstructor::reconstruct, this);
 }
 
-void LabicReconstructor::join() {
+void Reconstructor::join() {
     m_Thread.join();
 }
 
-void LabicReconstructor::close() {
+void Reconstructor::close() {
     join();
 }

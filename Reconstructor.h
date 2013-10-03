@@ -3,18 +3,19 @@
 
 #include "common.h"
 #include "opencv2/features2d/features2d.hpp"
+#include "RGBDImage.h"
 #include "LabicCV.h"
 #include "LabicPCL.h"
 #include "RANSACAligner.h"
 
 namespace labic {
 	
-	class LabicReconstructor {
+	class Reconstructor {
 	public:
 		LabicCV *cv;
 		LabicPCL *pcl;
 
-		LabicReconstructor(bool* _stop);
+		Reconstructor(bool* _stop);
 
 		void start();
 		void join();
@@ -22,6 +23,8 @@ namespace labic {
 
 		void performLoop(const cv::Mat& rgbCurrent,
 						 const uint16_t* depthCurrent);
+
+		void performLoop(const RGBDImage& rgbdCurrent);
 
 		void printStats() const;
 
@@ -49,16 +52,14 @@ namespace labic {
 		cv::Ptr<cv::DescriptorMatcher>    matcher2;
 		cv::Ptr<cv::DescriptorExtractor>  extractor;
 		pcl::PointCloud<pcl::PointXYZRGB> world, alignedCloudPrevious;
-		cv::Mat							  rgbPrevious, descriptorsPrevious;
-		uint16_t*						  depthPrevious;
+		cv::Mat							  descriptorsPrevious;
 		std::vector<cv::KeyPoint>		  featuresPrevious;
 		Eigen::Matrix4d 				  transformPrevious;
+		RGBDImage						  rgbdPrevious;
 
 		void reconstruct();
         
-
-		void extractRGBFeatures(const cv::Mat&               img,
-								const uint16_t* 			 depth,
+		void extractRGBFeatures(const RGBDImage&			 rgbd,
 								std::vector<cv::KeyPoint>&   keypoints,
 								cv::Mat&                     descriptors);
 

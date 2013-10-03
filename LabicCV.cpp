@@ -23,7 +23,7 @@ const string LabicCV::rgb_s_window = "Source RGB camera";
 const string LabicCV::depth_window = "Depth camera";
 const string LabicCV::rgbd_window = "RGBD Video";
 
-LabicCV::LabicCV(Kinect *_kinect, bool* _stop) : kinect(_kinect), stop(_stop) {
+LabicCV::LabicCV(KinectController *_kinect, bool* _stop) : kinect(_kinect), stop(_stop) {
     window_closed = false;
     initialized = false;
     
@@ -33,10 +33,6 @@ LabicCV::LabicCV(Kinect *_kinect, bool* _stop) : kinect(_kinect), stop(_stop) {
 		t_gamma[i] = v*6*256;
 	}
     
-    depthPrevious = (uint16_t*) malloc(sizeof(uint16_t)*width*height);
-    depthCurrent = (uint16_t*) malloc(sizeof(uint16_t)*width*height);
-    rgbPrevious = Mat(Size(width, height), CV_8UC3, Scalar(0));
-    rgbCurrent = Mat(Size(width, height), CV_8UC3, Scalar(0));
     cameras = Mat(height, width*2, CV_8UC3);
     previousSet = currentSet = false;
 
@@ -63,27 +59,39 @@ void LabicCV::display() {
     }
 
     do {
-		if (depth != NULL) free(depth);
-        depth = (uint16_t*) malloc(sizeof(uint16_t)*width*height);
+        kinect->getRGBDImage(rgbdDisplay);
         
-		kinect->getFrame(rgbMat, depth);
+        generateDepthImage(rgbdDisplay.depth(), depthMat);
         
-        generateDepthImage(depth, depthMat);
-        
-        rgbMat.copyTo(left);
+        rgbdDisplay.rgb().copyTo(left);
         depthMat.copyTo(right);
         
         //putText(cameras, "W,S,X -> ADJUST TILT", Point(20,30), CV_FONT_HERSHEY_PLAIN, 0.8f, Scalar::all(0), 1, 8);
         
-        //imshow(input_window, cameras);
-        //waitKey(1);
-        //keyboardHandler(waitKey(1));
-
+        //cout << "Loop timestamp " << rgbdDisplay.timestamp << endl;
     } while (!*stop);
     
     window_closed = true;
 
 	cout << "[LabicCV] Display finished" << endl;
+}
+
+void LabicCV::generateDepthImage(const Mat1f& depth, Mat depthMat) {
+    int x, y, i;
+    int depthValue;
+
+    clock_t t = clock();
+
+    for (y=0; y<height; y++) {
+    	for (x=0; x<width; x++) {
+    		depthValue = mmToRaw(depth(y,x));
+    		depthMat.at<Vec3b>(y,x) = depth_to_color(depthValue);
+    	}
+
+    }
+
+    t = clock() - t;
+    //cout << "[LabicCV] generateDepthImage time: " << 1000*((float)t)/CLOCKS_PER_SEC << " ms " << endl;
 }
 
 void LabicCV::generateDepthImage(uint16_t *depth, Mat depthMat) {
@@ -156,41 +164,6 @@ void LabicCV::keyboardHandler(int key) {
             *stop = true;
             destroyAllWindows();
             break;
-        case '1':
-            while (!previousSet) {
-            	previousSet = kinect->getFrame(rgbPrevious, depthPrevious);
-            }
-
-            if (previousSet) cout << "[LabicCV] Previous state set" << endl;
-            cout << "previousSet=" << previousSet << " currentSet=" << currentSet << " isReady=" << isReady() << endl;
-            /*
-            FILE *f;
-            f = fopen("rgbPrevious.bin", "wb");
-            if (f == NULL) cerr << "Error opening rgbPrevious file" << endl;
-            fwrite(&rgbPrevious, sizeof(Mat),sizeof(rgbPrevious), f);
-            fclose(f);
-            f = fopen("depthPrevious.bin", "wb");
-            if (f == NULL) cerr << "Error opening depthPrevious file" << endl;
-            fwrite(depthPrevious, sizeof(uint16_t),sizeof(uint16_t)*640*480, f);
-            fclose(f);*/
-            break;
-        case '2':
-        	while (!currentSet) {
-        		currentSet = kinect->getFrame(rgbCurrent, depthCurrent);
-        	}
-
-            if (currentSet) cout << "[LabicCV] Current state set" << endl;
-            cout << "previousSet=" << previousSet << " currentSet=" << currentSet << " isReady=" << isReady() << endl;
-            /*
-            f = fopen("rgbCurrent.bin", "wb");
-            if (f == NULL) cerr << "Error opening rgbCurrent file" << endl;
-            fwrite(&rgbCurrent, sizeof(Mat),sizeof(rgbCurrent), f);
-            fclose(f);
-            f = fopen("depthCurrent.bin", "wb");
-            if (f == NULL) cerr << "Error opening depthCurrent file" << endl;
-            fwrite(depthCurrent, sizeof(uint16_t),sizeof(uint16_t)*640*480, f);
-            fclose(f);*/
-            break;
         case 'w':
             kinect->setTilt(+1.0);
             break;
@@ -202,7 +175,8 @@ void LabicCV::keyboardHandler(int key) {
             break;
         case ' ':
 			while (!currentSet) {
-				currentSet = kinect->getFrame(rgbCurrent, depthCurrent);
+				//currentSet = kinect->getFrame(rgbCurrent, depthCurrent);
+				currentSet = kinect->getRGBDImage(rgbdCurrent);
 			}
 			framesSaved++;
 			cout << "[LabicCV] " << framesSaved << " frames saved" << endl;

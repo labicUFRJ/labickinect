@@ -16,7 +16,7 @@ using namespace labic;
 
 int main(int argc, char **argv) {
 	bool stop = false;
-	LabicReconstructor recon(&stop);
+	Reconstructor recon(&stop);
 	uint16_t* depthPrevious;
 	uint16_t* depthCurrent;
 	Mat rgbPrevious, rgbCurrent;
