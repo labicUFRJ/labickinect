@@ -27,6 +27,7 @@ namespace labic {
         void init();
         void display();
         const RGBDImage& lastSavedFrame() const { return rgbdCurrent; }
+        void setCaptureInterval(int interval) { captureInterval = interval; }
         const bool isReady() const { return currentSet; }
         void restartState() { currentSet = false; }
 
@@ -38,9 +39,10 @@ namespace labic {
 		boost::thread m_Thread;
         KinectController *kinect;
 		bool initialized;
-        bool window_closed;
+        bool windowClosed;
         bool currentSet;
         bool* stop;
+        int captureInterval;
 		int framesSaved;
 		uint16_t t_gamma[2048];
         cv::Mat cameras;

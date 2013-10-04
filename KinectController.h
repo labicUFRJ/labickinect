@@ -21,7 +21,7 @@ namespace labic {
 		void close();
 		void VideoCallback(void* _rgb, uint32_t timestamp);
 		void DepthCallback(void* _depth, uint32_t timestamp);
-		bool getRGBDImage(RGBDImage& rgbd);
+		bool grabRGBDImage(RGBDImage& rgbd);
 		void setTilt(double _tilt);
 		double tilt;
         

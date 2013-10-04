@@ -37,7 +37,7 @@ void KinectController::DepthCallback(void* _depth, uint32_t timestamp) {
     m_depth_mutex.unlock();
 }
 
-bool KinectController::getRGBDImage(RGBDImage& rgbd) {
+bool KinectController::grabRGBDImage(RGBDImage& rgbd) {
     m_rgb_mutex.lock();
     m_depth_mutex.lock();
 

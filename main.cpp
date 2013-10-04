@@ -22,8 +22,10 @@ using namespace std;
 using namespace labic;
 
 namespace opt {
-	ntk::arg<bool> high_resolution("--highres", "High resolution color image.", 0);
 	ntk::arg<int> kinect_id("--kinect-id", "Kinect id", 0);
+	ntk::arg<bool> enable_pcl("--pcl", "Enable PCL Visualizer", false);
+	ntk::arg<bool> enable_reconstructor("--reconstructor", "Enable reconstructor", true);
+	ntk::arg<int> capture_interval("--interval", "Time between frame grabbing to reconstruction", 0);
 }
 
 int main(int argc, char **argv) {
@@ -38,7 +40,7 @@ int main(int argc, char **argv) {
 	Reconstructor *recon;
 	bool stop;
 
-	cout << "[main] Initializing Kinect with id " << opt::kinect_id() << "\n";
+	cout << "[main] Initializing Kinect with id " << opt::kinect_id() << "... ";
 
 	try {
 		kinect = &freenect.createDevice<KinectController>(opt::kinect_id());
@@ -54,49 +56,36 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	recon = new Reconstructor(&stop);
-
 	// OpenCV thread
-	cv = new LabicCV(kinect, &stop); // TODO const
-	recon->cv = cv;
-#if LABIC_ENABLE_CV
+	cv = new LabicCV(kinect, &stop);
+	cv->setCaptureInterval(opt::capture_interval());
 	cv->start();
-#endif
 
-#if LABIC_ENABLE_PCL
-    // PCL thread
-	pcl = new LabicPCL(kinect, &stop);
-	recon->pcl = pcl;
-	pcl->start();
-	//pcl->display();
-#endif
+	// PCL thread
+	if (opt::enable_pcl()) {
+		pcl = new LabicPCL(kinect, &stop);
+		pcl->start();
+	}
 	
     // Reconstructor thread
-#if LABIC_ENABLE_MATCHER
-	recon->start();
-#endif
+	if (opt::enable_reconstructor()) {
+		recon = new Reconstructor(&stop);
+		recon->cv = cv;
+		recon->pcl = pcl;
+		recon->start();
+	}
 
 	while (!stop) {
-#if LABIC_ENABLE_PCL
-		pcl->mainLoopPart(REFRESH_INTERVAL);
-#endif
-#if LABIC_ENABLE_CV
+		if (opt::enable_pcl()) pcl->mainLoopPart(REFRESH_INTERVAL);
 		cv->mainLoopPart(REFRESH_INTERVAL);
-#endif
 	}
 
 	cout << "[main] Stop requested. Joining threads..." << endl;
 
 	// Wait for threads to finish
-#if LABIC_ENABLE_CV
 	cv->close();
-#endif
-#if LABIC_ENABLE_PCL
-	pcl->close();
-#endif
-#if LABIC_ENABLE_MATCHER
-	recon->close();
-#endif
+	if (opt::enable_pcl()) pcl->close();
+	if (opt::enable_reconstructor())recon->close();
 
 	cout << "[main] All threads have finished. Closing Kinect..." << endl;
 

@@ -79,9 +79,9 @@ void Reconstructor::reconstruct() {
 
 	        	t = clock();
 	        	performLoop(cv->lastSavedFrame());
-	    		totalTime += clock() - t;
+	    		totalTime += t = clock() - t;
 
-				cout << "[LabicReconstructor] Finished reconstruction loop" << endl << endl;
+				cout << "[LabicReconstructor] Finished reconstruction loop (" << ((float)t)/CLOCKS_PER_SEC << " secs)" << endl << endl;
     		}
 
 			framesAnalyzed++;
@@ -265,7 +265,7 @@ void Reconstructor::printStats() const {
 		 << "	Matches discarded: " << matchesDiscarded << " (avg. " << matchesDiscarded/(framesAnalyzed-1) << ")" << endl
 		 << "	Points detected: " << pointsDetected << " (avg. " << pointsDetected/framesAnalyzed << ")" << endl
 		 << "	Reconstruction time: " << ((float)totalTime)/CLOCKS_PER_SEC << " secs (avg. " << (((float)totalTime)/CLOCKS_PER_SEC)/(framesAnalyzed-1) << " secs)" << endl
-		 << endl << endl;
+		 << endl;
 }
 
 void Reconstructor::start() {

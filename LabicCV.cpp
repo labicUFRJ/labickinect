@@ -18,10 +18,8 @@ using namespace labic;
 
 const string LabicCV::input_window = "Kinect Input";
 
-LabicCV::LabicCV(KinectController *_kinect, bool* _stop) : kinect(_kinect), stop(_stop) {
-    window_closed = false;
-    initialized = false;
-    
+LabicCV::LabicCV(KinectController *_kinect, bool* _stop)
+:kinect(_kinect),  initialized(false), windowClosed(false), currentSet(false), stop(_stop), captureInterval(0), framesSaved(0) {
     for (unsigned int i=0; i<2048; i++) {
 		float v = i/2048.0;
 		v = pow(v, 3)* 6;
@@ -33,7 +31,6 @@ LabicCV::LabicCV(KinectController *_kinect, bool* _stop) : kinect(_kinect), stop
 
     namedWindow(input_window);
     initialized = true;
-    framesSaved = 0;
 }
 
 void LabicCV::display() {
@@ -51,7 +48,7 @@ void LabicCV::display() {
     }
 
     do {
-        kinect->getRGBDImage(rgbdDisplay);
+        kinect->grabRGBDImage(rgbdDisplay);
         
         // Skip redrawing if there was no change
         if (rgbdDisplay.timestamp() == timestampPrevious) continue;
@@ -66,7 +63,7 @@ void LabicCV::display() {
         timestampPrevious = rgbdDisplay.timestamp();
     } while (!*stop);
     
-    window_closed = true;
+    windowClosed = true;
 
 	cout << "[LabicCV] Display finished" << endl;
 }
@@ -149,8 +146,9 @@ void LabicCV::keyboardHandler(int key) {
             kinect->setTilt(-1.0);
             break;
         case ' ':
+        	if (captureInterval > 0) break;
 			while (!currentSet) {
-				currentSet = kinect->getRGBDImage(rgbdCurrent);
+				currentSet = kinect->grabRGBDImage(rgbdCurrent);
 			}
 			framesSaved++;
 			cout << "[LabicCV] " << framesSaved << " frames saved" << endl;
