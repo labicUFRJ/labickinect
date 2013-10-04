@@ -258,8 +258,9 @@ void Reconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 
 void Reconstructor::printStats() const {
 	cout << endl << "[LabicReconstructor] STATS" << endl
-		 << "	Frames analyzed: " << framesAnalyzed << endl
-		 << "	Features extracted: " << featuresExtracted << " (avg. " << featuresExtracted/framesAnalyzed << ")" << endl
+		 << "	Frames analyzed: " << framesAnalyzed << endl;
+	if (framesAnalyzed > 1)
+	cout << "	Features extracted: " << featuresExtracted << " (avg. " << featuresExtracted/framesAnalyzed << ")" << endl
 		 << "	Features matched: " << featuresMatched << " (avg. " << featuresMatched/(framesAnalyzed-1) << ")" << endl
 		 << "	Matches discarded: " << matchesDiscarded << " (avg. " << matchesDiscarded/(framesAnalyzed-1) << ")" << endl
 		 << "	Points detected: " << pointsDetected << " (avg. " << pointsDetected/framesAnalyzed << ")" << endl

@@ -7,8 +7,9 @@ namespace labic {
 	class RGBDImage {
 	public:
 		RGBDImage();
-		RGBDImage(uint8_t* raw_rgb, uint16_t* raw_depth, uint32_t _timestamp);
+		RGBDImage(std::vector<uint8_t>& _raw_rgb, std::vector<uint16_t>& _raw_depth, uint32_t _timestamp);
 		//~RGBDImage();
+		void update(std::vector<uint8_t>& _raw_rgb, std::vector<uint16_t>& _raw_depth, uint32_t _timestamp);
 		void copyTo(RGBDImage& other) const;
 		RGBDImage& operator=(const RGBDImage& other);
 		bool operator==(const RGBDImage& other) const;
@@ -26,7 +27,9 @@ namespace labic {
 	private:
 		cv::Mat3b m_rgb;
 		cv::Mat1f m_depth;
-		uint32_t timestamp;
+		std::vector<uint8_t> raw_rgb;
+		std::vector<uint16_t> raw_depth;
+		uint32_t  timestamp;
 	};
 }
 

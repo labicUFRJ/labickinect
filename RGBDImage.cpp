@@ -10,22 +10,50 @@
 
 using namespace labic;
 
-RGBDImage::RGBDImage() : timestamp(0) {
+RGBDImage::RGBDImage() : raw_rgb(0), raw_depth(0), timestamp(0) {
+	m_rgb = cv::Mat3b(height, width);
+	m_depth = cv::Mat1f(height, width);
 }
 
-RGBDImage::RGBDImage(uint8_t* raw_rgb, uint16_t* raw_depth, uint32_t _timestamp) : timestamp(_timestamp) {
+//RGBDImage::~RGBDImage() {
+//	delete &raw_rgb;
+//	delete &raw_depth;
+//	delete &m_rgb;
+//	delete &m_depth;
+//	delete &timestamp;
+//}
+
+RGBDImage::RGBDImage(std::vector<uint8_t>& _raw_rgb, std::vector<uint16_t>& _raw_depth, uint32_t _timestamp) : raw_rgb(_raw_rgb.size()), raw_depth(_raw_depth.size()), timestamp(_timestamp) {
 	m_rgb = cv::Mat3b(height, width);
 	m_depth = cv::Mat1f(height, width);
 
-	cv::Mat3b rgb_tmp = cv::Mat3b(height, width);
-	rgb_tmp.data = raw_rgb;
-	cv::cvtColor(rgb_tmp, m_rgb, CV_RGB2BGR);
+	update(_raw_rgb, _raw_depth, _timestamp);
+}
+
+void RGBDImage::update(std::vector<uint8_t>& _raw_rgb, std::vector<uint16_t>& _raw_depth, uint32_t _timestamp) {
+	if (_raw_rgb.size() != raw_rgb.size() || _raw_depth.size() != raw_depth.size()) {
+		std::cerr << "update size error\n";
+		raw_rgb.resize(_raw_rgb.size());
+		raw_depth.resize(_raw_depth.size());
+	}
+	timestamp = _timestamp;
+	//raw_rgb = _raw_rgb;
+	//raw_depth = _raw_depth;
+	raw_rgb.swap(_raw_rgb);
+	raw_depth.swap(_raw_depth);
+
+	//cv::Mat3b rgb_tmp = cv::Mat3b(height, width);
+	//rgb_tmp.data = (raw_rgb.front());
+	//cv::cvtColor(rgb_tmp, m_rgb, CV_RGB2BGR);
 
 	for (int i=0; i<width*height; i++) {
 		int x = i % width;
-		int y = i / 640;
+		int y = i / width;
 
 		m_depth(y,x) = raw_depth[i];
+		m_rgb(y,x)[0] = raw_rgb[3*i+2];
+		m_rgb(y,x)[1] = raw_rgb[3*i+1];
+		m_rgb(y,x)[2] = raw_rgb[3*i+0];
 	}
 }
 

@@ -26,12 +26,11 @@ namespace labic {
 		double tilt;
         
 	private:
-		std::vector<uint8_t> m_buffer_depth;
-		uint16_t *depth_buffer;
-		uint16_t* raw_depth;
-		uint8_t* raw_rgb;
-		uint32_t last_timestamp;
+		std::vector<uint16_t> m_buffer_depth;
 		std::vector<uint8_t> m_buffer_video;
+		std::vector<uint16_t> raw_depth;
+		std::vector<uint8_t> raw_rgb;
+		uint32_t last_timestamp;
 		std::vector<uint16_t> m_gamma;
 		Mutex m_rgb_mutex;
 		Mutex m_depth_mutex;
