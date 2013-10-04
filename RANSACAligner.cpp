@@ -13,7 +13,6 @@ RANSACAligner::RANSACAligner() : maxIterations(100), nSamples(3), inlierThreshol
 	estimator = &estimatorSVD;
 
 	srand(time(NULL));
-	//srand(5);
 }
 
 void RANSACAligner::reset() {
@@ -24,7 +23,7 @@ void RANSACAligner::reset() {
 }
 
 void RANSACAligner::getRandomSamples(std::vector<int>& maybeIndexes, std::vector<int>& notMaybeIndexes) const {
-	int i;
+	unsigned int i;
 
 	maybeIndexes.clear();
 	notMaybeIndexes.clear();
@@ -43,9 +42,9 @@ void RANSACAligner::getRandomSamples(std::vector<int>& maybeIndexes, std::vector
 	cout << "]" << endl;
 
 	//cout << "	not[";
-	for (int i=0; i<numFeatures; i++) {
+	for (i=0; i<numFeatures; i++) {
 		bool isInMaybeIndexes = false;
-		for (int j=0; j<maybeIndexes.size(); j++) {
+		for (unsigned int j=0; j<maybeIndexes.size(); j++) {
 			if (i == maybeIndexes[j]) {
 				isInMaybeIndexes = true;
 				break;
@@ -64,7 +63,7 @@ double RANSACAligner::getAlignmentError(const PointCloud<PointXYZRGB>& transform
 
     double error = 0.0;
 
-    for (int i=0; i<inliersIndexes.size(); i++) {
+    for (unsigned int i=0; i<inliersIndexes.size(); i++) {
         int inlierIndex = inliersIndexes[i];
         // TODO squaredEuclideanDistance
         error += euclideanDistance(transformedCloud.points[inlierIndex], cloudPrevious.points[inlierIndex]);
@@ -83,7 +82,7 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 	Eigen::Matrix4d maybeTransform, thisTransform;
 	vector<int> maybeIndexes, notMaybeIndexes, consensusSetIndexes;
 
-	int iterations = 0;
+	unsigned int iterations = 0;
 	numFeatures = cloudCurrent.size();
 
 	while (iterations < maxIterations) {
@@ -104,7 +103,7 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 //		cout << "       maybeTransform = " << endl << maybeTransform << endl;
 
 		// Test transformation with other points that are not in maybeIndexes
-		for (int i=0; i<notMaybeIndexes.size(); i++) {
+		for (unsigned int i=0; i<notMaybeIndexes.size(); i++) {
 			int pointIndex = notMaybeIndexes[i];
 			// creating pointcloud just to test transformation with a single point
 			PointCloud<PointXYZRGB> transformedPoint;

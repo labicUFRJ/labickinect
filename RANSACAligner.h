@@ -30,12 +30,12 @@ namespace labic {
 		void getRandomSamples(std::vector<int>& maybe, std::vector<int>& notMaybe) const;
 		double getAlignmentError(const pcl::PointCloud<pcl::PointXYZRGB>& transformedCloud, const pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, const std::vector<int>& inliersIndexes) const;
 
-		int maxIterations; // k
-		int nSamples; // number of maybe_inliers (random samples)
+		unsigned int maxIterations; // k
+		unsigned int nSamples; // number of maybe_inliers (random samples)
 		double inlierThreshold; // max error
-		int minInliers;
-		int numFeatures;
-		int bestIteration;
+		unsigned int minInliers;
+		unsigned int numFeatures;
+		unsigned int bestIteration;
 		double bestError;
 		Eigen::Matrix4d bestTransform;
 		std::vector<int> bestConsensusSetIndexes;

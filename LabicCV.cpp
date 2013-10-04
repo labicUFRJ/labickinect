@@ -17,11 +17,6 @@ using namespace cv;
 using namespace labic;
 
 const string LabicCV::input_window = "Kinect Input";
-const string LabicCV::rgb_window = "RGB camera";
-const string LabicCV::rgb_t_window = "Target RGB camera";
-const string LabicCV::rgb_s_window = "Source RGB camera";
-const string LabicCV::depth_window = "Depth camera";
-const string LabicCV::rgbd_window = "RGBD Video";
 
 LabicCV::LabicCV(KinectController *_kinect, bool* _stop) : kinect(_kinect), stop(_stop) {
     window_closed = false;
@@ -34,14 +29,11 @@ LabicCV::LabicCV(KinectController *_kinect, bool* _stop) : kinect(_kinect), stop
 	}
     
     cameras = Mat(height, width*2, CV_8UC3);
-    previousSet = currentSet = false;
+    currentSet = false;
 
     namedWindow(input_window);
     initialized = true;
     framesSaved = 0;
-}
-
-void LabicCV::init() {
 }
 
 void LabicCV::display() {
@@ -50,17 +42,20 @@ void LabicCV::display() {
     Mat left(cameras, Rect(0, 0, width, height));
     Mat right(cameras, Rect(width, 0, width, height));
 
-    uint16_t *depth = NULL;
+    uint32_t timestampPrevious = 0;
     
 	cout << "[LabicCV] Display started" << endl;
     if (!initialized) {
-        cout << "[LabicCV] ERROR: did not call init(). Display finished" << endl;
+        cerr << "[LabicCV] ERROR: OpenCV wasn't properly initialized" << endl;
         return;
     }
 
     do {
         kinect->getRGBDImage(rgbdDisplay);
         
+        // Skip redrawing if there was no change
+        if (rgbdDisplay.timestamp() == timestampPrevious) continue;
+
         generateDepthImage(rgbdDisplay.depth(), depthMat);
         
         rgbdDisplay.rgb().copyTo(left);
@@ -68,7 +63,7 @@ void LabicCV::display() {
         
         //putText(cameras, "W,S,X -> ADJUST TILT", Point(20,30), CV_FONT_HERSHEY_PLAIN, 0.8f, Scalar::all(0), 1, 8);
         
-        //cout << "Loop timestamp " << rgbdDisplay.timestamp << endl;
+        timestampPrevious = rgbdDisplay.timestamp();
     } while (!*stop);
     
     window_closed = true;
@@ -77,7 +72,7 @@ void LabicCV::display() {
 }
 
 void LabicCV::generateDepthImage(const Mat1f& depth, Mat depthMat) {
-    int x, y, i;
+    int x, y;
     int depthValue;
 
     clock_t t = clock();
@@ -85,35 +80,15 @@ void LabicCV::generateDepthImage(const Mat1f& depth, Mat depthMat) {
     for (y=0; y<height; y++) {
     	for (x=0; x<width; x++) {
     		depthValue = mmToRaw(depth(y,x));
-    		depthMat.at<Vec3b>(y,x) = depth_to_color(depthValue);
+    		depthMat.at<Vec3b>(y,x) = depthToColor(depthValue);
     	}
-
     }
 
     t = clock() - t;
     //cout << "[LabicCV] generateDepthImage time: " << 1000*((float)t)/CLOCKS_PER_SEC << " ms " << endl;
 }
 
-void LabicCV::generateDepthImage(uint16_t *depth, Mat depthMat) {
-    int x, y, i;
-    int depthValue;
-    
-    clock_t t = clock();
-    
-    for (i=0; i<width*height; i++) {
-        y = i/width;
-        x = i%width;
-        
-        depthValue = mmToRaw(depth[i]);
-        
-        depthMat.at<Vec3b>(y,x) = depth_to_color(depthValue);
-    }
-    
-    t = clock() - t;
-    //cout << "[LabicCV] generateDepthImage time: " << 1000*((float)t)/CLOCKS_PER_SEC << " ms " << endl;
-}
-
-Vec3b LabicCV::depth_to_color(float rawDepthValue) {
+Vec3b LabicCV::depthToColor(float rawDepthValue) {
     double r,g,b;
 	int pval = t_gamma[(int)rawDepthValue];
     int lb = pval & 0xff;
@@ -175,7 +150,6 @@ void LabicCV::keyboardHandler(int key) {
             break;
         case ' ':
 			while (!currentSet) {
-				//currentSet = kinect->getFrame(rgbCurrent, depthCurrent);
 				currentSet = kinect->getRGBDImage(rgbdCurrent);
 			}
 			framesSaved++;

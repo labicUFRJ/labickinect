@@ -16,11 +16,21 @@
 #include "LabicCV.h"
 #include "LabicPCL.h"
 #include "Reconstructor.h"
+#include "arg.h"
 
 using namespace std;
 using namespace labic;
 
+namespace opt {
+	ntk::arg<bool> high_resolution("--highres", "High resolution color image.", 0);
+	ntk::arg<int> kinect_id("--kinect-id", "Kinect id", 0);
+}
+
 int main(int argc, char **argv) {
+    // Parse command line options.
+    ntk::arg_base::set_help_option("-h");
+    ntk::arg_parse(argc, argv);
+
 	Freenect::Freenect freenect;
 	KinectController *kinect;
 	LabicCV *cv;
@@ -28,10 +38,10 @@ int main(int argc, char **argv) {
 	Reconstructor *recon;
 	bool stop;
 
-	cout << "[main] Initializing Kinect... ";
+	cout << "[main] Initializing Kinect with id " << opt::kinect_id() << "\n";
 
 	try {
-		kinect = &freenect.createDevice<KinectController>(0);
+		kinect = &freenect.createDevice<KinectController>(opt::kinect_id());
 
 		cout << "Done" << endl << "[main] Starting streams... ";
 
@@ -50,7 +60,6 @@ int main(int argc, char **argv) {
 	cv = new LabicCV(kinect, &stop); // TODO const
 	recon->cv = cv;
 #if LABIC_ENABLE_CV
-	cv->init();
 	cv->start();
 #endif
 

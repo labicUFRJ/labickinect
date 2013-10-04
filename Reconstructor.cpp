@@ -58,7 +58,7 @@ void Reconstructor::reconstruct() {
     		// If this is the first frame received, just save it
     		if (world.empty()) {
     		    cout << "[LabicReconstructor] Preparing first frame" << endl;
-    			rgbdPrevious = cv->rgbdCurrent;
+    			rgbdPrevious = cv->lastSavedFrame();
 
     			alignedCloudPrevious = rgbdPrevious.pointCloud();
     			extractRGBFeatures(rgbdPrevious, featuresPrevious, descriptorsPrevious);
@@ -69,16 +69,16 @@ void Reconstructor::reconstruct() {
     			pcl::io::savePLYFileASCII("world0.ply", world);
     			pointsDetected += world.size();
 
-				cout << endl << "[LabicReconstructor] Initial frame saved" << endl;
+				cout << "[LabicReconstructor] Initial frame saved" << endl;
 
     		} else {
 				cout << endl << "[LabicReconstructor] Reconstructor got frames. Reconstructing..." << endl;
 
 				imwrite("rgbPrevious.jpg", rgbdPrevious.rgb());
-				imwrite("rgbCurrent.jpg", cv->rgbdCurrent.rgb());
+				imwrite("rgbCurrent.jpg", cv->lastSavedFrame().rgb());
 
 	        	t = clock();
-	        	performLoop(cv->rgbdCurrent);
+	        	performLoop(cv->lastSavedFrame());
 	    		totalTime += clock() - t;
 
 				cout << "[LabicReconstructor] Finished reconstruction loop" << endl << endl;
@@ -125,7 +125,7 @@ void Reconstructor::performLoop(const RGBDImage& rgbdCurrent) {
 		return;
 	}
 
-    for (int i=0; i<relatedFeatures.size(); i++) {
+    for (unsigned int i=0; i<relatedFeatures.size(); i++) {
         int previousIndex = relatedFeatures[i].trainIdx;
         int currentIndex = relatedFeatures[i].queryIdx;
         Point2f previousPoint = featuresPrevious[previousIndex].pt;
@@ -161,7 +161,7 @@ void Reconstructor::performLoop(const RGBDImage& rgbdCurrent) {
 
     // Check if transformation generated the correct set of inliers
     if (transformationInliersIndexes.size() < minInliersToValidateTransformation) {
-    	cout << "[LabicReconstructor::performLoop] Transformation NOT accepted (did not generate the mininum of inliers). Using previous transformation:" << endl
+    	cerr << "[LabicReconstructor::performLoop] Transformation NOT accepted (did not generate the mininum of inliers). Using previous transformation:" << endl
     		 << transformPrevious << endl;
     	transform = transformPrevious;
     } else {
@@ -196,7 +196,7 @@ void Reconstructor::extractRGBFeatures(const RGBDImage& rgbd, vector<KeyPoint>& 
     Mat imgBlackWhite;
 
     int pointsDropped = 0;
-    int i, j;
+    unsigned int i, j;
     cvtColor(rgbd.rgb(), imgBlackWhite, CV_RGB2GRAY);
     
 	for (i=0; i<maxDetectionIte; i++) {
@@ -244,7 +244,7 @@ void Reconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 	_matches.clear();
 	
 	// Distance filter
-	for (int i=0; i<matches.size(); i++) {
+	for (unsigned int i=0; i<matches.size(); i++) {
 		if (matches[i].distance < maxMatchDistance) {
 			_matches.push_back(matches[i]);
 		}
@@ -257,7 +257,7 @@ void Reconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 }
 
 void Reconstructor::printStats() const {
-	cout << endl << "[LabicReconstructor] STATS" << endl
+	cout << "[LabicReconstructor] STATS" << endl
 		 << "	Frames analyzed: " << framesAnalyzed << endl;
 	if (framesAnalyzed > 1)
 	cout << "	Features extracted: " << featuresExtracted << " (avg. " << featuresExtracted/framesAnalyzed << ")" << endl
@@ -265,7 +265,7 @@ void Reconstructor::printStats() const {
 		 << "	Matches discarded: " << matchesDiscarded << " (avg. " << matchesDiscarded/(framesAnalyzed-1) << ")" << endl
 		 << "	Points detected: " << pointsDetected << " (avg. " << pointsDetected/framesAnalyzed << ")" << endl
 		 << "	Reconstruction time: " << ((float)totalTime)/CLOCKS_PER_SEC << " secs (avg. " << (((float)totalTime)/CLOCKS_PER_SEC)/(framesAnalyzed-1) << " secs)" << endl
-		 << endl;
+		 << endl << endl;
 }
 
 void Reconstructor::start() {

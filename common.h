@@ -77,8 +77,8 @@ namespace labic {
 		/*    uint16_t *depth;
 		 cv::Mat rgb(cv::Size(width, height), CV_8UC3, cv::Scalar(0));*/
 		cv::Vec3b ptRGB;
-		int i;
-		int x, y;
+		unsigned int i;
+		unsigned int x, y;
 		clock_t t;
 		
 		cloud.clear();
@@ -106,7 +106,7 @@ namespace labic {
 			for (i=0; i<pts.size(); i++) {
 				y = pts[i].y;
 				x = pts[i].x;
-				int index = y*width + x;
+				unsigned int index = y*width + x;
 				
 				// If point has no depth available, skip it
 				if (depth[index] > 0) {

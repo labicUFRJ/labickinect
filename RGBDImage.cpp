@@ -10,9 +10,7 @@
 
 using namespace labic;
 
-RGBDImage::RGBDImage() : raw_rgb(0), raw_depth(0), timestamp(0) {
-	m_rgb = cv::Mat3b(height, width);
-	m_depth = cv::Mat1f(height, width);
+RGBDImage::RGBDImage() : m_rgb(height, width), m_depth(height, width), raw_rgb(0), raw_depth(0), time(0) {
 }
 
 //RGBDImage::~RGBDImage() {
@@ -23,28 +21,20 @@ RGBDImage::RGBDImage() : raw_rgb(0), raw_depth(0), timestamp(0) {
 //	delete &timestamp;
 //}
 
-RGBDImage::RGBDImage(std::vector<uint8_t>& _raw_rgb, std::vector<uint16_t>& _raw_depth, uint32_t _timestamp) : raw_rgb(_raw_rgb.size()), raw_depth(_raw_depth.size()), timestamp(_timestamp) {
-	m_rgb = cv::Mat3b(height, width);
-	m_depth = cv::Mat1f(height, width);
-
+RGBDImage::RGBDImage(std::vector<uint8_t>& _raw_rgb, std::vector<uint16_t>& _raw_depth, uint32_t _timestamp)
+: m_rgb(height, width), m_depth(height, width), raw_rgb(_raw_rgb.size()), raw_depth(_raw_depth.size()), time(_timestamp) {
 	update(_raw_rgb, _raw_depth, _timestamp);
 }
 
 void RGBDImage::update(std::vector<uint8_t>& _raw_rgb, std::vector<uint16_t>& _raw_depth, uint32_t _timestamp) {
 	if (_raw_rgb.size() != raw_rgb.size() || _raw_depth.size() != raw_depth.size()) {
-		std::cerr << "update size error\n";
 		raw_rgb.resize(_raw_rgb.size());
 		raw_depth.resize(_raw_depth.size());
 	}
-	timestamp = _timestamp;
-	//raw_rgb = _raw_rgb;
-	//raw_depth = _raw_depth;
+
+	time = _timestamp;
 	raw_rgb.swap(_raw_rgb);
 	raw_depth.swap(_raw_depth);
-
-	//cv::Mat3b rgb_tmp = cv::Mat3b(height, width);
-	//rgb_tmp.data = (raw_rgb.front());
-	//cv::cvtColor(rgb_tmp, m_rgb, CV_RGB2BGR);
 
 	for (int i=0; i<width*height; i++) {
 		int x = i % width;
@@ -68,7 +58,7 @@ RGBDImage& RGBDImage::operator=(const RGBDImage& other) {
 }
 
 bool RGBDImage::operator==(const RGBDImage& other) const {
-	return other.timestamp == timestamp;
+	return other.time == time;
 }
 
 const pcl::PointXYZRGB RGBDImage::point(int r, int c) const {
@@ -112,7 +102,7 @@ const pcl::PointCloud<pcl::PointXYZRGB> RGBDImage::pointCloudOfSelection(std::ve
 
 	cloud.reserve(pts.size());
 
-	for (int i=0; i<pts.size(); i++) {
+	for (unsigned int i=0; i<pts.size(); i++) {
 		if (rgbPixelHasDepth(pts[i].y,pts[i].x)) cloud.push_back(point(pts[i].y,pts[i].x));
 	}
 

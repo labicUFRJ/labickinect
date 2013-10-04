@@ -20,8 +20,6 @@ namespace labic {
 	private:
 		boost::thread m_Thread;
 		KinectController *kinect;
-        int width;
-        int height;
         bool* stop;
         void generateDepthCloud(uint16_t *depth);
 		

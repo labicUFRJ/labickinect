@@ -9,6 +9,7 @@
 #include "LabicPCL.h"
 #include <pcl/io/ply_io.h>
 
+using namespace std;
 using namespace pcl;
 using namespace pcl::visualization;
 using namespace labic;
@@ -34,7 +35,6 @@ bool LabicPCL::mainLoopPart(const int t) {
 }
 
 void LabicPCL::display() {
-    uint16_t *depth = (uint16_t*) malloc(sizeof(uint16_t)*640*480);
     cv::Mat rgb(cv::Size(640, 480), CV_8UC3, cv::Scalar(0));
     
 	std::cout << "[LabicPCL] Display started\n";
@@ -44,7 +44,6 @@ void LabicPCL::display() {
     viewer.setCameraPosition(0.0, 0.0, -1.0, 0.0, -1.0, 0.0);
     viewer.addText("Live PointCloud", 10, 10);    
     
-    bool savedPLY(false);
     /*
     while (!viewer.wasStopped() && !*stop) {
         if (!kinect->getFrame(rgb, depth)) continue;
@@ -87,7 +86,7 @@ void LabicPCL::addCameras(const std::vector<cv::Mat>&         T,
                           const std::vector<cv::Mat>&         R) {
     
     // add camera coordinates
-    for (int i = 0; i < R.size(); i++){
+    for (unsigned int i = 0; i < R.size(); i++){
         cv::Mat           Rw, Tw;
         Eigen::Matrix4f   _t;
         Eigen::Affine3f   t;
