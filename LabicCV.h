@@ -27,6 +27,7 @@ namespace labic {
         void init();
         void display();
         const RGBDImage& lastSavedFrame() const { return rgbdCurrent; }
+        void saveFrame();
         void setCaptureInterval(int interval) { captureInterval = interval; }
         const bool isReady() const { return currentSet; }
         void restartState() { currentSet = false; }

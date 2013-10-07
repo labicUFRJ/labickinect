@@ -238,7 +238,7 @@ void Reconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 	cout << "[LabicReconstructor::matchFeatures] Matching features\n";
 	vector<DMatch> matches;
 	
-	matcher2->match(_descriptors_q, _descriptors_t, matches);
+	matcher->match(_descriptors_q, _descriptors_t, matches);
 	cout << "[LabicReconstructor::matchFeatures] Inital matched features: " << matches.size() << endl;
 		
 	_matches.clear();

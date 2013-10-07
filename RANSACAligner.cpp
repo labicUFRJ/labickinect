@@ -103,6 +103,14 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 //		cout << "       maybeTransform = " << endl << maybeTransform << endl;
 
 		// Test transformation with other points that are not in maybeIndexes
+//		PointCloud<PointXYZRGB> testConsensusCloud(notMaybeIndexes.size());
+//		for (unsigned int i=0; i<notMaybeIndexes.size(); i++) {
+//			int pointIndex = notMaybeIndexes[i];
+//			testConsensusCloud[i] = cloudCurrent.points[pointIndex];
+//		}
+//
+//		transformPointCloud(testConsensusCloud, testConsensusCloud, maybeTransform);
+
 		for (unsigned int i=0; i<notMaybeIndexes.size(); i++) {
 			int pointIndex = notMaybeIndexes[i];
 			// creating pointcloud just to test transformation with a single point
@@ -110,9 +118,10 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 			transformedPoint.clear();
 			transformedPoint.push_back(cloudCurrent.points[pointIndex]);
 			transformPointCloud(transformedPoint, transformedPoint, maybeTransform);
+			// TODO change to pixel distance
 			float transformedDistance = euclideanDistance(transformedPoint.points[0], cloudPrevious.points[pointIndex]);
 
-			cout << "       Point " << i << " distance = " << transformedDistance;
+			cout << "       Point " << pointIndex << " distance = " << transformedDistance;
 			if (transformedDistance < inlierThreshold) {
 				consensusSetIndexes.push_back(pointIndex);
 				cout << " (added to consensus set!)";

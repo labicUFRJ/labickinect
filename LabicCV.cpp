@@ -40,12 +40,18 @@ void LabicCV::display() {
     Mat right(cameras, Rect(width, 0, width, height));
 
     uint32_t timestampPrevious = 0;
+    time_t start, end;
+    double fps;
+    int clicks = 0;
     
 	cout << "[LabicCV] Display started" << endl;
+
     if (!initialized) {
         cerr << "[LabicCV] ERROR: OpenCV wasn't properly initialized" << endl;
         return;
     }
+
+    time(&start);
 
     do {
         kinect->grabRGBDImage(rgbdDisplay);
@@ -61,6 +67,14 @@ void LabicCV::display() {
         //putText(cameras, "W,S,X -> ADJUST TILT", Point(20,30), CV_FONT_HERSHEY_PLAIN, 0.8f, Scalar::all(0), 1, 8);
         
         timestampPrevious = rgbdDisplay.timestamp();
+
+        time(&end);
+        clicks++;
+        fps = clicks / difftime(end, start);
+
+        ostringstream fps_str;
+        fps_str << "OpenCV FPS: " << fps;
+        putText(cameras, fps_str.str(), Point(20,30), CV_FONT_HERSHEY_PLAIN, 1.0f, Scalar::all(0));
     } while (!*stop);
     
     windowClosed = true;
@@ -83,6 +97,14 @@ void LabicCV::generateDepthImage(const Mat1f& depth, Mat depthMat) {
 
     t = clock() - t;
     //cout << "[LabicCV] generateDepthImage time: " << 1000*((float)t)/CLOCKS_PER_SEC << " ms " << endl;
+}
+
+void LabicCV::saveFrame() {
+	while (!currentSet) {
+		currentSet = kinect->grabRGBDImage(rgbdCurrent);
+	}
+	framesSaved++;
+	cout << "[LabicCV::saveFrame] " << framesSaved << " frames saved" << endl;
 }
 
 Vec3b LabicCV::depthToColor(float rawDepthValue) {
@@ -147,11 +169,7 @@ void LabicCV::keyboardHandler(int key) {
             break;
         case ' ':
         	if (captureInterval > 0) break;
-			while (!currentSet) {
-				currentSet = kinect->grabRGBDImage(rgbdCurrent);
-			}
-			framesSaved++;
-			cout << "[LabicCV] " << framesSaved << " frames saved" << endl;
+			saveFrame();
             break;
         default:
         	break;
