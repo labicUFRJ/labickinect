@@ -17,12 +17,13 @@ Reconstructor::Reconstructor(bool* _stop) : stop(_stop) {
 	
 	ID = 0;
 	
-	minFeatures     = 150;
-	maxFeatures     = 500;
-	maxDetectionIte = 100;
-	minMatches      = 25;
+	minFeatures      = 150;
+	maxFeatures      = 500;
+	maxDetectionIte  = 100;
+	minMatches       = 25;
 	maxMatchDistance = 10;
 	minInliersToValidateTransformation = 10;
+	badTransformAction = DISCARD;
 	
 	adjuster  = new FastAdjuster(100, true);
 	extractor = new BriefDescriptorExtractor();
@@ -111,14 +112,15 @@ void Reconstructor::performLoop(const RGBDImage& rgbdCurrent) {
     cloudCurrent = rgbdCurrent.pointCloud();
     pointsDetected += cloudCurrent.size();
 
-    pcl::io::savePLYFileASCII("cloudCurrent.ply", cloudCurrent);
+    //pcl::io::savePLYFileASCII("cloudCurrent.ply", cloudCurrent);
 
 	// 1. Extract features from both images
 	extractRGBFeatures(rgbdCurrent, featuresCurrent, descriptorsCurrent);
 
 	// 2. Get related features (matches) between features from both images
-	matchFeatures(featuresPrevious, descriptorsPrevious, featuresCurrent, descriptorsCurrent, relatedFeatures);
-	drawMatches(rgbdPrevious.rgb(), featuresPrevious, rgbdCurrent.rgb(), featuresCurrent, relatedFeatures, matchesMat);
+	//matchFeatures(featuresPrevious, descriptorsPrevious, featuresCurrent, descriptorsCurrent, relatedFeatures);
+	matchFeatures(featuresCurrent, descriptorsCurrent, featuresPrevious, descriptorsPrevious, relatedFeatures);
+	drawMatches(rgbdCurrent.rgb(), featuresCurrent, rgbdPrevious.rgb(), featuresPrevious, relatedFeatures, matchesMat);
 	if (relatedFeatures.size() < minMatches) {
 		cerr << "[LabicReconstructor::performLoop] IMAGES DO NOT MATCH! ABORTING RECONSTRUCTION" << endl;
 		imwrite("matchfailed.jpg", matchesMat);
@@ -142,6 +144,10 @@ void Reconstructor::performLoop(const RGBDImage& rgbdCurrent) {
 
     cout << "[LabicReconstructor::performLoop] Matches after depth filter: " << selectedFeaturePointsPrevious.size() << " points" << endl;
 
+    for (unsigned int i=0; i<selectedFeaturePointsPrevious.size(); i++) {
+    	cout << "	Match " << i << ": prev " << selectedFeaturePointsPrevious[i] << ", curr " << selectedFeaturePointsCurrent[i] << endl;
+    }
+
 	// 3. Generate PointClouds of related features
     featureCloudPrevious = rgbdPrevious.pointCloudOfSelection(selectedFeaturePointsPrevious);
     featureCloudCurrent = rgbdCurrent.pointCloudOfSelection(selectedFeaturePointsCurrent);
@@ -161,9 +167,16 @@ void Reconstructor::performLoop(const RGBDImage& rgbdCurrent) {
 
     // Check if transformation generated the correct set of inliers
     if (transformationInliersIndexes.size() < minInliersToValidateTransformation) {
-    	cerr << "[LabicReconstructor::performLoop] Transformation NOT accepted (did not generate the mininum of inliers). Using previous transformation:" << endl
+    	cerr << "[LabicReconstructor::performLoop] Transformation NOT accepted (did not generate the mininum of inliers).";
+
+    	if (badTransformAction == USE_LAST_TRANSFORM) {
+    		cerr << "Using previous transformation:" << endl
     		 << transformPrevious << endl;
-    	transform = transformPrevious;
+    		transform = transformPrevious;
+    	} else {
+    		cerr << "Discarding reconstruction!" << endl;
+    		return;
+    	}
     } else {
         cout << "[LabicReconstructor::performLoop] Transformation accepted" << endl;
         transformPrevious = transform;
@@ -229,6 +242,10 @@ void Reconstructor::extractRGBFeatures(const RGBDImage& rgbd, vector<KeyPoint>& 
 	<< ", iteration: " << i << ")" << " (dropped " << pointsDropped << " points)" << endl;
 }
 
+/**
+ * q -> query (current / source)
+ * t -> train (previous / target)
+ */
 void Reconstructor::matchFeatures(vector<KeyPoint>&   _keypoints_q,
 									   const Mat&               _descriptors_q,
 									   vector<KeyPoint>&   _keypoints_t,

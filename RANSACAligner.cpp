@@ -121,10 +121,10 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 			// TODO change to pixel distance
 			float transformedDistance = euclideanDistance(transformedPoint.points[0], cloudPrevious.points[pointIndex]);
 
-			cout << "       Point " << pointIndex << " distance = " << transformedDistance;
+			//cout << "       Point " << pointIndex << " distance = " << transformedDistance;
 			if (transformedDistance < inlierThreshold) {
 				consensusSetIndexes.push_back(pointIndex);
-				cout << " (added to consensus set!)";
+				//cout << " (added to consensus set!)";
 			}
 			//cout << endl;
 		}

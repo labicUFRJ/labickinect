@@ -100,7 +100,7 @@ const pcl::PointCloud<pcl::PointXYZRGB> RGBDImage::pointCloud() const {
 const pcl::PointCloud<pcl::PointXYZRGB> RGBDImage::pointCloudOfSelection(std::vector<cv::Point2f> pts) const {
 	pcl::PointCloud<pcl::PointXYZRGB> cloud;
 
-	cloud.reserve(pts.size());
+	//cloud.reserve(pts.size());
 
 	for (unsigned int i=0; i<pts.size(); i++) {
 		if (rgbPixelHasDepth(pts[i].y,pts[i].x)) cloud.push_back(point(pts[i].y,pts[i].x));

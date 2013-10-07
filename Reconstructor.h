@@ -17,6 +17,8 @@ namespace labic {
 
 		Reconstructor(bool* _stop);
 
+		void setBadTransformAction(int act) { badTransformAction = act; }
+
 		void start();
 		void join();
         void close();
@@ -29,6 +31,8 @@ namespace labic {
 		void printStats() const;
 
 	private:
+		static const int DISCARD = 1;
+		static const int USE_LAST_TRANSFORM = 2;
         boost::thread m_Thread;
 		unsigned int ID;
 		unsigned int minFeatures;
@@ -44,6 +48,7 @@ namespace labic {
 		unsigned int featuresMatched;
 		unsigned int matchesDiscarded;
 		unsigned int pointsDetected;
+		int			 badTransformAction;
 		bool*	stop;
 		clock_t	totalTime;
 		RANSACAligner* ransac;
