@@ -14,12 +14,13 @@
 #include "common.h"
 #include "KinectController.h"
 #include "RGBDImage.h"
+#include "queue.h"
 
 namespace labic {
 	
     class LabicCV {
     public:
-        LabicCV(KinectController *_kinect, bool* _stop);
+        LabicCV(KinectController *_kinect, bool* _stop, FrameQueue& q);
 		void start();
         void mainLoopPart(const int t);
 		void join();
@@ -44,10 +45,10 @@ namespace labic {
         bool currentSet;
         bool* stop;
         int captureInterval;
-		int framesSaved;
 		uint16_t t_gamma[2048];
         cv::Mat cameras;
         RGBDImage rgbdDisplay, rgbdCurrent;
+        FrameQueue& queue;
         
 		static const std::string input_window;
         static const int DEPTH_RAW = 1;

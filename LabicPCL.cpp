@@ -14,7 +14,7 @@ using namespace pcl;
 using namespace pcl::visualization;
 using namespace labic;
 
-LabicPCL::LabicPCL(KinectController *_kinect, bool* _stop)  : kinect(_kinect), stop(_stop) {
+LabicPCL::LabicPCL(KinectController *_kinect, bool* _stop, FrameQueue& q)  : kinect(_kinect), stop(_stop), queue(q) {
     viewPort = 1;
     
     std::cout << "[LabicPCL] Viewer initialized\n";
@@ -61,25 +61,6 @@ void LabicPCL::display() {
     viewer.close();
 	
     std::cout << "[LabicPCL] Display finished\n";
-}
-
-void LabicPCL::generateDepthCloud(uint16_t *depth) {
-    int x, y, i;
-    PointXYZRGB pt;
-    
-    cloud.clear();
-    cloud.width = width*height;
-    cloud.height = 1;
-    
-    for (i=0; i<width*height; i++) {
-        y = i/width;
-        x = i%width;
-        
-        pt = ptToPointXYZRGB(x, y, depth[i]);
-        pt.r = pt.g = pt.b = 255;
-        
-        cloud.points.push_back(pt);
-    }
 }
 
 void LabicPCL::addCameras(const std::vector<cv::Mat>&         T,

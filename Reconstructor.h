@@ -4,18 +4,14 @@
 #include "common.h"
 #include "opencv2/features2d/features2d.hpp"
 #include "RGBDImage.h"
-#include "LabicCV.h"
-#include "LabicPCL.h"
+#include "queue.h"
 #include "RANSACAligner.h"
 
 namespace labic {
 	
 	class Reconstructor {
 	public:
-		LabicCV *cv;
-		LabicPCL *pcl;
-
-		Reconstructor(bool* _stop);
+		Reconstructor(bool* _stop, FrameQueue& q);
 
 		void setBadTransformAction(int act) { badTransformAction = act; }
 
@@ -23,10 +19,7 @@ namespace labic {
 		void join();
         void close();
 
-		void performLoop(const cv::Mat& rgbCurrent,
-						 const uint16_t* depthCurrent);
-
-		void performLoop(const RGBDImage& rgbdCurrent);
+		void performLoop();
 
 		void printStats() const;
 
@@ -60,7 +53,8 @@ namespace labic {
 		cv::Mat							  descriptorsPrevious;
 		std::vector<cv::KeyPoint>		  featuresPrevious;
 		Eigen::Matrix4d 				  transformPrevious;
-		RGBDImage						  rgbdPrevious;
+		RGBDImage						  rgbdPrevious, rgbdCurrent;
+		FrameQueue& queue;
 
 		void reconstruct();
         

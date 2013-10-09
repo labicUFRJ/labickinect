@@ -12,24 +12,13 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include "common.h"
 #include "KinectController.h"
+#include "queue.h"
 
 namespace labic {
 	
 	class LabicPCL {
-		
-	private:
-		boost::thread m_Thread;
-		KinectController *kinect;
-        bool* stop;
-        void generateDepthCloud(uint16_t *depth);
-		
 	public:
-        pcl::visualization::PCLVisualizer viewer;
-        pcl::PointCloud<pcl::PointXYZRGB> cloud;
-        pcl::PointCloud<pcl::PointXYZRGB> liveCloud;
-        int viewPort;
-        
-        LabicPCL(KinectController *_kinect, bool* _stop);
+        LabicPCL(KinectController *_kinect, bool* _stop, FrameQueue& q);
 		void start();
         bool mainLoopPart(const int t);
 		void join();
@@ -41,7 +30,18 @@ namespace labic {
         void updateCloud(std::vector< cv::Point3d >& objPoints, cv::Mat img);
         
         void display();
-        
+
+	private:
+		boost::thread m_Thread;
+		KinectController *kinect;
+        bool* stop;
+        pcl::visualization::PCLVisualizer viewer;
+        pcl::PointCloud<pcl::PointXYZRGB> cloud;
+        pcl::PointCloud<pcl::PointXYZRGB> liveCloud;
+        FrameQueue& queue;
+        int viewPort;
+        void generateDepthCloud(uint16_t *depth);
+
     };
 }
 

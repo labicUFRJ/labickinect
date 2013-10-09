@@ -16,16 +16,17 @@
 #include "LabicCV.h"
 #include "LabicPCL.h"
 #include "Reconstructor.h"
+#include "queue.h"
 #include "arg.h"
 
 using namespace std;
 using namespace labic;
 
 namespace opt {
-	ntk::arg<int> kinect_id("--kinect-id", "Kinect id", 0);
-	ntk::arg<bool> enable_pcl("--pcl", "Enable PCL Visualizer", false);
-	ntk::arg<bool> enable_reconstructor("--reconstructor", "Enable reconstructor", true);
-	ntk::arg<int> capture_interval("--interval", "Time between frame grabbing to reconstruction", 0);
+	ntk::arg<int> 	kinect_id("--kinect-id", "Kinect id", 0);
+	ntk::arg<bool> 	enable_pcl("--pcl", "Enable PCL Visualizer", false);
+	ntk::arg<bool>	enable_reconstructor("--reconstructor", "Enable reconstructor", true);
+	ntk::arg<int>	capture_interval("--interval", "Time between frame grabbing to reconstruction (milliseconds)", -1);
 }
 
 int main(int argc, char **argv) {
@@ -34,6 +35,7 @@ int main(int argc, char **argv) {
     ntk::arg_parse(argc, argv);
 
 	Freenect::Freenect freenect;
+	FrameQueue queue;
 	KinectController *kinect;
 	LabicCV *cv;
 	LabicPCL *pcl;
@@ -57,21 +59,24 @@ int main(int argc, char **argv) {
 	}
 
 	// OpenCV thread
-	cv = new LabicCV(kinect, &stop);
-	cv->setCaptureInterval(opt::capture_interval());
+	cv = new LabicCV(kinect, &stop, queue);
+	if (opt::capture_interval() >= 0) {
+		cout << "[main] Automatic mode: new frames will be saved each " << opt::capture_interval() << " milliseconds" << endl;
+		cv->setCaptureInterval(opt::capture_interval());
+	} else {
+		cout << "[main] Manual mode: press <<space>> to save a frame" << endl;
+	}
 	cv->start();
 
 	// PCL thread
 	if (opt::enable_pcl()) {
-		pcl = new LabicPCL(kinect, &stop);
+		pcl = new LabicPCL(kinect, &stop, queue);
 		pcl->start();
 	}
 	
     // Reconstructor thread
 	if (opt::enable_reconstructor()) {
-		recon = new Reconstructor(&stop);
-		recon->cv = cv;
-		recon->pcl = pcl;
+		recon = new Reconstructor(&stop, queue);
 		recon->start();
 	}
 

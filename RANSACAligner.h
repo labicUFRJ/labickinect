@@ -39,7 +39,7 @@ namespace labic {
 		double bestError;
 		Eigen::Matrix4d bestTransform;
 		std::vector<int> bestConsensusSetIndexes;
-		pcl::PointCloud<pcl::PointXYZRGB> cloudCurrent, cloudPrevious;
+		//pcl::PointCloud<pcl::PointXYZRGB> cloudCurrent, cloudPrevious;
 		pcl::registration::TransformationEstimationSVD<pcl::PointXYZRGB, pcl::PointXYZRGB, double> estimatorSVD;
 		pcl::registration::TransformationEstimationLM<pcl::PointXYZRGB, pcl::PointXYZRGB, double> estimatorLM;
 		pcl::registration::TransformationEstimation<pcl::PointXYZRGB, pcl::PointXYZRGB, double>* estimator;

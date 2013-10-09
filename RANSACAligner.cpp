@@ -16,9 +16,10 @@ RANSACAligner::RANSACAligner() : maxIterations(100), nSamples(3), inlierThreshol
 }
 
 void RANSACAligner::reset() {
-	bestTransform.setIdentity();
+	bestTransform.setZero();
 	bestError = INFINITY;
 	bestIteration = 0;
+	bestConsensusSetIndexes.clear();
 	numFeatures = 0;
 }
 
@@ -40,6 +41,7 @@ void RANSACAligner::getRandomSamples(std::vector<int>& maybeIndexes, std::vector
 		}
 	}
 	cout << "]" << endl;
+	if (maybeIndexes.size() > nSamples) cerr << "opss!!" << endl;
 
 	//cout << "	not[";
 	for (i=0; i<numFeatures; i++) {

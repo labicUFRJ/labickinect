@@ -13,7 +13,7 @@ using namespace pcl;
 using namespace cv;
 using namespace labic;
 
-Reconstructor::Reconstructor(bool* _stop) : stop(_stop) {
+Reconstructor::Reconstructor(bool* _stop, FrameQueue& q) : stop(_stop), queue(q) {
 	
 	ID = 0;
 	
@@ -31,13 +31,10 @@ Reconstructor::Reconstructor(bool* _stop) : stop(_stop) {
 	matcher2  = new BFMatcher(NORM_HAMMING, false);
 	
 	ransac = new RANSACAligner();
-	ransac->setDistanceThreshold(0.5); // 1.0
+	ransac->setDistanceThreshold(1.0); // 1.0
 	ransac->setMaxIterations(100);
 	ransac->setMinInliers(20);
 	ransac->setNumSamples(3);
-
-	cv = NULL;
-	pcl = NULL;
 
 	framesAnalyzed = 0;
 	reconstructionsGenerated = 0;
@@ -55,11 +52,11 @@ void Reconstructor::reconstruct() {
     cout << "[LabicReconstructor] Reconstructor initialized" << endl;
 
     while (!*stop) {
-    	if (cv->isReady()) {
+    	if (queue.size() > 0) {
     		// If this is the first frame received, just save it
     		if (world.empty()) {
     		    cout << "[LabicReconstructor] Preparing first frame" << endl;
-    			rgbdPrevious = cv->lastSavedFrame();
+    			rgbdPrevious = queue.pop();
 
     			alignedCloudPrevious = rgbdPrevious.pointCloud();
     			extractRGBFeatures(rgbdPrevious, featuresPrevious, descriptorsPrevious);
@@ -75,18 +72,19 @@ void Reconstructor::reconstruct() {
     		} else {
 				cout << endl << "[LabicReconstructor] Reconstructor got frames. Reconstructing..." << endl;
 
+				rgbdCurrent = queue.pop();
+
 				imwrite("rgbPrevious.jpg", rgbdPrevious.rgb());
-				imwrite("rgbCurrent.jpg", cv->lastSavedFrame().rgb());
+				imwrite("rgbCurrent.jpg", rgbdCurrent.rgb());
 
 	        	t = clock();
-	        	performLoop(cv->lastSavedFrame());
+	        	performLoop();
 	    		totalTime += t = clock() - t;
 
 				cout << "[LabicReconstructor] Finished reconstruction loop (" << ((float)t)/CLOCKS_PER_SEC << " secs)" << endl << endl;
     		}
 
 			framesAnalyzed++;
-			cv->restartState();
 		}
     	else {
     		boost::this_thread::sleep(boost::posix_time::milliseconds(100));
@@ -98,7 +96,7 @@ void Reconstructor::reconstruct() {
     cout << "[LabicReconstructor] Reconstructor finished" << endl;
 }
 
-void Reconstructor::performLoop(const RGBDImage& rgbdCurrent) {
+void Reconstructor::performLoop() {
 
 	vector<KeyPoint> featuresCurrent;
 	Mat descriptorsCurrent, matchesMat;
@@ -144,9 +142,9 @@ void Reconstructor::performLoop(const RGBDImage& rgbdCurrent) {
 
     cout << "[LabicReconstructor::performLoop] Matches after depth filter: " << selectedFeaturePointsPrevious.size() << " points" << endl;
 
-    for (unsigned int i=0; i<selectedFeaturePointsPrevious.size(); i++) {
-    	cout << "	Match " << i << ": prev " << selectedFeaturePointsPrevious[i] << ", curr " << selectedFeaturePointsCurrent[i] << endl;
-    }
+//    for (unsigned int i=0; i<selectedFeaturePointsPrevious.size(); i++) {
+//    	cout << "	Match " << i << ": prev " << selectedFeaturePointsPrevious[i] << ", curr " << selectedFeaturePointsCurrent[i] << endl;
+//    }
 
 	// 3. Generate PointClouds of related features
     featureCloudPrevious = rgbdPrevious.pointCloudOfSelection(selectedFeaturePointsPrevious);
@@ -167,13 +165,14 @@ void Reconstructor::performLoop(const RGBDImage& rgbdCurrent) {
 
     // Check if transformation generated the correct set of inliers
     if (transformationInliersIndexes.size() < minInliersToValidateTransformation) {
-    	cerr << "[LabicReconstructor::performLoop] Transformation NOT accepted (did not generate the mininum of inliers).";
+    	cerr << "[LabicReconstructor::performLoop] Transformation NOT accepted (did not generate the mininum of inliers). ";
 
     	if (badTransformAction == USE_LAST_TRANSFORM) {
     		cerr << "Using previous transformation:" << endl
     		 << transformPrevious << endl;
     		transform = transformPrevious;
     	} else {
+    		//TODO update previous data
     		cerr << "Discarding reconstruction!" << endl;
     		return;
     	}

@@ -19,7 +19,7 @@ namespace labic {
 	static const int width		 = 640;
 	static const int height		 = 480;
 	static const int DEPTH_BLANK = 2047;
-	
+
 	inline int mmToRaw(float depthValue) {
 		int z = DEPTH_BLANK;
 		if (depthValue > 0) {
@@ -27,110 +27,110 @@ namespace labic {
 		}
 		return z;
 	}
-	
-	
-	inline cv::Point3d ptToPoint3d(float cgx, float cgy, float cgz) {
-		double fx_d = 1.0 / 5.9421434211923247e+02;
-		double fy_d = 1.0 / 5.9104053696870778e+02;
-		double cx_d = 3.3930780975300314e+02;
-		double cy_d = 2.4273913761751615e+02;
-		
-		cgz = cgz/1000.0; // cgz has to be in mm
-		
-		if (cgz == 0 || cgz == DEPTH_BLANK) {
-			return cv::Point3d(0,0,0);
-		}
-        
-		return cv::Point3d(
-						   (cgx - cx_d) * cgz * fx_d,
-						   (cgy - cy_d) * cgz * fy_d,
-						   cgz
-						   );
-	}
-	
-	
-	inline pcl::PointXYZRGB ptToPointXYZRGB(float cgx, float cgy, float cgz) {
-		double fx_d = 1.0 / 5.9421434211923247e+02;
-		double fy_d = 1.0 / 5.9104053696870778e+02;
-		double cx_d = 3.3930780975300314e+02;
-		double cy_d = 2.4273913761751615e+02;
-		pcl::PointXYZRGB pt;
-		
-		cgz = cgz/1000.0; // cgz has to be in mm
-		
-		if (cgz == 0 || cgz == DEPTH_BLANK) {
-			pt.x = pt.y = pt.z = 0;
-		} else {
-			
-			pt.x = (cgx - cx_d) * cgz * fx_d;
-			pt.y = (cgy - cy_d) * cgz * fy_d;
-			pt.z = cgz;
-		}
-		
-		return pt;
-	}
-	
-	
-	inline bool frameToPointCloud(const cv::Mat& rgb, const uint16_t* depth, pcl::PointCloud<pcl::PointXYZRGB>& _cloud, const std::vector<cv::Point2f> pts = std::vector<cv::Point2f>()) {
-		pcl::PointCloud<pcl::PointXYZRGB> cloud;
-		pcl::PointXYZRGB pt;
-		/*    uint16_t *depth;
-		 cv::Mat rgb(cv::Size(width, height), CV_8UC3, cv::Scalar(0));*/
-		cv::Vec3b ptRGB;
-		unsigned int i;
-		unsigned int x, y;
-		clock_t t;
-		
-		cloud.clear();
-		cloud.reserve(width*height);
-		
-		t = clock();
-		// If no specific points were specified
-		if (pts.empty()) {
-			for (i=0; i<width*height; i++) {
-				y = i/width;
-				x = i%width;
-				
-				// If point has no depth available, skip it
-				if (depth[i] > 0) {
-					pt = ptToPointXYZRGB(x, y, depth[i]);
-					ptRGB = rgb.at<cv::Vec3b>(y,x);
-					pt.r = ptRGB[2];
-					pt.g = ptRGB[1];
-					pt.b = ptRGB[0];
-					
-					cloud.push_back(pt);
-				}
-			}
-		} else {
-			for (i=0; i<pts.size(); i++) {
-				y = pts[i].y;
-				x = pts[i].x;
-				unsigned int index = y*width + x;
-				
-				// If point has no depth available, skip it
-				if (depth[index] > 0) {
-					pt = ptToPointXYZRGB(x, y, depth[index]);
-					ptRGB = rgb.at<cv::Vec3b>(y,x);
-					pt.r = ptRGB[2];
-					pt.g = ptRGB[1];
-					pt.b = ptRGB[0];
-					
-					cloud.push_back(pt);
-				}
-			}
-		}
-		
-		t = clock() - t;
-		
-		_cloud = cloud;
-		//free(depth);
-		
-		//    std::cout << "frameToPointCloud time: " << 1000*((float)t)/CLOCKS_PER_SEC << " ms " << std::endl;
-		
-		return true;
-		
-	}
+
+
+//	inline cv::Point3d ptToPoint3d(float cgx, float cgy, float cgz) {
+//		double fx_d = 1.0 / 5.9421434211923247e+02;
+//		double fy_d = 1.0 / 5.9104053696870778e+02;
+//		double cx_d = 3.3930780975300314e+02;
+//		double cy_d = 2.4273913761751615e+02;
+//
+//		cgz = cgz/1000.0; // cgz has to be in mm
+//
+//		if (cgz == 0 || cgz == DEPTH_BLANK) {
+//			return cv::Point3d(0,0,0);
+//		}
+//
+//		return cv::Point3d(
+//						   (cgx - cx_d) * cgz * fx_d,
+//						   (cgy - cy_d) * cgz * fy_d,
+//						   cgz
+//						   );
+//	}
+//
+//
+//	inline pcl::PointXYZRGB ptToPointXYZRGB(float cgx, float cgy, float cgz) {
+//		double fx_d = 1.0 / 5.9421434211923247e+02;
+//		double fy_d = 1.0 / 5.9104053696870778e+02;
+//		double cx_d = 3.3930780975300314e+02;
+//		double cy_d = 2.4273913761751615e+02;
+//		pcl::PointXYZRGB pt;
+//
+//		cgz = cgz/1000.0; // cgz has to be in mm
+//
+//		if (cgz == 0 || cgz == DEPTH_BLANK) {
+//			pt.x = pt.y = pt.z = 0;
+//		} else {
+//
+//			pt.x = (cgx - cx_d) * cgz * fx_d;
+//			pt.y = (cgy - cy_d) * cgz * fy_d;
+//			pt.z = cgz;
+//		}
+//
+//		return pt;
+//	}
+//
+//
+//	inline bool frameToPointCloud(const cv::Mat& rgb, const uint16_t* depth, pcl::PointCloud<pcl::PointXYZRGB>& _cloud, const std::vector<cv::Point2f> pts = std::vector<cv::Point2f>()) {
+//		pcl::PointCloud<pcl::PointXYZRGB> cloud;
+//		pcl::PointXYZRGB pt;
+//		/*    uint16_t *depth;
+//		 cv::Mat rgb(cv::Size(width, height), CV_8UC3, cv::Scalar(0));*/
+//		cv::Vec3b ptRGB;
+//		unsigned int i;
+//		unsigned int x, y;
+//		clock_t t;
+//
+//		cloud.clear();
+//		cloud.reserve(width*height);
+//
+//		t = clock();
+//		// If no specific points were specified
+//		if (pts.empty()) {
+//			for (i=0; i<width*height; i++) {
+//				y = i/width;
+//				x = i%width;
+//
+//				// If point has no depth available, skip it
+//				if (depth[i] > 0) {
+//					pt = ptToPointXYZRGB(x, y, depth[i]);
+//					ptRGB = rgb.at<cv::Vec3b>(y,x);
+//					pt.r = ptRGB[2];
+//					pt.g = ptRGB[1];
+//					pt.b = ptRGB[0];
+//
+//					cloud.push_back(pt);
+//				}
+//			}
+//		} else {
+//			for (i=0; i<pts.size(); i++) {
+//				y = pts[i].y;
+//				x = pts[i].x;
+//				unsigned int index = y*width + x;
+//
+//				// If point has no depth available, skip it
+//				if (depth[index] > 0) {
+//					pt = ptToPointXYZRGB(x, y, depth[index]);
+//					ptRGB = rgb.at<cv::Vec3b>(y,x);
+//					pt.r = ptRGB[2];
+//					pt.g = ptRGB[1];
+//					pt.b = ptRGB[0];
+//
+//					cloud.push_back(pt);
+//				}
+//			}
+//		}
+//
+//		t = clock() - t;
+//
+//		_cloud = cloud;
+//		//free(depth);
+//
+//		//    std::cout << "frameToPointCloud time: " << 1000*((float)t)/CLOCKS_PER_SEC << " ms " << std::endl;
+//
+//		return true;
+//
+//	}
 	
 }
 

@@ -18,8 +18,8 @@ using namespace labic;
 
 const string LabicCV::input_window = "Kinect Input";
 
-LabicCV::LabicCV(KinectController *_kinect, bool* _stop)
-:kinect(_kinect),  initialized(false), windowClosed(false), currentSet(false), stop(_stop), captureInterval(0), framesSaved(0) {
+LabicCV::LabicCV(KinectController *_kinect, bool* _stop, FrameQueue& q)
+: kinect(_kinect),  initialized(false), windowClosed(false), currentSet(false), stop(_stop), captureInterval(-1), queue(q) {
     for (unsigned int i=0; i<2048; i++) {
 		float v = i/2048.0;
 		v = pow(v, 3)* 6;
@@ -40,9 +40,9 @@ void LabicCV::display() {
     Mat right(cameras, Rect(width, 0, width, height));
 
     uint32_t timestampPrevious = 0;
-    time_t start, end;
-    double fps;
+    time_t start, end, lastCap = 0;
     int clicks = 0;
+    double fps;
     
 	cout << "[LabicCV] Display started" << endl;
 
@@ -52,6 +52,7 @@ void LabicCV::display() {
     }
 
     time(&start);
+    time(&lastCap);
 
     do {
         kinect->grabRGBDImage(rgbdDisplay);
@@ -71,6 +72,11 @@ void LabicCV::display() {
         time(&end);
         clicks++;
         fps = clicks / difftime(end, start);
+
+        if (captureInterval > 0 && difftime(end, lastCap)*1000 > captureInterval) {
+        	lastCap = end;
+        	saveFrame();
+        }
 
         ostringstream fps_str;
         fps_str << "OpenCV FPS: " << fps;
@@ -103,8 +109,7 @@ void LabicCV::saveFrame() {
 	while (!currentSet) {
 		currentSet = kinect->grabRGBDImage(rgbdCurrent);
 	}
-	framesSaved++;
-	cout << "[LabicCV::saveFrame] " << framesSaved << " frames saved" << endl;
+	queue.push(rgbdCurrent);
 }
 
 Vec3b LabicCV::depthToColor(float rawDepthValue) {
