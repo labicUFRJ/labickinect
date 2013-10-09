@@ -31,6 +31,7 @@ namespace labic {
 		std::vector<uint16_t> raw_depth;
 		std::vector<uint8_t> raw_rgb;
 		uint32_t last_timestamp;
+		uint32_t last_timestamp_grabbed;
 		std::vector<uint16_t> m_gamma;
 		Mutex m_rgb_mutex;
 		Mutex m_depth_mutex;

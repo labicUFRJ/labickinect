@@ -13,7 +13,6 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "common.h"
 #include "KinectController.h"
-#include "RGBDImage.h"
 #include "queue.h"
 
 namespace labic {
@@ -27,7 +26,6 @@ namespace labic {
         void close();
         void init();
         void display();
-        const RGBDImage& lastSavedFrame() const { return rgbdCurrent; }
         void saveFrame();
         void setCaptureInterval(int interval) { captureInterval = interval; }
         const bool isReady() const { return currentSet; }
@@ -47,7 +45,6 @@ namespace labic {
         int captureInterval;
 		uint16_t t_gamma[2048];
         cv::Mat cameras;
-        RGBDImage rgbdDisplay, rgbdCurrent;
         FrameQueue& queue;
         
 		static const std::string input_window;

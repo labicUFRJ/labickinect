@@ -29,19 +29,19 @@ void RANSACAligner::getRandomSamples(std::vector<int>& maybeIndexes, std::vector
 	maybeIndexes.clear();
 	notMaybeIndexes.clear();
 
-	cout << "	maybeIndexes[";
+//	cout << "	maybeIndexes[";
 	while (maybeIndexes.size() < nSamples) {
 		int randomSample = rand() % numFeatures;
-		cout << randomSample << ", ";
+//		cout << randomSample << ", ";
 		for (i=0; i<maybeIndexes.size(); i++) {
 			if (randomSample == maybeIndexes[i]) break;
 		}
-		if (i == maybeIndexes.size()) {
-			maybeIndexes.push_back(randomSample);
-		}
+
+		// If i reached position n, then no match was found (it is new)
+		if (i == maybeIndexes.size()) maybeIndexes.push_back(randomSample);
 	}
-	cout << "]" << endl;
-	if (maybeIndexes.size() > nSamples) cerr << "opss!!" << endl;
+//	cout << "]" << endl;
+	if (maybeIndexes.size() > nSamples) cerr << "RANDOM SAMPLES WITH TOO MANY SAMPLES!!" << endl;
 
 	//cout << "	not[";
 	for (i=0; i<numFeatures; i++) {
@@ -134,7 +134,7 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 		cout << "	Consensus set has " << consensusSetIndexes.size() << " points" << endl;
 
 		if (consensusSetIndexes.size() > minInliers) {
-			cout << "	Consensus set has more than " << minInliers << " inliers. Finding consensus set transformation" << endl;
+//			cout << "	Consensus set has more than " << minInliers << " inliers. Finding consensus set transformation" << endl;
 
 			// Recalculate transformation from new consensus set
 			estimator->estimateRigidTransformation(cloudCurrent, consensusSetIndexes, cloudPrevious, consensusSetIndexes, thisTransform);

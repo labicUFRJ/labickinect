@@ -11,6 +11,7 @@
 #include "opencv2/nonfree/features2d.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
+#include "RGBDImage.h"
 
 using namespace std;
 using namespace cv;
@@ -38,6 +39,7 @@ void LabicCV::display() {
 	Mat depthMat(Size(width, height), CV_8UC3, Scalar(0));
     Mat left(cameras, Rect(0, 0, width, height));
     Mat right(cameras, Rect(width, 0, width, height));
+    RGBDImage frame;
 
     uint32_t timestampPrevious = 0;
     time_t start, end, lastCap = 0;
@@ -55,19 +57,19 @@ void LabicCV::display() {
     time(&lastCap);
 
     do {
-        kinect->grabRGBDImage(rgbdDisplay);
+        kinect->grabRGBDImage(frame);
         
         // Skip redrawing if there was no change
-        if (rgbdDisplay.timestamp() == timestampPrevious) continue;
+        if (frame.timestamp() == timestampPrevious) continue;
 
-        generateDepthImage(rgbdDisplay.depth(), depthMat);
+        generateDepthImage(frame.depth(), depthMat);
         
-        rgbdDisplay.rgb().copyTo(left);
+        frame.rgb().copyTo(left);
         depthMat.copyTo(right);
         
         //putText(cameras, "W,S,X -> ADJUST TILT", Point(20,30), CV_FONT_HERSHEY_PLAIN, 0.8f, Scalar::all(0), 1, 8);
         
-        timestampPrevious = rgbdDisplay.timestamp();
+        timestampPrevious = frame.timestamp();
 
         time(&end);
         clicks++;
@@ -106,10 +108,10 @@ void LabicCV::generateDepthImage(const Mat1f& depth, Mat depthMat) {
 }
 
 void LabicCV::saveFrame() {
-	while (!currentSet) {
-		currentSet = kinect->grabRGBDImage(rgbdCurrent);
-	}
-	queue.push(rgbdCurrent);
+	RGBDImage tmp;
+	while (!kinect->grabRGBDImage(tmp)) {}
+	cout << "[LabicCV] Pushed frame " << tmp.timestamp() << " to queue" << endl;
+	queue.push(tmp);
 }
 
 Vec3b LabicCV::depthToColor(float rawDepthValue) {

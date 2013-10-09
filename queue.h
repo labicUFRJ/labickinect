@@ -1,8 +1,5 @@
 /*
- * queue.h
- *
- *  Created on: Oct 9, 2013
- *      Author: macecchi
+ * Implements a queue for the type of RGBDImages with synchronized access control
  */
 
 #ifndef QUEUE_H_
@@ -23,13 +20,14 @@ namespace labic {
 		~FrameQueue() {
 			pthread_mutex_destroy(&mutex);
 			pthread_cond_destroy(&condv);
+			delete[] &queue;
 		}
 
 		void push(RGBDImage image) {
 			pthread_mutex_lock(&mutex);
 
 			queue.push_back(image);
-			std::cout << "[FrameQueue] New frame added. Queue size: " << queue.size() << std::endl;
+			//std::cout << "[FrameQueue] New frame added. Queue size: " << queue.size() << std::endl;
 
 			pthread_cond_signal(&condv);
 			pthread_mutex_unlock(&mutex);
@@ -44,7 +42,7 @@ namespace labic {
 
 			RGBDImage image = queue.front();
 			queue.pop_front();
-			std::cout << "[FrameQueue] Frame removed. Queue size: " << queue.size() << std::endl;
+			//std::cout << "[FrameQueue] Frame removed. Queue size: " << queue.size() << std::endl;
 
 			pthread_mutex_unlock(&mutex);
 			return image;

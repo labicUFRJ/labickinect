@@ -64,7 +64,7 @@ void Reconstructor::reconstruct() {
     			world += alignedCloudPrevious;
     			transformPrevious.setIdentity();
 
-    			pcl::io::savePLYFileASCII("world0.ply", world);
+    			//pcl::io::savePLYFileASCII("world0.ply", world);
     			pointsDetected += world.size();
 
 				cout << "[LabicReconstructor] Initial frame saved" << endl;
@@ -73,6 +73,11 @@ void Reconstructor::reconstruct() {
 				cout << endl << "[LabicReconstructor] Reconstructor got frames. Reconstructing..." << endl;
 
 				rgbdCurrent = queue.pop();
+
+				if (rgbdCurrent == rgbdPrevious) {
+					cerr << "ERROR - LOOP WITH EQUAL FRAMES" << endl;
+					continue;
+				}
 
 				imwrite("rgbPrevious.jpg", rgbdPrevious.rgb());
 				imwrite("rgbCurrent.jpg", rgbdCurrent.rgb());
@@ -97,7 +102,6 @@ void Reconstructor::reconstruct() {
 }
 
 void Reconstructor::performLoop() {
-
 	vector<KeyPoint> featuresCurrent;
 	Mat descriptorsCurrent, matchesMat;
 	vector<DMatch> relatedFeatures;
@@ -116,7 +120,6 @@ void Reconstructor::performLoop() {
 	extractRGBFeatures(rgbdCurrent, featuresCurrent, descriptorsCurrent);
 
 	// 2. Get related features (matches) between features from both images
-	//matchFeatures(featuresPrevious, descriptorsPrevious, featuresCurrent, descriptorsCurrent, relatedFeatures);
 	matchFeatures(featuresCurrent, descriptorsCurrent, featuresPrevious, descriptorsPrevious, relatedFeatures);
 	drawMatches(rgbdCurrent.rgb(), featuresCurrent, rgbdPrevious.rgb(), featuresPrevious, relatedFeatures, matchesMat);
 	if (relatedFeatures.size() < minMatches) {
@@ -280,7 +283,7 @@ void Reconstructor::printStats() const {
 		 << "	Features matched: " << featuresMatched << " (avg. " << featuresMatched/(framesAnalyzed-1) << ")" << endl
 		 << "	Matches discarded: " << matchesDiscarded << " (avg. " << matchesDiscarded/(framesAnalyzed-1) << ")" << endl
 		 << "	Points detected: " << pointsDetected << " (avg. " << pointsDetected/framesAnalyzed << ")" << endl
-		 << "	Reconstruction time: " << ((float)totalTime)/CLOCKS_PER_SEC << " secs (avg. " << (((float)totalTime)/CLOCKS_PER_SEC)/(framesAnalyzed-1) << " secs)" << endl
+		 << "	Reconstruction time: " << ((float)totalTime)/CLOCKS_PER_SEC << " secs (avg. " << (((float)totalTime)/CLOCKS_PER_SEC)/reconstructionsAccepted << " secs)" << endl
 		 << endl;
 }
 

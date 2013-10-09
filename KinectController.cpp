@@ -10,7 +10,9 @@ using namespace std;
 using namespace labic;
 
 KinectController::KinectController(freenect_context *_ctx, int _index)
-: Freenect::FreenectDevice(_ctx, _index), m_buffer_depth(freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB).bytes),m_buffer_video(freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB).bytes), m_gamma(2048), m_new_rgb_frame(false), m_new_depth_frame(false) {
+: Freenect::FreenectDevice(_ctx, _index), m_buffer_depth(freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB).bytes),
+  m_buffer_video(freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB).bytes), last_timestamp(0), last_timestamp_grabbed(0),
+  m_gamma(2048), m_new_rgb_frame(false), m_new_depth_frame(false) {
     setTilt(0.0);
     setLed(LED_RED);
 }
@@ -47,12 +49,13 @@ bool KinectController::grabRGBDImage(RGBDImage& rgbd) {
     	m_new_rgb_frame = false;
         m_rgb_mutex.unlock();
         m_depth_mutex.unlock();
+        last_timestamp_grabbed = last_timestamp;
         return true;
-    } else {
-        m_rgb_mutex.unlock();
-        m_depth_mutex.unlock();
-    	return false;
     }
+
+    m_rgb_mutex.unlock();
+    m_depth_mutex.unlock();
+    return false;
 }
 
 void KinectController::setTilt(double _tilt) {

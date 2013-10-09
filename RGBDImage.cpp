@@ -50,6 +50,9 @@ void RGBDImage::update(std::vector<uint8_t>& _raw_rgb, std::vector<uint16_t>& _r
 void RGBDImage::copyTo(RGBDImage& other) const {
 	m_depth.copyTo(other.m_depth);
 	m_rgb.copyTo(other.m_rgb);
+	other.raw_rgb = raw_rgb;
+	other.raw_depth = raw_depth;
+	other.time = time;
 }
 
 RGBDImage& RGBDImage::operator=(const RGBDImage& other) {
