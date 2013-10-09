@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
 		cout << "[main] Automatic mode: new frames will be saved each " << opt::capture_interval() << " milliseconds" << endl;
 		cv->setCaptureInterval(opt::capture_interval());
 	} else {
-		cout << "[main] Manual mode: press <<space>> to save a frame" << endl;
+		cout << "[main] Manual mode: press <<SPACEBAR>> to save a frame" << endl;
 	}
 	cv->start();
 

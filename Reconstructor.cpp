@@ -283,6 +283,8 @@ void Reconstructor::printStats() const {
 		 << "	Features matched: " << featuresMatched << " (avg. " << featuresMatched/(framesAnalyzed-1) << ")" << endl
 		 << "	Matches discarded: " << matchesDiscarded << " (avg. " << matchesDiscarded/(framesAnalyzed-1) << ")" << endl
 		 << "	Points detected: " << pointsDetected << " (avg. " << pointsDetected/framesAnalyzed << ")" << endl
+		 << "	Reconstructions generated: " << reconstructionsGenerated << endl
+		 << "	Reconstructions accepted: " << reconstructionsAccepted << endl
 		 << "	Reconstruction time: " << ((float)totalTime)/CLOCKS_PER_SEC << " secs (avg. " << (((float)totalTime)/CLOCKS_PER_SEC)/reconstructionsAccepted << " secs)" << endl
 		 << endl;
 }
