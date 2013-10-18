@@ -20,7 +20,7 @@ namespace labic {
 		~FrameQueue() {
 			pthread_mutex_destroy(&mutex);
 			pthread_cond_destroy(&condv);
-			delete[] &queue;
+			//delete[] &queue;
 		}
 
 		void push(RGBDImage image) {

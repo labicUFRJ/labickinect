@@ -81,7 +81,6 @@ int main(int argc, char **argv) {
 	}
 
 	while (!stop) {
-		if (opt::enable_pcl()) pcl->mainLoopPart(REFRESH_INTERVAL);
 		cv->mainLoopPart(REFRESH_INTERVAL);
 	}
 

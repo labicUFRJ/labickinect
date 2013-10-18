@@ -16,49 +16,51 @@ using namespace labic;
 
 LabicPCL::LabicPCL(KinectController *_kinect, bool* _stop, FrameQueue& q)  : kinect(_kinect), stop(_stop), queue(q) {
     viewPort = 1;
-    
     std::cout << "[LabicPCL] Viewer initialized\n";
 }
 
-bool LabicPCL::mainLoopPart(const int t) {
-    if (!viewer.wasStopped() && !*stop) {
-		viewer.spinOnce(t);
-        return true;
-    } else {
-        cout << "[LabicPCL] User closed PCLVisualizer window" << endl;
-
-        close();
-        
-        cout << "[LabicPCL] mainLoopPart finished" << endl;
-        return false;
-    }
-}
-
 void LabicPCL::display() {
-    cv::Mat rgb(cv::Size(640, 480), CV_8UC3, cv::Scalar(0));
-    
-	std::cout << "[LabicPCL] Display started\n";
-    
-    viewer.addCoordinateSystem(0.1);
-    viewer.initCameraParameters();
-    viewer.setCameraPosition(0.0, 0.0, -1.0, 0.0, -1.0, 0.0);
-    viewer.addText("Live PointCloud", 10, 10);    
-    
-    /*
-    while (!viewer.wasStopped() && !*stop) {
-        if (!kinect->getFrame(rgb, depth)) continue;
-        if (!frameToPointCloud(rgb, depth, liveCloud)) continue;
-        
-        if (!savedPLY) { pcl::io::savePLYFileASCII("cloud.ply", liveCloud); savedPLY = true; }
-        
-        if (!viewer.updatePointCloud(liveCloud.makeShared())) {
-            viewer.addPointCloud<PointXYZRGB>(liveCloud.makeShared());
-			viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3);
-        }
+	std::cout << "[LabicPCL] Display started" << std::endl;
+
+	viewer.reset(new PCLVisualizer("PCLVisualizer Thread Test"));
+    viewer->setBackgroundColor(0,0,0);
+
+    RGBDImage rgbdCurrent;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr liveCloud;
+    PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb;
+
+    viewer->addCoordinateSystem(0.1);
+    viewer->initCameraParameters();
+    viewer->setCameraPosition(0, 0, -1, 0, -1, 0);
+    viewer->addText("Live PointCloud (empty)", 20, 10, "size");
+
+	while (!viewer->wasStopped() && !*stop) {
+		if (!kinect->grabRGBDImage(rgbdCurrent)) {
+			viewer->spinOnce(100);
+			continue;
+		}
+
+		liveCloud = rgbdCurrent.pointCloud().makeShared();
+		rgb.setInputCloud(liveCloud);
+
+		if (!viewer->updatePointCloud<PointXYZRGB>(liveCloud, rgb)) {
+			viewer->addPointCloud<PointXYZRGB>(liveCloud, rgb);
+			viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1);
+		}
+
+		std::stringstream txtSize;
+		txtSize << "Live PointCloud size: " << liveCloud->size() << " points";
+
+		viewer->updateText(txtSize.str(), 20, 10, "size");
+
+		viewer->spinOnce(100);
+	    boost::this_thread::sleep(boost::posix_time::microseconds(100000)); // WHY
 	}
-	*/
-    
-    viewer.close();
+
+	cout << "[LabicPCL] User closed window" << endl;
+
+	viewer->close();
+	*stop = true;
 	
     std::cout << "[LabicPCL] Display finished\n";
 }
@@ -88,42 +90,6 @@ void LabicPCL::addCameras(const std::vector<cv::Mat>&         T,
     }
 }
 
-void LabicPCL::updateCloud(std::vector< cv::Point3d >& objPoints, cv::Mat img) {
-	if (!cloud.empty()) cloud.clear();
-	
-    cloud.width    = objPoints.size();
-    cloud.height   = 1;
-    cloud.is_dense = false;
-    cloud.points.resize (cloud.width * cloud.height);
-    
-    int imgx, imgy;
-    
-    for (size_t i = 0; i < cloud.points.size (); ++i){
-        // Set cloud point position
-        cloud.points[i].x = objPoints[i].x;
-        cloud.points[i].y = objPoints[i].y;
-        cloud.points[i].z = objPoints[i].z - 1.0;
-        
-        // Set cloud point color
-        // Color the point as black if there is no depth information
-        if (objPoints[i].x == 0 && objPoints[i].y == 0 && objPoints[i].z == 0) {
-            
-            cloud.points[i].r = cloud.points[i].g = cloud.points[i].b = 255;
-            
-        } else {
-        
-            imgx = i/640;
-            imgy = i%640;
-            
-            cv::Vec3b cor = img.at<cv::Vec3b>(imgx, imgy);
-            
-            cloud.points[i].r = cor.val[2];
-            cloud.points[i].g = cor.val[1];
-            cloud.points[i].b = cor.val[0];
-        }        
-    }
-}
-
 void LabicPCL::start() {
     m_Thread = boost::thread(&LabicPCL::display, this);
 }
@@ -134,8 +100,7 @@ void LabicPCL::join() {
 
 void LabicPCL::close() {
 //    cout << "[LabicPCL] Asked to close PCL" << endl;
-    *stop = true;
-    viewer.close();
+    viewer->close();
     join();
 }
 
