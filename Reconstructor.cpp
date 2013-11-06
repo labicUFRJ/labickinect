@@ -31,7 +31,7 @@ Reconstructor::Reconstructor(bool* _stop, FrameQueue& q) : stop(_stop), queue(q)
 	matcher2  = new BFMatcher(NORM_HAMMING, false);
 	
 	ransac = new RANSACAligner();
-	ransac->setDistanceThreshold(1.0); // 1.0
+	ransac->setDistanceThreshold(2.0); // 1.0
 	ransac->setMaxIterations(100);
 	ransac->setMinInliers(20);
 	ransac->setNumSamples(3);

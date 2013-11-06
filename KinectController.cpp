@@ -10,7 +10,7 @@ using namespace std;
 using namespace labic;
 
 KinectController::KinectController(freenect_context *_ctx, int _index)
-: Freenect::FreenectDevice(_ctx, _index), m_buffer_depth(freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB).bytes),
+: Freenect::FreenectDevice(_ctx, _index), m_buffer_depth(freenect_find_depth_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_DEPTH_REGISTERED).bytes),
   m_buffer_video(freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB).bytes), last_timestamp(0), last_timestamp_grabbed(0),
   m_gamma(2048), m_new_rgb_frame(false), m_new_depth_frame(false) {
     setTilt(0.0);
@@ -34,7 +34,7 @@ void KinectController::DepthCallback(void* _depth, uint32_t timestamp) {
     m_depth_mutex.lock();
     last_timestamp = timestamp;
     uint16_t* depth = static_cast<uint16_t*>(_depth);
-    std::copy(depth, depth+getDepthBufferSize(), m_buffer_depth.begin());
+    std::copy(depth, depth+640*480, m_buffer_depth.begin());
     m_new_depth_frame = true;
     m_depth_mutex.unlock();
 }

@@ -75,7 +75,7 @@ const pcl::PointXYZRGB RGBDImage::point(int r, int c) const {
 
 	pt.x = (c - cx_d) * d * fx_d;
 	pt.y = (r - cy_d) * d * fy_d;
-	pt.z = d - 1.0;
+	pt.z = d;
 	pt.r = m_rgb(r,c)[2];
 	pt.g = m_rgb(r,c)[1];
 	pt.b = m_rgb(r,c)[0];

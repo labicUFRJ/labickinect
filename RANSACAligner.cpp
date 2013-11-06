@@ -67,8 +67,7 @@ double RANSACAligner::getAlignmentError(const PointCloud<PointXYZRGB>& transform
 
     for (unsigned int i=0; i<inliersIndexes.size(); i++) {
         int inlierIndex = inliersIndexes[i];
-        // TODO squaredEuclideanDistance
-        error += euclideanDistance(transformedCloud.points[inlierIndex], cloudPrevious.points[inlierIndex]);
+        error += euclideanDistance(transformedCloud.points[inlierIndex], cloudPrevious.points[inlierIndex])/1000; // distance divided by 1000 because original measure is in MM not in meters
     }
 
     error /= inliersIndexes.size();
@@ -121,9 +120,9 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 			transformedPoint.push_back(cloudCurrent.points[pointIndex]);
 			transformPointCloud(transformedPoint, transformedPoint, maybeTransform);
 			// TODO change to pixel distance
-			float transformedDistance = euclideanDistance(transformedPoint.points[0], cloudPrevious.points[pointIndex]);
+			float transformedDistance = euclideanDistance(transformedPoint.points[0], cloudPrevious.points[pointIndex])/1000; // distance divided by 1000 because original measure is in MM not in meters
 
-			//cout << "       Point " << pointIndex << " distance = " << transformedDistance;
+			cout << "       Point " << pointIndex << " distance (" << transformedPoint.points[0] << " and " << cloudPrevious.points[pointIndex] << ") = " << transformedDistance;
 			if (transformedDistance < inlierThreshold) {
 				consensusSetIndexes.push_back(pointIndex);
 				//cout << " (added to consensus set!)";
