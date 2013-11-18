@@ -199,7 +199,9 @@ namespace Freenect {
 			DeviceMap::iterator it = m_devices.find(_index);
 			if (it != m_devices.end()) delete it->second;
 			ConcreteDevice * device = new ConcreteDevice(m_ctx, _index);
-			m_devices.insert(std::make_pair<int, FreenectDevice*>(_index, device));
+			// doesnt work with c++0x
+			//m_devices.insert(std::make_pair<int, FreenectDevice*>(_index, device));
+			m_devices.insert(std::make_pair(_index, device));
 			return *device;
 		}
 		void deleteDevice(int _index) {
@@ -226,7 +228,8 @@ namespace Freenect {
 					}
 					std::stringstream ss;
 					ss << "Cannot process freenect events (libusb error code: " << res << ")";
-					throw std::runtime_error(ss.str());
+					m_stop = true;
+					//throw std::runtime_error(ss.str());
 				}
 			}
 		}

@@ -7,6 +7,7 @@
 //
 
 #include <ctime>
+#include <chrono>
 #include "LabicCV.h"
 #include "opencv2/nonfree/features2d.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
@@ -20,41 +21,36 @@ using namespace labic;
 const string LabicCV::input_window = "Kinect Input";
 
 LabicCV::LabicCV(KinectController *_kinect, bool* _stop, FrameQueue& q)
-: kinect(_kinect),  initialized(false), windowClosed(false), currentSet(false), stop(_stop), captureInterval(-1), queue(q) {
+: kinect(_kinect),  windowClosed(false), currentSet(false), stop(_stop), captureInterval(-1), captureHold(false), startCapture(true), cameras(Mat(height, width*2, CV_8UC3)), queue(q) {
     for (unsigned int i=0; i<2048; i++) {
 		float v = i/2048.0;
 		v = pow(v, 3)* 6;
 		t_gamma[i] = v*6*256;
 	}
-    
-    cameras = Mat(height, width*2, CV_8UC3);
-    currentSet = false;
 
     namedWindow(input_window);
-    initialized = true;
 }
 
 void LabicCV::display() {
-    Mat rgbMat(Size(width, height), CV_8UC3, Scalar(0));
 	Mat depthMat(Size(width, height), CV_8UC3, Scalar(0));
     Mat left(cameras, Rect(0, 0, width, height));
     Mat right(cameras, Rect(width, 0, width, height));
     RGBDImage frame;
 
     uint32_t timestampPrevious = 0;
-    time_t start, end, lastCap = 0;
-    int clicks = 0;
-    double fps;
-    
+    long long unsigned int clicks = 0;
+    long long unsigned int savedFrames = 0;
+    long long unsigned int processedFrames = 0;
+    double fps = 0;
+    double seconds = 0;
+
+    startCapture = !captureHold;
+
+    chrono::high_resolution_clock::time_point first, start, end, lastCap;
+
 	cout << "[LabicCV] Display started" << endl;
 
-    if (!initialized) {
-        cerr << "[LabicCV] ERROR: OpenCV wasn't properly initialized" << endl;
-        return;
-    }
-
-    time(&start);
-    time(&lastCap);
+    first = lastCap = start = chrono::high_resolution_clock::now();
 
     do {
         kinect->grabRGBDImage(frame);
@@ -67,27 +63,43 @@ void LabicCV::display() {
         frame.rgb().copyTo(left);
         depthMat.copyTo(right);
         
-        //putText(cameras, "W,S,X -> ADJUST TILT", Point(20,30), CV_FONT_HERSHEY_PLAIN, 0.8f, Scalar::all(0), 1, 8);
-        
         timestampPrevious = frame.timestamp();
 
-        time(&end);
-        clicks++;
-        fps = clicks / difftime(end, start);
+        // Calculate FPS
+        end = chrono::high_resolution_clock::now();
+        seconds = chrono::duration_cast<chrono::seconds>(end - start).count();
+        if (seconds > 0) fps = clicks++ / seconds;
 
-        if (captureInterval > 0 && difftime(end, lastCap)*1000 > captureInterval) {
-        	lastCap = end;
-        	saveFrame();
+        // If automatic mode is on and can start capture
+        if (captureInterval > 0 && startCapture) {
+			seconds = chrono::duration_cast<chrono::milliseconds>(end - lastCap).count();
+
+			if (seconds > captureInterval || !savedFrames) {
+				//[cout << "difftime for capture in ms: " << seconds << endl;
+				lastCap = chrono::high_resolution_clock::now();
+				if (!savedFrames) first = lastCap;
+				saveFrame();
+				savedFrames++;
+			}
         }
 
         ostringstream fps_str;
         fps_str << "OpenCV FPS: " << fps;
         putText(cameras, fps_str.str(), Point(20,30), CV_FONT_HERSHEY_PLAIN, 1.0f, Scalar::all(0));
+
+        processedFrames++;
     } while (!*stop);
-    
+
+    end = chrono::high_resolution_clock::now();
     windowClosed = true;
 
-	cout << "[LabicCV] Display finished" << endl;
+    double totalTime = chrono::duration_cast<chrono::milliseconds>(end - first).count() / 1000.0;
+
+
+	cout << "[LabicCV] Display finished." << endl;
+	cout << "[LabicCV] Total run time: " << totalTime << " seconds" << endl;
+	cout << "[LabicCV] Total processed frames: " << processedFrames << endl;
+	cout << "[LabicCV] Total captures: " << savedFrames << " (" << ((double)savedFrames)/totalTime << " captures/sec)" << endl;
 }
 
 void LabicCV::generateDepthImage(const Mat1f& depth, Mat depthMat) {
@@ -112,6 +124,7 @@ void LabicCV::saveFrame() {
 	while (!kinect->grabRGBDImage(tmp)) {}
 	cout << "[LabicCV] Pushed frame " << tmp.timestamp() << " to queue" << endl;
 	queue.push(tmp);
+	queue.printStatus();
 }
 
 Vec3b LabicCV::depthToColor(float rawDepthValue) {
@@ -175,7 +188,8 @@ void LabicCV::keyboardHandler(int key) {
             kinect->setTilt(-1.0);
             break;
         case ' ':
-        	if (captureInterval > 0) break;
+        	if (!captureHold && captureInterval > 0) break;
+        	if (captureHold && captureInterval > 0) startCapture = true;
 			saveFrame();
             break;
         default:
@@ -184,18 +198,10 @@ void LabicCV::keyboardHandler(int key) {
     }
 }
 
-void LabicCV::start() {
-	m_Thread = boost::thread(&LabicCV::display, this);
-}
-
 void LabicCV::mainLoopPart(const int t) {
 	if (*stop) return ;
 	imshow(input_window, cameras);
     keyboardHandler(waitKey(t));
-}
-
-void LabicCV::join() {
-    m_Thread.join();
 }
 
 void LabicCV::close() {

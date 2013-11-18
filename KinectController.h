@@ -11,7 +11,7 @@
 
 #include "common.h"
 #include "libfreenect.h"
-#include "Mutex.h"
+#include "mutex.h"
 #include "RGBDImage.h"
 
 namespace labic {

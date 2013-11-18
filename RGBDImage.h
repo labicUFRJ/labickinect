@@ -8,7 +8,10 @@ namespace labic {
 	public:
 		RGBDImage();
 		RGBDImage(std::vector<uint8_t>& _raw_rgb, std::vector<uint16_t>& _raw_depth, uint32_t _timestamp);
+		//TODO copy constructor, move constructor
 		//~RGBDImage();
+		//RGBDImage(const RGBDImage& other);
+		//RGBDImage(RGBDImage&& other);
 		void update(std::vector<uint8_t>& _raw_rgb, std::vector<uint16_t>& _raw_depth, uint32_t _timestamp);
 		void copyTo(RGBDImage& other) const;
 		RGBDImage& operator=(const RGBDImage& other);
@@ -31,6 +34,10 @@ namespace labic {
 		std::vector<uint8_t> raw_rgb;
 		std::vector<uint16_t> raw_depth;
 		uint32_t time;
+		constexpr static double fx_d = 1.0 / 5.9421434211923247e+02;
+		constexpr static double fy_d = 1.0 / 5.9104053696870778e+02;
+		constexpr static double cx_d = 3.3930780975300314e+02;
+		constexpr static double cy_d = 2.4273913761751615e+02;
 	};
 }
 

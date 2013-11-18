@@ -20,14 +20,15 @@ namespace labic {
     class LabicCV {
     public:
         LabicCV(KinectController *_kinect, bool* _stop, FrameQueue& q);
-		void start();
+		void start() { m_Thread = boost::thread(&LabicCV::display, this); }
         void mainLoopPart(const int t);
-		void join();
+		void join() { m_Thread.join(); }
         void close();
         void init();
         void display();
         void saveFrame();
         void setCaptureInterval(int interval) { captureInterval = interval; }
+        void setCaptureHold(bool hold) { captureHold = hold; }
         const bool isReady() const { return currentSet; }
         void restartState() { currentSet = false; }
 
@@ -38,11 +39,12 @@ namespace labic {
 
 		boost::thread m_Thread;
         KinectController *kinect;
-		bool initialized;
         bool windowClosed;
         bool currentSet;
         bool* stop;
         int captureInterval;
+        bool captureHold;
+        bool startCapture;
 		uint16_t t_gamma[2048];
         cv::Mat cameras;
         FrameQueue& queue;

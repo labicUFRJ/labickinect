@@ -17,7 +17,7 @@ add_executable (labickinect main.cpp arg.cpp arg.h queue.h RGBDImage.cpp RGBDIma
 # to supress pcl libraries warnings
 SET(GCC_COVERAGE_COMPILE_FLAGS "-Wall -Wno-deprecated -Wno-invalid-offsetof ")
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
+SET(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 
 if(APPLE)
 	set(CMAKE_EXE_LINKER_FLAGS "-framework OpenGL -framework GLUT")

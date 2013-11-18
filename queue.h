@@ -55,6 +55,10 @@ namespace labic {
 			return size;
 		}
 
+		void printStatus() {
+			std::cout << "[FrameQueue] Queue has " << queue.size() << " frames" << std::endl;
+		}
+
 	private:
 		std::list<RGBDImage> queue;
 		pthread_mutex_t		 mutex;

@@ -65,10 +65,6 @@ bool RGBDImage::operator==(const RGBDImage& other) const {
 }
 
 const pcl::PointXYZRGB RGBDImage::point(int r, int c) const {
-	double fx_d = 1.0 / 5.9421434211923247e+02;
-	double fy_d = 1.0 / 5.9104053696870778e+02;
-	double cx_d = 3.3930780975300314e+02;
-	double cy_d = 2.4273913761751615e+02;
 	pcl::PointXYZRGB pt;
 
 	float d = m_depth(r,c); // depth has to be in mm

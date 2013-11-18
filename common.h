@@ -28,6 +28,35 @@ namespace labic {
 		return z;
 	}
 
+	inline pcl::PointXYZ pointInPixelSpace(pcl::PointXYZRGB p) {
+		static const double f = 580.0; // focal length of ir camera in pixels
+		static const double b = 0.075; // 7.5 cm in m
+		p.x /= 1000; // convert from mm scale to m
+		p.y /= 1000;
+		p.z /= 1000;
+
+		pcl::PointXYZ r;
+		r.x = (f/p.z)*p.x + width/2;
+		r.y = (f/p.z)*p.y + height/2;
+		r.z = (f/p.z)*b;
+
+		return r;
+	}
+
+	inline double pixelDistance(pcl::PointXYZRGB p1, pcl::PointXYZRGB p2) {
+		pcl::PointXYZ projP1 = pointInPixelSpace(p1);
+		pcl::PointXYZ projP2 = pointInPixelSpace(p2);
+
+		return sqrt(pow(projP1.x - projP2.x, 2) + pow(projP1.y - projP2.y, 2) + pow(projP1.z - projP2.z, 2));
+	}
+
+	inline double squaredPixelDistance(pcl::PointXYZRGB p1, pcl::PointXYZRGB p2) {
+		pcl::PointXYZ projP1 = pointInPixelSpace(p1);
+		pcl::PointXYZ projP2 = pointInPixelSpace(p2);
+
+		return (pow(projP1.x - projP2.x, 2) + pow(projP1.y - projP2.y, 2) + pow(projP1.z - projP2.z, 2));
+	}
+
 
 //	inline cv::Point3d ptToPoint3d(float cgx, float cgy, float cgz) {
 //		double fx_d = 1.0 / 5.9421434211923247e+02;

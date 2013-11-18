@@ -24,6 +24,7 @@ namespace labic {
 		void setNumSamples(int _n) { nSamples = _n; }
 		const Eigen::Matrix4d& getFinalTransform() const { return bestTransform; }
 		const std::vector<int>& getFinalInliers() const { return bestConsensusSetIndexes; }
+		double getFinalError() const { return bestError; }
 
 	private:
 		void reset();

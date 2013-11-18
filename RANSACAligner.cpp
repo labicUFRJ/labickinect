@@ -24,7 +24,6 @@ void RANSACAligner::reset() {
 }
 
 void RANSACAligner::getRandomSamples(std::vector<int>& maybeIndexes, std::vector<int>& notMaybeIndexes) const {
-	unsigned int i;
 
 	maybeIndexes.clear();
 	notMaybeIndexes.clear();
@@ -33,6 +32,7 @@ void RANSACAligner::getRandomSamples(std::vector<int>& maybeIndexes, std::vector
 	while (maybeIndexes.size() < nSamples) {
 		int randomSample = rand() % numFeatures;
 //		cout << randomSample << ", ";
+		unsigned int i;
 		for (i=0; i<maybeIndexes.size(); i++) {
 			if (randomSample == maybeIndexes[i]) break;
 		}
@@ -41,13 +41,13 @@ void RANSACAligner::getRandomSamples(std::vector<int>& maybeIndexes, std::vector
 		if (i == maybeIndexes.size()) maybeIndexes.push_back(randomSample);
 	}
 //	cout << "]" << endl;
-	if (maybeIndexes.size() > nSamples) cerr << "RANDOM SAMPLES WITH TOO MANY SAMPLES!!" << endl;
+//	if (maybeIndexes.size() > nSamples) cerr << "RANDOM SAMPLES WITH TOO MANY SAMPLES!!" << endl;
 
 	//cout << "	not[";
-	for (i=0; i<numFeatures; i++) {
+	for (unsigned int i=0; i<numFeatures; i++) {
 		bool isInMaybeIndexes = false;
 		for (unsigned int j=0; j<maybeIndexes.size(); j++) {
-			if (i == maybeIndexes[j]) {
+			if (i == (unsigned int)maybeIndexes[j]) {
 				isInMaybeIndexes = true;
 				break;
 			}
@@ -67,7 +67,8 @@ double RANSACAligner::getAlignmentError(const PointCloud<PointXYZRGB>& transform
 
     for (unsigned int i=0; i<inliersIndexes.size(); i++) {
         int inlierIndex = inliersIndexes[i];
-        error += euclideanDistance(transformedCloud.points[inlierIndex], cloudPrevious.points[inlierIndex])/1000; // distance divided by 1000 because original measure is in MM not in meters
+//        error += euclideanDistance(transformedCloud.points[inlierIndex], cloudPrevious.points[inlierIndex])/1000; // distance divided by 1000 because original measure is in MM not in meters
+        error += squaredPixelDistance(transformedCloud.points[inlierIndex], cloudPrevious.points[inlierIndex]);
     }
 
     error /= inliersIndexes.size();
@@ -87,7 +88,7 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 	numFeatures = cloudCurrent.size();
 
 	while (iterations < maxIterations) {
-		cout << ">>> RANSAC iteration " << iterations << endl;
+//		cout << ">>> RANSAC iteration " << iterations << endl;
 
 		consensusSetIndexes.clear();
 		maybeTransform.setZero();
@@ -119,10 +120,12 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 			transformedPoint.clear();
 			transformedPoint.push_back(cloudCurrent.points[pointIndex]);
 			transformPointCloud(transformedPoint, transformedPoint, maybeTransform);
-			// TODO change to pixel distance
-			float transformedDistance = euclideanDistance(transformedPoint.points[0], cloudPrevious.points[pointIndex])/1000; // distance divided by 1000 because original measure is in MM not in meters
 
-			cout << "       Point " << pointIndex << " distance (" << transformedPoint.points[0] << " and " << cloudPrevious.points[pointIndex] << ") = " << transformedDistance;
+			float transformedDistance;
+//			transformedDistance = euclideanDistance(transformedPoint.points[0], cloudPrevious.points[pointIndex])/1000; // distance divided by 1000 because original measure is in MM not in meters
+			transformedDistance = pixelDistance(transformedPoint.points[0], cloudPrevious.points[pointIndex]);
+
+//			cout << "       Point " << pointIndex << " distance (" << transformedPoint.points[0] << " and " << cloudPrevious.points[pointIndex] << ") = " << transformedDistance;
 			if (transformedDistance < inlierThreshold) {
 				consensusSetIndexes.push_back(pointIndex);
 				//cout << " (added to consensus set!)";
@@ -130,7 +133,7 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 			//cout << endl;
 		}
 
-		cout << "	Consensus set has " << consensusSetIndexes.size() << " points" << endl;
+//		cout << "	Consensus set has " << consensusSetIndexes.size() << " points" << endl;
 
 		if (consensusSetIndexes.size() > minInliers) {
 //			cout << "	Consensus set has more than " << minInliers << " inliers. Finding consensus set transformation" << endl;
@@ -148,19 +151,21 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 
 //			cout << "       thisError = " << thisError;
 			if (thisError < bestError) {
-				cout << "	Great! best error so far (thisError = "  << thisError << "). Updating best parameters." << endl;
+//				cout << "	Great! best error so far (thisError = "  << thisError << "). Updating best parameters." << endl;
 				bestIteration = iterations;
 				bestTransform = thisTransform;
 				bestError = thisError;
 				bestConsensusSetIndexes = consensusSetIndexes;
 			} else {
-				cout << "	Iteration was not the best. thisError = "  << thisError << endl;
+//				cout << "	Iteration was not the best. thisError = "  << thisError << endl;
 			}
 		}
 
 		// TODO test to stop if found error < ok_error
-		cout << "	Best iteration so far: " << bestIteration << " (bestError = " << bestError << ")" << endl;
+//		cout << "	Best iteration so far: " << bestIteration << " (bestError = " << bestError << ")" << endl;
 		iterations++;
 	}
+
+	cout << "[RANSAC] Ransac finished. Best iteration: " << bestIteration << ". Best error: " << bestError << ". Best consensus set: " << bestConsensusSetIndexes.size() << " points" << endl;
 
 }
