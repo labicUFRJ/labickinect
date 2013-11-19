@@ -22,10 +22,10 @@ Reconstructor::Reconstructor(bool* _stop, FrameQueue& q) : stop(_stop), autoSave
 	maxMatchDistance = 10; // max distance of visual match to be valid
 	minInliersToValidateTransformation = 10; // gamma - min inliers to accept ransac
 	
-	adjuster  = new FastAdjuster(100, true);
+	adjuster  = new FastAdjuster(50, true);
 	extractor = new BriefDescriptorExtractor();
 	matcher   = new BFMatcher(NORM_HAMMING, true); // gives infinite distance between matchings
-	matcher2  = new BFMatcher(NORM_HAMMING, false);
+	//matcher2  = new BFMatcher(NORM_HAMMING, false);
 	
 	ransac = new RANSACAligner();
 	ransac->setDistanceThreshold(1.0); // paper: 2.0 pixels
@@ -42,11 +42,13 @@ Reconstructor::Reconstructor(bool* _stop, FrameQueue& q) : stop(_stop), autoSave
 	pointsDetected = 0;
 	totalTime = 0;
 
+	transformFinal.setIdentity();
 	transformPrevious.setIdentity();
 }
 
 void Reconstructor::threadFunc() {
-	clock_t t;
+	hrclock::time_point t;
+	double timeReconstruction;
     cout << "[LabicReconstructor] Reconstructor initialized" << endl;
 
     while (!*stop || queue.size() > 0) {
@@ -74,14 +76,11 @@ void Reconstructor::threadFunc() {
 					continue;
 				}
 
-				//imwrite("rgbPrevious.jpg", rgbdPrevious.rgb());
-				//imwrite("rgbCurrent.jpg", rgbdCurrent.rgb());
+	        	t = hrclock::now();
+	        	performAlignment();
+	    		totalTime += (timeReconstruction = diffTime(hrclock::now(), t));
 
-	        	t = clock();
-	        	performLoop();
-	    		totalTime += t = clock() - t;
-
-				cout << "[LabicReconstructor] Finished reconstruction loop (" << ((float)t)/CLOCKS_PER_SEC << " secs)" << endl;
+				cout << "[LabicReconstructor] Finished reconstruction loop (" << timeReconstruction << " secs)" << endl;
 				queue.printStatus();
     		}
 
@@ -94,23 +93,26 @@ void Reconstructor::threadFunc() {
     
     printStats();
 
-    cout << "[LabicReconstructor] Exporting final world" << endl;
-    if (world.size() > 0) pcl::io::savePLYFileASCII("world.ply", world);
-    else cout << "[LabicReconstructor] World empty" << endl;
+    cout << "[LabicReconstructor] Exporting final world. Please wait... ";
+    if (world.size() > 0) {
+    	pcl::io::savePLYFileASCII("world.ply", world);
+    	cout << "Done." << endl;
+    }
+    else cout << "Nothing to be done." << endl;
 
     cout << "[LabicReconstructor] Reconstructor finished" << endl;
 }
 
-void Reconstructor::performLoop() {
+void Reconstructor::performAlignment() {
 	vector<KeyPoint> featuresCurrent;
-	Mat descriptorsCurrent, matchesMat;
+	Mat descriptorsCurrent;
 	vector<DMatch> relatedFeatures;
     vector<Point2f> selectedFeaturePointsCurrent, selectedFeaturePointsPrevious;
-	PointCloud<PointXYZRGB> cloudCurrent, featureCloudCurrent, featureCloudPrevious, alignedCloudCurrent;
-	Eigen::Matrix4d transform, transformFinal;
     vector<int> transformationInliersIndexes;
+	PointCloud<PointXYZRGB> cloudCurrent, featureCloudCurrent, featureCloudPrevious, alignedCloudCurrent;
+	Eigen::Matrix4d transform;
 
-    transform = transformFinal = Eigen::Matrix4d::Zero();
+    transform = Eigen::Matrix4d::Zero();
 
     // 0. Get PointCloud from previous and current states
     cloudCurrent = rgbdCurrent.pointCloud();
@@ -121,15 +123,19 @@ void Reconstructor::performLoop() {
 
 	// 2. Get related features (matches) between features from both images
 	matchFeatures(featuresCurrent, descriptorsCurrent, featuresPrevious, descriptorsPrevious, relatedFeatures);
-	drawMatches(rgbdCurrent.rgb(), featuresCurrent, rgbdPrevious.rgb(), featuresPrevious, relatedFeatures, matchesMat);
 
+	// 2.1. Verify if visual match resulted in the minimal number of associations
 	if (relatedFeatures.size() < minMatches) {
-		cerr << "[LabicReconstructor::performLoop] IMAGES DO NOT MATCH! ABORTING RECONSTRUCTION" << endl;
+		cerr << "[LabicReconstructor] IMAGES DO NOT MATCH! ABORTING RECONSTRUCTION. MATCH SAVED TO 'matchfailed.jpg'" << endl;
+
+		Mat matchesMat;
+		drawMatches(rgbdCurrent.rgb(), featuresCurrent, rgbdPrevious.rgb(), featuresPrevious, relatedFeatures, matchesMat);
 		imwrite("matchfailed.jpg", matchesMat);
+
 		return;
 	}
 
-    // Filter matches and discard matches that do not have depth information on both images
+    // 2.2. Apply depth-filter to matches
     for (unsigned int i=0; i<relatedFeatures.size(); i++) {
         int previousIndex = relatedFeatures[i].trainIdx;
         int currentIndex = relatedFeatures[i].queryIdx;
@@ -140,22 +146,18 @@ void Reconstructor::performLoop() {
         	rgbdCurrent.rgbPixelHasDepth(currentPoint.y, currentPoint.x)) {
         	selectedFeaturePointsPrevious.push_back(previousPoint);
         	selectedFeaturePointsCurrent.push_back(currentPoint);
-        } else {
-        	matchesDiscarded++;
-        }
+        } else matchesDiscarded++;
     }
 
-    cout << "[LabicReconstructor::performLoop] Matches after depth filter: " << selectedFeaturePointsPrevious.size() << " points" << endl;
+    cout << "[LabicReconstructor::performAlignment] Matches after depth filter: " << selectedFeaturePointsPrevious.size() << " points" << endl;
 
 	// 3. Generate PointClouds of related features
     featureCloudPrevious = rgbdPrevious.pointCloudOfSelection(selectedFeaturePointsPrevious);
     featureCloudCurrent = rgbdCurrent.pointCloudOfSelection(selectedFeaturePointsCurrent);
 
-    //cout << "[LabicReconstructor::performLoop] Feature cloud being transformed with " << featureCloudPrevious.size() << " points" << endl;
-
 	// 4. Alignment detection
-    if (featureCloudPrevious.size() < 10) {
-		cerr << "[LabicReconstructor::performLoop] Too few points to call RANSAC! Aborting reconstruction!" << endl;
+    if (featureCloudPrevious.size() < minInliersToValidateTransformation) {
+		cerr << "[LabicReconstructor] Too few points to call RANSAC! Aborting reconstruction!" << endl;
 		return;
     }
 
@@ -163,47 +165,46 @@ void Reconstructor::performLoop() {
     transform = ransac->getFinalTransform();
     transformationInliersIndexes = ransac->getFinalInliers();
 
-    cout << "[LabicReconstructor::performLoop] Final transformation matrix resulted in " << transformationInliersIndexes.size() << " inliers: " << endl << transform << endl;
+    cout << "[LabicReconstructor] Final transformation matrix that resulted in " << transformationInliersIndexes.size() << " inliers: " << endl << transform << endl;
 
     reconstructionsGenerated++;
 
     // Check if transformation generated the correct set of inliers
     if (transformationInliersIndexes.size() < minInliersToValidateTransformation) {
-    	cerr << "[LabicReconstructor::performLoop] RANSAC transformation NOT accepted (did not generate the mininum of inliers). ";
+    	cerr << "[LabicReconstructor] RANSAC transformation NOT accepted (did not generate the mininum of inliers). ";
 
     	// Use same transformation as previous reconstruction
-		transformFinal = transformPrevious;
-		cerr << "Using previous transformation:" << endl << transformFinal << endl;
-		transformationInliersIndexes.clear();
+		transformFinal = transformFinal * transformPrevious;
+		cerr << "Repeating previous transformation:" << endl << transformPrevious << endl;
 
+		transformationInliersIndexes.clear();
     } else {
-        cout << "[LabicReconstructor::performLoop] Transformation accepted" << endl;
-        // As the previous frame already had a transformation, multiply it so it matches the previous alignment
-        transformFinal = transformPrevious * transform; // TODO or the opposite??????????
-        cout << "			transformFinal:" << endl << transformFinal << endl;
-        transformPrevious = transformFinal;
+        cout << "[LabicReconstructor] Transformation accepted" << endl;
+        transformPrevious = transform;
+        transformFinal = transformFinal * transform; // TODO or the opposite??????????
+
         reconstructionsAccepted++;
     }
 
 	// 5. Apply transformation to all frame points
+    cout << "Final accumulated transformation:" << endl << transformFinal << endl;
     transformPointCloud(cloudCurrent, alignedCloudCurrent, transformFinal);
 
     // 6. Update 'previous' variables
     rgbdCurrent.copyTo(rgbdPrevious);
     featuresPrevious = featuresCurrent;
     descriptorsCurrent.copyTo(descriptorsPrevious);
-    world += alignedCloudCurrent;
-    cout << "[LabicReconstructor::performLoop] World updated. Total of " << world.size() << " points (approximately " << ((world.size()*sizeof(PointXYZRGB))>>20)*1.35 << " MB)" << endl;
 
+    // 7. Update world with new frame
+    world += alignedCloudCurrent;
+    cout << "[LabicReconstructor] World updated. Total of " << world.size() << " points (approximately " << ((world.size()*sizeof(PointXYZRGB))>>20)*1.35 << " MB)" << endl;
 
     if (autoSave) {
-        char filenamejpg[25], filenameply[25];
-        sprintf(filenamejpg, "matches%d.jpg", reconstructionsAccepted);
+        char filenameply[25];
         sprintf(filenameply, "world%d.ply", reconstructionsAccepted);
-        imwrite(filenamejpg, matchesMat);
     	pcl::io::savePLYFileASCII(filenameply, world);
 
-    	cout << "[LabicReconstructor] World saved with filename '" << filenameply << "'" << endl;
+    	cout << "[LabicReconstructor] World exported with filename '" << filenameply << "'" << endl;
     }
 
 }
@@ -281,6 +282,6 @@ void Reconstructor::printStats() const {
 		 << "	Points detected: " << pointsDetected << " (avg. " << pointsDetected/framesAnalyzed << ")" << endl
 		 << "	Reconstructions generated: " << reconstructionsGenerated << endl
 		 << "	Reconstructions accepted: " << reconstructionsAccepted << endl
-		 << "	Reconstruction time: " << ((float)totalTime)/CLOCKS_PER_SEC << " secs (avg. " << (((float)totalTime)/CLOCKS_PER_SEC)/reconstructionsAccepted << " secs)" << endl
+		 << "	Reconstruction time: " << totalTime << " secs (avg. " << totalTime/reconstructionsAccepted << " secs)" << endl
 		 ;
 }

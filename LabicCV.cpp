@@ -6,8 +6,6 @@
 //
 //
 
-#include <ctime>
-#include <chrono>
 #include "LabicCV.h"
 #include "opencv2/nonfree/features2d.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
@@ -46,11 +44,11 @@ void LabicCV::display() {
 
     startCapture = !captureHold;
 
-    chrono::high_resolution_clock::time_point first, start, end, lastCap;
+    hrclock::time_point first, start, end, lastCap;
 
 	cout << "[LabicCV] Display started" << endl;
 
-    first = lastCap = start = chrono::high_resolution_clock::now();
+    first = lastCap = start = hrclock::now();
 
     do {
         kinect->grabRGBDImage(frame);
@@ -66,17 +64,17 @@ void LabicCV::display() {
         timestampPrevious = frame.timestamp();
 
         // Calculate FPS
-        end = chrono::high_resolution_clock::now();
-        seconds = chrono::duration_cast<chrono::seconds>(end - start).count();
+        end = hrclock::now();
+        seconds = diffTime(end, start);
         if (seconds > 0) fps = clicks++ / seconds;
 
         // If automatic mode is on and can start capture
         if (captureInterval > 0 && startCapture) {
-			seconds = chrono::duration_cast<chrono::milliseconds>(end - lastCap).count();
+			seconds = diffTimeMs(end,lastCap);
 
 			if (seconds > captureInterval || !savedFrames) {
 				//[cout << "difftime for capture in ms: " << seconds << endl;
-				lastCap = chrono::high_resolution_clock::now();
+				lastCap = hrclock::now();
 				if (!savedFrames) first = lastCap;
 				saveFrame();
 				savedFrames++;
@@ -90,10 +88,9 @@ void LabicCV::display() {
         processedFrames++;
     } while (!*stop);
 
-    end = chrono::high_resolution_clock::now();
     windowClosed = true;
 
-    double totalTime = chrono::duration_cast<chrono::milliseconds>(end - first).count() / 1000.0;
+    double totalTime = diffTime(lastCap, first);
 
 
 	cout << "[LabicCV] Display finished." << endl;
@@ -106,17 +103,12 @@ void LabicCV::generateDepthImage(const Mat1f& depth, Mat depthMat) {
     int x, y;
     int depthValue;
 
-    clock_t t = clock();
-
     for (y=0; y<height; y++) {
     	for (x=0; x<width; x++) {
     		depthValue = mmToRaw(depth(y,x));
     		depthMat.at<Vec3b>(y,x) = depthToColor(depthValue);
     	}
     }
-
-    t = clock() - t;
-    //cout << "[LabicCV] generateDepthImage time: " << 1000*((float)t)/CLOCKS_PER_SEC << " ms " << endl;
 }
 
 void LabicCV::saveFrame() {

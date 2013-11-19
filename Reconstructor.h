@@ -15,7 +15,7 @@ namespace labic {
 		void start() { m_Thread = boost::thread(&Reconstructor::threadFunc, this); }
 		void join() { m_Thread.join(); }
         void close() { join(); }
-		void performLoop();
+		void performAlignment();
 		void printStats() const;
 
 	private:
@@ -46,7 +46,7 @@ namespace labic {
 		unsigned int pointsDetected;
 		bool*		 stop;
 		bool		 autoSave;
-		clock_t	totalTime;
+		double	     totalTime;
 		RANSACAligner* ransac;
 		cv::Ptr<cv::FastAdjuster>         adjuster;
 		cv::Ptr<cv::DescriptorMatcher>    matcher;
@@ -55,7 +55,7 @@ namespace labic {
 		pcl::PointCloud<pcl::PointXYZRGB> world;
 		cv::Mat							  descriptorsPrevious;
 		std::vector<cv::KeyPoint>		  featuresPrevious;
-		Eigen::Matrix4d 				  transformPrevious;
+		Eigen::Matrix4d 				  transformPrevious, transformFinal;
 		RGBDImage						  rgbdPrevious, rgbdCurrent;
 		FrameQueue& queue;
 		
