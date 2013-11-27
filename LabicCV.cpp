@@ -18,8 +18,8 @@ using namespace labic;
 
 const string LabicCV::input_window = "Kinect Input";
 
-LabicCV::LabicCV(KinectController *_kinect, bool* _stop, FrameQueue& q)
-: kinect(_kinect),  windowClosed(false), currentSet(false), stop(_stop), captureInterval(-1), captureHold(false), startCapture(true), cameras(Mat(height, width*2, CV_8UC3)), queue(q) {
+LabicCV::LabicCV(KinectController *_kinect, bool* _stop, Queue<RGBDImage>& q)
+: kinect(_kinect),  windowClosed(false), currentSet(false), stop(_stop), captureInterval(-1), captureHold(false), startCapture(true), cameras(Mat(height, width*2, CV_8UC3)), queue(q), savedFrames(0), processedFrames(0) {
     for (unsigned int i=0; i<2048; i++) {
 		float v = i/2048.0;
 		v = pow(v, 3)* 6;
@@ -37,8 +37,6 @@ void LabicCV::display() {
 
     uint32_t timestampPrevious = 0;
     long long unsigned int clicks = 0;
-    long long unsigned int savedFrames = 0;
-    long long unsigned int processedFrames = 0;
     double fps = 0;
     double seconds = 0;
 
@@ -46,7 +44,7 @@ void LabicCV::display() {
 
     hrclock::time_point first, start, end, lastCap;
 
-	cout << "[LabicCV] Display started" << endl;
+    dinfo << "[LabicCV] Display started" << endl;
 
     first = lastCap = start = hrclock::now();
 
@@ -73,7 +71,7 @@ void LabicCV::display() {
 			seconds = diffTimeMs(end,lastCap);
 
 			if (seconds > captureInterval || !savedFrames) {
-				//[cout << "difftime for capture in ms: " << seconds << endl;
+				//ddebug << "difftime for capture in ms: " << seconds << endl;
 				lastCap = hrclock::now();
 				if (!savedFrames) first = lastCap;
 				saveFrame();
@@ -90,13 +88,7 @@ void LabicCV::display() {
 
     windowClosed = true;
 
-    double totalTime = diffTime(lastCap, first);
-
-
-	cout << "[LabicCV] Display finished." << endl;
-	cout << "[LabicCV] Total run time: " << totalTime << " seconds" << endl;
-	cout << "[LabicCV] Total processed frames: " << processedFrames << endl;
-	cout << "[LabicCV] Total captures: " << savedFrames << " (" << ((double)savedFrames)/totalTime << " captures/sec)" << endl;
+    totalTime = diffTime(lastCap, first);
 }
 
 void LabicCV::generateDepthImage(const Mat1f& depth, Mat depthMat) {
@@ -114,9 +106,16 @@ void LabicCV::generateDepthImage(const Mat1f& depth, Mat depthMat) {
 void LabicCV::saveFrame() {
 	RGBDImage tmp;
 	while (!kinect->grabRGBDImage(tmp)) {}
-	cout << "[LabicCV] Pushed frame " << tmp.timestamp() << " to queue" << endl;
+	dinfo << "[LabicCV] Pushed frame " << tmp.timestamp() << " to queue" << endl;
 	queue.push(tmp);
-	queue.printStatus();
+	ddebug << queue << endl;
+}
+
+void LabicCV::printStats() const {
+    dinfo << "[LabicCV] Display finished\n"
+    	  << "          Total run time: " << totalTime << " seconds\n"
+    	  << "          Total processed frames: " << processedFrames << "\n"
+    	  << "          Total captures: " << savedFrames << " (" << ((double)savedFrames)/totalTime << " captures/sec)" << endl;
 }
 
 Vec3b LabicCV::depthToColor(float rawDepthValue) {

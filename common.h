@@ -15,6 +15,7 @@
 #include <boost/thread.hpp>
 #include <pcl/common/common.h>
 #include "opencv2/core/core.hpp"
+#include "debug.h"
 
 namespace labic {
 	static const int width		 = 640;
@@ -67,7 +68,6 @@ namespace labic {
 
 		return (pow(projP1.x - projP2.x, 2) + pow(projP1.y - projP2.y, 2) + pow(projP1.z - projP2.z, 2));
 	}
-	
 }
 
 #endif /* __LABICKINECT_COMMON_H__ */

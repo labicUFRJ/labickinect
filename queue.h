@@ -7,45 +7,45 @@
 
 #include <pthread.h>
 #include <list>
-#include "RGBDImage.h"
 
 namespace labic {
-	class FrameQueue {
+	template <class T>
+	class Queue {
 	public:
-		FrameQueue() {
+		Queue() {
 			pthread_mutex_init(&mutex, NULL);
 			pthread_cond_init(&condv, NULL);
 		}
 
-		~FrameQueue() {
+		~Queue() {
 			pthread_mutex_destroy(&mutex);
 			pthread_cond_destroy(&condv);
 			//delete[] &queue;
 		}
 
-		void push(RGBDImage image) {
+		void push(T item) {
 			pthread_mutex_lock(&mutex);
 
-			queue.push_back(image);
-			//std::cout << "[FrameQueue] New frame added. Queue size: " << queue.size() << std::endl;
+			queue.push_back(item);
+			//std::cout << "[Queue] New item added. Queue size: " << queue.size() << std::endl;
 
 			pthread_cond_signal(&condv);
 			pthread_mutex_unlock(&mutex);
 		}
 
-		RGBDImage pop() {
+		T pop() {
 			pthread_mutex_lock(&mutex);
 
 			while (queue.size() == 0) {
 				pthread_cond_wait(&condv, &mutex);
 			}
 
-			RGBDImage image = queue.front();
+			T item = queue.front();
 			queue.pop_front();
-			//std::cout << "[FrameQueue] Frame removed. Queue size: " << queue.size() << std::endl;
+			//std::cout << "[Queue] Item removed. Queue size: " << queue.size() << std::endl;
 
 			pthread_mutex_unlock(&mutex);
-			return image;
+			return item;
 		}
 
 		int size() {
@@ -55,16 +55,22 @@ namespace labic {
 			return size;
 		}
 
-		void printStatus() {
-			std::cout << "[FrameQueue] Queue has " << queue.size() << " frames" << std::endl;
+		void printStatus(std::ostream& o) const {
+			o << "[Queue] Queue has " << queue.size() << " items";
 		}
 
 	private:
-		std::list<RGBDImage> queue;
-		pthread_mutex_t		 mutex;
-		pthread_cond_t		 condv;
+		std::list<T>	 queue;
+		pthread_mutex_t	 mutex;
+		pthread_cond_t	 condv;
 
 	};
+
+	template <class T>
+	std::ostream& operator << (std::ostream& o, const Queue<T> queue) {
+		queue.printStatus(o);
+		return o;
+	}
 
 }
 

@@ -13,12 +13,13 @@
 #include "common.h"
 #include "KinectController.h"
 #include "queue.h"
+#include "RGBDImage.h"
 
 namespace labic {
 	
 	class LabicPCL {
 	public:
-        LabicPCL(KinectController *_kinect, bool* _stop, FrameQueue& q);
+        LabicPCL(KinectController *_kinect, bool* _stop, Queue<RGBDImage>& q);
 		void start();
 		void join();
         void close();
@@ -35,7 +36,7 @@ namespace labic {
 		KinectController *kinect;
         bool* stop;
         boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
-        FrameQueue& queue;
+        Queue<RGBDImage>& queue;
         int viewPort;
         void generateDepthCloud(uint16_t *depth);
 

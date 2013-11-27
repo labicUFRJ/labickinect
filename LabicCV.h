@@ -12,14 +12,15 @@
 #include <string>
 #include "opencv2/highgui/highgui.hpp"
 #include "common.h"
-#include "KinectController.h"
 #include "queue.h"
+#include "KinectController.h"
 
 namespace labic {
+	class RGBDImage;
 	
     class LabicCV {
     public:
-        LabicCV(KinectController *_kinect, bool* _stop, FrameQueue& q);
+        LabicCV(KinectController *_kinect, bool* _stop, Queue<RGBDImage>& q);
 		void start() { m_Thread = boost::thread(&LabicCV::display, this); }
         void mainLoopPart(const int t);
 		void join() { m_Thread.join(); }
@@ -31,6 +32,7 @@ namespace labic {
         void setCaptureHold(bool hold) { captureHold = hold; }
         const bool isReady() const { return currentSet; }
         void restartState() { currentSet = false; }
+        void printStats() const;
 
     private:
         void keyboardHandler(int key);
@@ -47,13 +49,13 @@ namespace labic {
         bool startCapture;
 		uint16_t t_gamma[2048];
         cv::Mat cameras;
-        FrameQueue& queue;
+        Queue<RGBDImage>& queue;
+
+        long long unsigned int savedFrames;
+        long long unsigned int processedFrames;
+        double totalTime;
         
 		static const std::string input_window;
-        static const int DEPTH_RAW = 1;
-        static const int DEPTH_MM = 2;
-		static const int WINDOW_FLAGS = CV_WINDOW_AUTOSIZE;
-        
     };
 }
 

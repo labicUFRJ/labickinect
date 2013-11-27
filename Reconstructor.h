@@ -11,7 +11,7 @@ namespace labic {
 	
 	class Reconstructor {
 	public:
-		Reconstructor(bool* _stop, FrameQueue& q);
+		Reconstructor(bool* _stop, Queue<RGBDImage>& q);
 		void start() { m_Thread = boost::thread(&Reconstructor::threadFunc, this); }
 		void join() { m_Thread.join(); }
         void close() { join(); }
@@ -47,6 +47,8 @@ namespace labic {
 		bool*		 stop;
 		bool		 autoSave;
 		double	     totalTime;
+		double		 lastError;
+		double		 totalError;
 		RANSACAligner* ransac;
 		cv::Ptr<cv::FastAdjuster>         adjuster;
 		cv::Ptr<cv::DescriptorMatcher>    matcher;
@@ -57,7 +59,7 @@ namespace labic {
 		std::vector<cv::KeyPoint>		  featuresPrevious;
 		Eigen::Matrix4d 				  transformPrevious, transformFinal;
 		RGBDImage						  rgbdPrevious, rgbdCurrent;
-		FrameQueue& queue;
+		Queue<RGBDImage>& queue;
 		
 	};
 }

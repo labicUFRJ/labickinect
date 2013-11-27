@@ -16,6 +16,7 @@
 #include "LabicCV.h"
 #include "LabicPCL.h"
 #include "Reconstructor.h"
+#include "RGBDImage.h"
 #include "queue.h"
 #include "arg.h"
 
@@ -31,12 +32,15 @@ namespace opt {
 }
 
 int main(int argc, char **argv) {
-    // Parse command line options.
+    // Parse command line options
     ntk::arg_base::set_help_option("-h");
     ntk::arg_parse(argc, argv);
 
+    // Set debugger level
+    debug_set_level(DebugLevel::INFO);
+
 	Freenect::Freenect freenect;
-	FrameQueue queue;
+	Queue<RGBDImage> queue;
 	KinectController *kinect;
 	LabicCV *cv;
 	LabicPCL *pcl;
@@ -87,20 +91,24 @@ int main(int argc, char **argv) {
 		cv->mainLoopPart(REFRESH_INTERVAL);
 	}
 
-	cout << "[main] Stop requested. Joining threads..." << endl;
+	cout << "[main] Stop requested. Waiting for threads to finish..." << endl;
 
 	// Wait for threads to finish
 	cv->close();
+	cv->printStats();
 	if (opt::enable_pcl()) pcl->close();
-	if (opt::enable_reconstructor())recon->close();
+	if (opt::enable_reconstructor()) {
+		recon->close();
+		recon->printStats();
+	}
 
-	cout << "[main] All threads have finished. Closing Kinect..." << endl;
+	cout << "[main] Done. Closing Kinect..." << endl;
 
 	kinect->stopVideo();
 	kinect->stopDepth();
 	kinect->close();
 
-	cout << "[main] Everything closed. Bye!" << endl;
+	cout << "[main] Done. Bye!" << endl;
 	
 	return 0;
 }

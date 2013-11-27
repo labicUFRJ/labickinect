@@ -14,7 +14,7 @@ using namespace pcl;
 using namespace pcl::visualization;
 using namespace labic;
 
-LabicPCL::LabicPCL(KinectController *_kinect, bool* _stop, FrameQueue& q)  : kinect(_kinect), stop(_stop), queue(q) {
+LabicPCL::LabicPCL(KinectController *_kinect, bool* _stop, Queue<RGBDImage>& q)  : kinect(_kinect), stop(_stop), queue(q) {
     viewPort = 1;
     std::cout << "[LabicPCL] Viewer initialized\n";
 }

@@ -10,7 +10,7 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable (labickinect main.cpp arg.cpp arg.h queue.h RGBDImage.cpp RGBDImage.h KinectController.cpp KinectController.h LabicCV.cpp LabicCV.h Reconstructor.cpp Reconstructor.h RANSACAligner.cpp RANSACAligner.h LabicPCL.cpp LabicPCL.h libfreenect.h)
+add_executable (labickinect main.cpp arg.cpp arg.h debug.h queue.h RGBDImage.cpp RGBDImage.h KinectController.cpp KinectController.h LabicCV.cpp LabicCV.h Reconstructor.cpp Reconstructor.h RANSACAligner.cpp RANSACAligner.h LabicPCL.cpp LabicPCL.h libfreenect.h)
 
 #add_executable (reconstructor testereconstructor.cpp KinectController.cpp KinectController.h LabicCV.cpp LabicCV.h LabicReconstructor.cpp LabicReconstructor.h RANSACAligner.cpp RANSACAligner.h LabicPCL.cpp LabicPCL.h libfreenect.h)
 
