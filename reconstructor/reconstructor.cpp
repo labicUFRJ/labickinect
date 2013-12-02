@@ -1,11 +1,8 @@
-#include <algorithm>
-#include <cassert>
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
 #include <pcl/common/eigen.h>
 #include <pcl/io/ply_io.h>
 #include "../kinect/kinect_controller.h"
 #include "reconstructor.h"
+#include "reconstruction_exception.h"
 
 using namespace std;
 using namespace pcl;
@@ -14,22 +11,7 @@ using namespace labic;
 
 Reconstructor::Reconstructor(bool* _stop, Queue<RGBDImage>& q) : stop(_stop), autoSave(false), queue(q) {
 	// Reconstructor parameters
-	minFeatures      = 150;
-	maxFeatures      = 500;
-	maxDetectionIte  = 100;
-	minMatches       = 25; // min number of visual matches to start ransac
-	maxMatchDistance = 10; // max distance of visual match to be valid (pixels)
 	minInliersToValidateTransformation = 10; // gamma - min inliers to accept ransac
-	
-	adjuster  = new FastAdjuster(50, true);
-	extractor = new BriefDescriptorExtractor();
-	matcher   = new BFMatcher(NORM_HAMMING, true);
-	
-	ransac = new RANSACAligner();
-	ransac->setDistanceThreshold(0.8); // paper: 2.0 pixels
-	ransac->setMaxIterations(150);
-	ransac->setMinInliers(30);
-	ransac->setNumSamples(3);
 
 	framesAnalyzed = 0;
 	reconstructionsGenerated = 0;
@@ -42,23 +24,21 @@ Reconstructor::Reconstructor(bool* _stop, Queue<RGBDImage>& q) : stop(_stop), au
 	totalError = 0;
 	lastError = 0;
 
-	transformFinal.setIdentity();
+	transformGlobal.setIdentity();
 	transformPrevious.setIdentity();
 }
 
 void Reconstructor::threadFunc() {
 	hrclock::time_point t;
 	double timeReconstruction;
-    cout << "[LabicReconstructor] Reconstructor initialized" << endl;
+    cout << "[Reconstructor] Reconstructor initialized" << endl;
 
     while (!*stop || queue.size() > 0) {
     	if (queue.size() > 0) {
     		// If this is the first frame received, just save it
     		if (world.empty()) {
-    		    dinfo << "[LabicReconstructor] Preparing first frame" << endl;
+    		    dinfo << "[Reconstructor] Preparing first frame" << endl;
     			rgbdPrevious = queue.pop();
-
-    			extractRGBFeatures(rgbdPrevious, featuresPrevious, descriptorsPrevious);
 
     			world = rgbdPrevious.pointCloud();
 
@@ -67,7 +47,7 @@ void Reconstructor::threadFunc() {
     			dinfo << "[LabicReconstructor] Initial frame saved" << endl;
 
     		} else {
-				cout << "[LabicReconstructor] Reconstructing frame " << reconstructionsGenerated+1 << "..." << endl;
+				cout << "[Reconstructor] Reconstructing frame " << reconstructionsGenerated+1 << "..." << endl;
 
 				rgbdCurrent = queue.pop();
 
@@ -77,10 +57,10 @@ void Reconstructor::threadFunc() {
 				}
 
 	        	t = hrclock::now();
-	        	performVisualAlignment();
+	        	performAlignment();
 	    		totalTime += (timeReconstruction = diffTime(hrclock::now(), t));
 
-	    		dinfo << "[LabicReconstructor] Finished reconstruction loop (" << timeReconstruction << " secs)" << endl;
+	    		dinfo << "[Reconstructor] Finished reconstruction loop (" << timeReconstruction << " secs)" << endl;
 				ddebug << queue << endl;
     		}
 
@@ -91,191 +71,89 @@ void Reconstructor::threadFunc() {
     	}
     }
 
-    cout << "[LabicReconstructor] Exporting final world. Please wait... " << endl;
+    cout << "[Reconstructor] Exporting final world. Please wait... " << endl;
     if (world.size() > 0) {
     	pcl::io::savePLYFileASCII("world.ply", world);
     	cout << "Done." << endl;
     }
     else cout << "Nothing to be done." << endl;
 
-    cout << "[LabicReconstructor] Reconstructor finished" << endl;
+    printStats();
+
+    cout << "[Reconstructor] Reconstructor finished" << endl;
+
 }
 
-void Reconstructor::performVisualAlignment() {
-	vector<KeyPoint> featuresCurrent;
-	Mat descriptorsCurrent;
-	vector<DMatch> relatedFeatures;
-    vector<Point2f> selectedFeaturePointsCurrent, selectedFeaturePointsPrevious;
-    vector<int> transformationInliersIndexes;
-	PointCloud<PointXYZRGB> cloudCurrent, featureCloudCurrent, featureCloudPrevious, alignedCloudCurrent;
-	Eigen::Matrix4d transform;
+void Reconstructor::performAlignment() {
+	Eigen::Matrix4d pairTransform;
+	vector<int> pairTransformInliersIndexes;
 	double ransacError;
 
-    transform = Eigen::Matrix4d::Zero();
+	try {
+		// Steps 1 to 3: Visual RERANSAC
+		visualReconstructor(rgbdPrevious, rgbdCurrent);
 
-    // 0. Get PointCloud from previous and current states
-    cloudCurrent = rgbdCurrent.pointCloud();
-    pointsDetected += cloudCurrent.size();
+		pairTransform = visualReconstructor.getFinalTransform();
 
-	// 1. Extract features from both images
-	extractRGBFeatures(rgbdCurrent, featuresCurrent, descriptorsCurrent);
+		ransacError = visualReconstructor.getFinalError();
+		pairTransformInliersIndexes = visualReconstructor.getFinalInliers();
 
-	// 2. Get related features (matches) between features from both images
-	matchFeatures(featuresCurrent, descriptorsCurrent, featuresPrevious, descriptorsPrevious, relatedFeatures);
+		dinfo << "[Reconstructor] Final transformation matrix that resulted in " << pairTransformInliersIndexes.size() << " inliers: " << endl << pairTransform << endl;
 
-	// 2.1. Verify if visual match resulted in the minimal number of associations
-	if (relatedFeatures.size() < minMatches) {
-		derr << "[LabicReconstructor] IMAGES DO NOT MATCH! ABORTING RECONSTRUCTION. MATCH SAVED TO 'matchfailed.jpg'" << endl;
+		reconstructionsGenerated++;
 
-		Mat matchesMat;
-		drawMatches(rgbdCurrent.rgb(), featuresCurrent, rgbdPrevious.rgb(), featuresPrevious, relatedFeatures, matchesMat);
-		imwrite("matchfailed.jpg", matchesMat);
+		// Step 4: Check if transformation generated the correct set of inliers
+		if (pairTransformInliersIndexes.size() < minInliersToValidateTransformation) {
+			dwarn << "[Reconstructor] Visual RANSAC transformation NOT accepted (did not generate the mininum of inliers)" << endl;
 
-		return;
-	}
+			// Step 5: Use same transformation as previous reconstruction
+			transformGlobal = transformPrevious * transformGlobal;
+			ddebug << "Repeating previous transformation:\n" << transformPrevious << endl;
 
-    // 2.2. Apply depth-filter to matches
-    for (unsigned int i=0; i<relatedFeatures.size(); i++) {
-        int previousIndex = relatedFeatures[i].trainIdx;
-        int currentIndex = relatedFeatures[i].queryIdx;
-        Point2f previousPoint = featuresPrevious[previousIndex].pt;
-        Point2f currentPoint = featuresCurrent[currentIndex].pt;
-
-        if (rgbdPrevious.rgbPixelHasDepth(previousPoint.y, previousPoint.x) &&
-        	rgbdCurrent.rgbPixelHasDepth(currentPoint.y, currentPoint.x)) {
-        	selectedFeaturePointsPrevious.push_back(previousPoint);
-        	selectedFeaturePointsCurrent.push_back(currentPoint);
-        } else matchesDiscarded++;
-    }
-
-    ddebug << "[LabicReconstructor::performAlignment] Matches after depth filter: " << selectedFeaturePointsPrevious.size() << " points" << endl;
-
-	// 3. Generate PointClouds of related features
-    featureCloudPrevious = rgbdPrevious.pointCloudOfSelection(selectedFeaturePointsPrevious);
-    featureCloudCurrent = rgbdCurrent.pointCloudOfSelection(selectedFeaturePointsCurrent);
-
-	// 4. Alignment detection
-    if (featureCloudPrevious.size() < minInliersToValidateTransformation) {
-		derr << "[LabicReconstructor] Too few points to call RANSAC! Aborting reconstruction!" << endl;
-		return;
-    }
-
-    ransac->estimate(featureCloudPrevious, featureCloudCurrent);
-    transform = ransac->getFinalTransform();
-    ransacError = ransac->getFinalError();
-    transformationInliersIndexes = ransac->getFinalInliers();
-
-    dinfo << "[LabicReconstructor] Final transformation matrix that resulted in " << transformationInliersIndexes.size() << " inliers: " << endl << transform << endl;
-
-    reconstructionsGenerated++;
-
-    // Check if transformation generated the correct set of inliers
-    if (transformationInliersIndexes.size() < minInliersToValidateTransformation) {
-    	dwarn << "[LabicReconstructor] RANSAC transformation NOT accepted (did not generate the mininum of inliers)" << endl;
-
-    	// Use same transformation as previous reconstruction
-		transformFinal = transformPrevious * transformFinal;
-		ddebug << "Repeating previous transformation:\n" << transformPrevious << endl;
-
-		transformationInliersIndexes.clear();
-		ransacError = lastError;
-    } else {
-        dinfo << "[LabicReconstructor] Transformation accepted" << endl;
-        transformPrevious = transform;
-        transformFinal = transform * transformFinal; // TODO or the opposite??????????
-        lastError = ransacError;
-        reconstructionsAccepted++;
-    }
-
-    totalError += ransacError;
-
-	// 5. Apply transformation to all frame points
-    ddebug << "Final accumulated transformation:\n" << transformFinal << endl;
-    transformPointCloud(cloudCurrent, alignedCloudCurrent, transformFinal);
-
-    // 6. Update 'previous' variables
-    rgbdCurrent.copyTo(rgbdPrevious);
-    featuresPrevious = featuresCurrent;
-    descriptorsCurrent.copyTo(descriptorsPrevious);
-
-    // 7. Update world with new frame
-    world += alignedCloudCurrent;
-    cout << "[LabicReconstructor] World updated. Total of " << world.size() << " points (estimated size: " << ((world.size()*sizeof(PointXYZRGB))>>20)*1.35 << " MB)" << endl;
-
-    if (autoSave) {
-        char filenameply[25];
-        sprintf(filenameply, "world%d.ply", reconstructionsGenerated);
-    	pcl::io::savePLYFileASCII(filenameply, world);
-    	cout << "[LabicReconstructor] World exported with filename '" << filenameply << "'" << endl;
-    }
-
-}
-
-void Reconstructor::extractRGBFeatures(const RGBDImage& rgbd, vector<KeyPoint>& keypoints, Mat& descriptors) {
-	ddebug << "[LabicReconstructor::extractRGBFeatures] Extracting RGB features and descriptors" << endl;
-	
-    Mat imgBlackWhite;
-
-    int pointsDropped = 0;
-    unsigned int i, j;
-    cvtColor(rgbd.rgb(), imgBlackWhite, CV_RGB2GRAY);
-    
-	for (i=0; i<maxDetectionIte; i++) {
-		adjuster->detect(imgBlackWhite, keypoints);
-		extractor->compute(imgBlackWhite, keypoints, descriptors);
-        
-		// Filter features to garantee depth information
-        pointsDropped = 0;
-		for (j=0; j<keypoints.size(); j++) {
-			if (!rgbd.rgbPixelHasDepth(keypoints[j].pt.y, keypoints[j].pt.x)) {
-				pointsDropped++;
-			}
-		}
-		
-//        ddebug << "[LabicReconstructor::extractRGBFeatures] Iteration " << i << " found " << keypoints.size() << " points and dropped " << pointsDropped << " points" << endl;
-        
-		if (keypoints.size()-pointsDropped < minFeatures){
-			adjuster->tooFew(minFeatures, keypoints.size());
-		} else if (keypoints.size()-pointsDropped > maxFeatures) {
-			adjuster->tooMany(maxFeatures, keypoints.size());
+			// Step 6: Clean untrustworthy associations
+			pairTransformInliersIndexes.clear();
+			ransacError = lastError;
 		} else {
-			break;
+			dinfo << "[Reconstructor] Initial visual transformation accepted" << endl;
+
+			// TODO ICP Loop
+
+			transformPrevious = pairTransform;
+			transformGlobal = pairTransform * transformGlobal; // TODO or the opposite??????????
+			lastError = ransacError;
+			reconstructionsAccepted++;
 		}
+
+		totalError += ransacError;
+
+		// 5. Apply transformation to all frame points
+		ddebug << "Final accumulated transformation:\n" << transformGlobal << endl;
+
+		PointCloud<PointXYZRGB> cloudCurrent = rgbdCurrent.pointCloud();
+		PointCloud<PointXYZRGB> alignedCloudCurrent;
+		transformPointCloud(cloudCurrent, alignedCloudCurrent, transformGlobal);
+
+		// 6. Update 'previous' variables
+		rgbdCurrent.copyTo(rgbdPrevious);
+
+		// 7. Update world with new frame
+		world += alignedCloudCurrent;
+		cout << "[Reconstructor] World updated. Total of " << world.size() << " points (estimated size: " << ((world.size()*sizeof(PointXYZRGB))>>20)*1.35 << " MB)" << endl;
+
+		if (autoSave) {
+			char filenameply[25];
+			sprintf(filenameply, "world%d.ply", reconstructionsGenerated);
+			pcl::io::savePLYFileASCII(filenameply, world);
+			cout << "[Reconstructor] World exported with filename '" << filenameply << "'" << endl;
+		}
+	} catch (ReconstructionException& e) {
+		derr << "[Reconstructor] Error obtaining alignment: " << e.what() << endl;
 	}
-
-	featuresExtracted += keypoints.size();
-
-	ddebug << "[LabicReconstructor::extractRGBFeatures] Extracted " << keypoints.size()
-				<< " features (target range: " << minFeatures << " to " << maxFeatures
-				<< ", iteration: " << i << ")" << " (dropped " << pointsDropped << " points)" << endl;
 }
 
-/**
- * q -> query (current / source)
- * t -> train (previous / target)
- */
-void Reconstructor::matchFeatures(vector<KeyPoint>& _keypoints_q, const Mat& _descriptors_q, vector<KeyPoint>& _keypoints_t, const Mat& _descriptors_t, vector<DMatch>& _matches) {
-	ddebug << "[LabicReconstructor::matchFeatures] Matching features\n";
-	vector<DMatch> matches;
-	
-	matcher->match(_descriptors_q, _descriptors_t, matches);
-
-	_matches.clear();
-	
-	// Distance filter
-	for (unsigned int i=0; i<matches.size(); i++) {
-		if (matches[i].distance < maxMatchDistance) {
-			_matches.push_back(matches[i]);
-		}
-	}
-	
-	featuresMatched += _matches.size();
-
-	ddebug << "[LabicReconstructor::matchFeatures] RGB matches after threshold: " << _matches.size() << " (initial: " << matches.size() << ")" << endl;
-}
 
 void Reconstructor::printStats() const {
-	cout << "[LabicReconstructor] STATS" << endl
+	cout << "[Reconstructor] STATS" << endl
 		 << "	Frames analyzed: " << framesAnalyzed << endl;
 	if (framesAnalyzed > 1)
 	cout << "	Total error: " << totalError << " (avg. " << totalError/reconstructionsGenerated << ")" << endl
