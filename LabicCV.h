@@ -1,19 +1,11 @@
-//
-//  LabicCV.h
-//  LabicKinect
-//
-//  Created by Mario Cecchi on 8/22/13.
-//
-//
-
 #ifndef __LABICKINECT_CV_H__
 #define __LABICKINECT_CV_H__
 
 #include <string>
 #include "opencv2/highgui/highgui.hpp"
 #include "common.h"
-#include "queue.h"
-#include "KinectController.h"
+#include "tools/queue.h"
+#include "kinect/kinect_controller.h"
 
 namespace labic {
 	class RGBDImage;

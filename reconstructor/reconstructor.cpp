@@ -1,12 +1,11 @@
 #include <algorithm>
 #include <cassert>
-#include <ctime>
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <pcl/common/eigen.h>
 #include <pcl/io/ply_io.h>
-#include "KinectController.h"
-#include "Reconstructor.h"
+#include "../kinect/kinect_controller.h"
+#include "reconstructor.h"
 
 using namespace std;
 using namespace pcl;
@@ -15,11 +14,11 @@ using namespace labic;
 
 Reconstructor::Reconstructor(bool* _stop, Queue<RGBDImage>& q) : stop(_stop), autoSave(false), queue(q) {
 	// Reconstructor parameters
-	minFeatures      = 200;
+	minFeatures      = 150;
 	maxFeatures      = 500;
 	maxDetectionIte  = 100;
 	minMatches       = 25; // min number of visual matches to start ransac
-	maxMatchDistance = 10; // max distance of visual match to be valid
+	maxMatchDistance = 10; // max distance of visual match to be valid (pixels)
 	minInliersToValidateTransformation = 10; // gamma - min inliers to accept ransac
 	
 	adjuster  = new FastAdjuster(50, true);
@@ -27,9 +26,9 @@ Reconstructor::Reconstructor(bool* _stop, Queue<RGBDImage>& q) : stop(_stop), au
 	matcher   = new BFMatcher(NORM_HAMMING, true);
 	
 	ransac = new RANSACAligner();
-	ransac->setDistanceThreshold(1.0); // paper: 2.0 pixels
+	ransac->setDistanceThreshold(0.8); // paper: 2.0 pixels
 	ransac->setMaxIterations(150);
-	ransac->setMinInliers(50);
+	ransac->setMinInliers(30);
 	ransac->setNumSamples(3);
 
 	framesAnalyzed = 0;
@@ -78,7 +77,7 @@ void Reconstructor::threadFunc() {
 				}
 
 	        	t = hrclock::now();
-	        	performAlignment();
+	        	performVisualAlignment();
 	    		totalTime += (timeReconstruction = diffTime(hrclock::now(), t));
 
 	    		dinfo << "[LabicReconstructor] Finished reconstruction loop (" << timeReconstruction << " secs)" << endl;
@@ -102,7 +101,7 @@ void Reconstructor::threadFunc() {
     cout << "[LabicReconstructor] Reconstructor finished" << endl;
 }
 
-void Reconstructor::performAlignment() {
+void Reconstructor::performVisualAlignment() {
 	vector<KeyPoint> featuresCurrent;
 	Mat descriptorsCurrent;
 	vector<DMatch> relatedFeatures;
@@ -175,7 +174,7 @@ void Reconstructor::performAlignment() {
     	dwarn << "[LabicReconstructor] RANSAC transformation NOT accepted (did not generate the mininum of inliers)" << endl;
 
     	// Use same transformation as previous reconstruction
-		transformFinal = transformFinal * transformPrevious;
+		transformFinal = transformPrevious * transformFinal;
 		ddebug << "Repeating previous transformation:\n" << transformPrevious << endl;
 
 		transformationInliersIndexes.clear();
@@ -183,13 +182,12 @@ void Reconstructor::performAlignment() {
     } else {
         dinfo << "[LabicReconstructor] Transformation accepted" << endl;
         transformPrevious = transform;
-        transformFinal = transformFinal * transform; // TODO or the opposite??????????
+        transformFinal = transform * transformFinal; // TODO or the opposite??????????
         lastError = ransacError;
         reconstructionsAccepted++;
     }
 
     totalError += ransacError;
-
 
 	// 5. Apply transformation to all frame points
     ddebug << "Final accumulated transformation:\n" << transformFinal << endl;

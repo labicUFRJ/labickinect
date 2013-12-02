@@ -1,16 +1,8 @@
-//
-//  LabicCV.cpp
-//  LabicKinect
-//
-//  Created by Mario Cecchi on 8/22/13.
-//
-//
-
 #include "LabicCV.h"
 #include "opencv2/nonfree/features2d.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include "RGBDImage.h"
+#include "rgbd_image.h"
 
 using namespace std;
 using namespace cv;
@@ -19,7 +11,7 @@ using namespace labic;
 const string LabicCV::input_window = "Kinect Input";
 
 LabicCV::LabicCV(KinectController *_kinect, bool* _stop, Queue<RGBDImage>& q)
-: kinect(_kinect),  windowClosed(false), currentSet(false), stop(_stop), captureInterval(-1), captureHold(false), startCapture(true), cameras(Mat(height, width*2, CV_8UC3)), queue(q), savedFrames(0), processedFrames(0) {
+: kinect(_kinect),  windowClosed(false), currentSet(false), stop(_stop), captureInterval(-1), captureHold(false), startCapture(true), cameras(Mat(height, width*2, CV_8UC3)), queue(q), savedFrames(0), processedFrames(0), totalTime(0) {
     for (unsigned int i=0; i<2048; i++) {
 		float v = i/2048.0;
 		v = pow(v, 3)* 6;

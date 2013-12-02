@@ -15,7 +15,7 @@
 #include <boost/thread.hpp>
 #include <pcl/common/common.h>
 #include "opencv2/core/core.hpp"
-#include "debug.h"
+#include "tools/debug.h"
 
 namespace labic {
 	static const int width		 = 640;

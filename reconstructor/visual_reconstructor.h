@@ -1,0 +1,8 @@
+#ifndef VISUAL_RECONSTRUCTOR_H_
+#define VISUAL_RECONSTRUCTOR_H_
+
+
+
+
+
+#endif /* VISUAL_RECONSTRUCTOR_H_ */

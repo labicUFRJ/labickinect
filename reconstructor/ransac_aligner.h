@@ -1,14 +1,7 @@
-/*
- * RANSACAligner.h
- *
- *  Created on: Sep 25, 2013
- *      Author: macecchi
- */
-
 #ifndef __LABICKINECT_RANSACALIGNER_H__
 #define __LABICKINECT_RANSACALIGNER_H__
 
-#include "common.h"
+#include "../common.h"
 #include <pcl/registration/transformation_estimation.h>
 #include <pcl/registration/transformation_estimation_svd.h>
 #include <pcl/registration/transformation_estimation_lm.h>

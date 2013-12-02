@@ -10,7 +10,25 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable (labickinect main.cpp arg.cpp arg.h debug.h queue.h RGBDImage.cpp RGBDImage.h KinectController.cpp KinectController.h LabicCV.cpp LabicCV.h Reconstructor.cpp Reconstructor.h RANSACAligner.cpp RANSACAligner.h LabicPCL.cpp LabicPCL.h libfreenect.h)
+SET(labickinect_sources
+	main.cpp
+	common.h
+	tools/arg.cpp tools/arg.h
+	tools/debug.h
+	tools/queue.h
+	kinect/libfreenect.h
+	kinect/kinect_controller.cpp kinect/kinect_controller.h
+	rgbd_image.cpp rgbd_image.h
+	LabicCV.cpp LabicCV.h
+	LabicPCL.cpp LabicPCL.h
+	reconstructor/reconstructor.cpp reconstructor/reconstructor.h
+	reconstructor/ransac_aligner.cpp reconstructor/ransac_aligner.h
+	reconstructor/visual_reconstructor.cpp reconstructor/visual_reconstructor.h
+)
+
+add_executable(labickinect ${labickinect_sources})
+
+#add_executable (labickinect ${labickinect_sources} main.cpp arg.cpp arg.h debug.h queue.h RGBDImage.cpp RGBDImage.h KinectController.cpp KinectController.h LabicCV.cpp LabicCV.h Reconstructor.cpp Reconstructor.h RANSACAligner.cpp RANSACAligner.h LabicPCL.cpp LabicPCL.h libfreenect.h)
 
 #add_executable (reconstructor testereconstructor.cpp KinectController.cpp KinectController.h LabicCV.cpp LabicCV.h LabicReconstructor.cpp LabicReconstructor.h RANSACAligner.cpp RANSACAligner.h LabicPCL.cpp LabicPCL.h libfreenect.h)
 

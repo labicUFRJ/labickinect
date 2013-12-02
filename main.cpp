@@ -11,14 +11,13 @@
 #define REFRESH_INTERVAL     1
 
 #include "common.h"
-#include <ctime>
-#include "KinectController.h"
+#include "kinect/kinect_controller.h"
 #include "LabicCV.h"
 #include "LabicPCL.h"
-#include "Reconstructor.h"
-#include "RGBDImage.h"
-#include "queue.h"
-#include "arg.h"
+#include "reconstructor/reconstructor.h"
+#include "rgbd_image.h"
+#include "tools/queue.h"
+#include "tools/arg.h"
 
 using namespace std;
 using namespace labic;

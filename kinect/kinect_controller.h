@@ -9,10 +9,10 @@
 #ifndef __LABICKINECT_KINECTCONTROLLER_H__
 #define __LABICKINECT_KINECTCONTROLLER_H__
 
-#include "common.h"
+#include "../common.h"
 #include "libfreenect.h"
-#include "mutex.h"
-#include "RGBDImage.h"
+#include "../tools/mutex.h"
+#include "../rgbd_image.h"
 
 namespace labic {
 	class KinectController : public Freenect::FreenectDevice {

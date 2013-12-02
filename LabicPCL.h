@@ -11,9 +11,9 @@
 
 #include <pcl/visualization/pcl_visualizer.h>
 #include "common.h"
-#include "KinectController.h"
-#include "queue.h"
-#include "RGBDImage.h"
+#include "kinect/kinect_controller.h"
+#include "tools/queue.h"
+#include "rgbd_image.h"
 
 namespace labic {
 	

@@ -1,11 +1,11 @@
 #ifndef __LABICKINECT_RECONSTRUCTOR_H__
 #define __LABICKINECT_RECONSTRUCTOR_H__
 
-#include "common.h"
+#include "../common.h"
 #include "opencv2/features2d/features2d.hpp"
-#include "RGBDImage.h"
-#include "queue.h"
-#include "RANSACAligner.h"
+#include "../rgbd_image.h"
+#include "../tools/queue.h"
+#include "ransac_aligner.h"
 
 namespace labic {
 	
@@ -15,7 +15,7 @@ namespace labic {
 		void start() { m_Thread = boost::thread(&Reconstructor::threadFunc, this); }
 		void join() { m_Thread.join(); }
         void close() { join(); }
-		void performAlignment();
+		void performVisualAlignment();
 		void printStats() const;
 
 	private:

@@ -1,4 +1,4 @@
-#include "RANSACAligner.h"
+#include "ransac_aligner.h"
 #include <cassert>
 #include <pcl/common/distances.h>
 #include <pcl/common/eigen.h>
@@ -24,7 +24,6 @@ void RANSACAligner::reset() {
 }
 
 void RANSACAligner::getRandomSamples(std::vector<int>& maybeIndexes, std::vector<int>& notMaybeIndexes) const {
-
 	maybeIndexes.clear();
 	notMaybeIndexes.clear();
 
@@ -74,7 +73,6 @@ double RANSACAligner::getAlignmentError(const PointCloud<PointXYZRGB>& transform
     error /= inliersIndexes.size();
     return error;
 }
-
 
 void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, pcl::PointCloud<pcl::PointXYZRGB>& cloudCurrent) {
     assert(cloudCurrent.size() == cloudPrevious.size());
@@ -154,5 +152,4 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 	}
 
 	dinfo << "[RANSAC] Ransac finished. Best iteration: " << bestIteration << ". Best error: " << bestError << ". Best consensus set: " << bestConsensusSetIndexes.size() << " points" << endl;
-
 }

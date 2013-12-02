@@ -1,11 +1,4 @@
-/*
- * RGBImage.cpp
- *
- *  Created on: Oct 3, 2013
- *      Author: macecchi
- */
-
-#include "RGBDImage.h"
+#include "rgbd_image.h"
 #include "opencv2/imgproc/imgproc.hpp"
 
 using namespace labic;

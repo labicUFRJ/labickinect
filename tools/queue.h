@@ -1,5 +1,5 @@
 /*
- * Implements a queue for the type of RGBDImages with synchronized access control
+ * Implements a queue template with synchronized access control
  */
 
 #ifndef QUEUE_H_
