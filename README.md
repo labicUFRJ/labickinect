@@ -1,33 +1,30 @@
-LabicKinect
-=============================
+# LabicKinect
 
-LabicKinect is a software capable of reconstructing 3D maps of environments with a Kinect, being developed as a graduation project at UFRJ. Please notice the software is still under early development and it not stable at all. Please read the support terms before using it.
+LabicKinect is a software capable of reconstructing 3D maps of indoor environments using Kinect, being developed as a graduation project at UFRJ. Please notice the software is still under early development and it not stable at all. Please read the support terms before using it.
 
 - Developed at the Laboratory Computational Intelligence - NCE/UFRJ ([http://www.labic.nce.ufrj.br](http://www.labic.nce.ufrj.br))
 - Project and code: Mario Cecchi ([http://meriw.com](http://meriw.com))
 - Orientation: Adriano Joaquim de Oliveira Cruz ([http://equipe.nce.ufrj.br/adriano](http://equipe.nce.ufrj.br/adriano))
 
-- - -
 
-# Requirements
+## Requirements
 - [CMake](http://www.cmake.org/) >= 2.8
 - [libfreenect](https://github.com/OpenKinect/libfreenect) >= 0.1.2
 - [OpenCV](http://opencv.org) >= 2.4.6
 - [libPCL](http://pointclouds.org) >= 1.7
 
-- - -
 
-# Compiling
-## Dependencies installation
+## Compiling
+### Dependencies installation
 Please follow to the installation of each library listed below before continuing.
-### Ubuntu 12.04.3
-#### CMake
+#### Ubuntu 12.04.3
+##### CMake
 	sudo apt-get install cmake
-#### libPCL
+##### libPCL
 	sudo add-apt-repository ppa:v-launchpad-jochen-sprickerhof-de/pcl
 	sudo apt-get update
 	sudo apt-get install libpcl-all
-#### OpenCV
+##### OpenCV
 	version="$(wget -q -O - http://sourceforge.net/projects/opencvlibrary/files/opencv-unix | egrep -m1 -o '\"[0-9](\.[0-9])+' | cut -c2-)"
 	echo "Installing OpenCV" $version
 	mkdir OpenCV
@@ -49,7 +46,7 @@ Please follow to the installation of each library listed below before continuing
 	sudo sh -c 'echo "/usr/local/lib" > /etc/ld.so.conf.d/opencv.conf'
 	sudo ldconfig
 	echo "OpenCV" $version "ready to be used"
-#### libfreenect
+##### libfreenect
 	sudo apt-get install git-core cmake libglut3-dev pkg-config build-essential libxmu-dev libxi-dev libusb-1.0-0-dev
 	git clone git://github.com/OpenKinect/libfreenect.git
 	cd libfreenect
@@ -61,7 +58,7 @@ Please follow to the installation of each library listed below before continuing
 	sudo ldconfig /usr/local/lib64/
 
 You can test if the Kinect is working by running `sudo glview`.
-## Compiling sources
+### Compiling sources
 	git clone https://bitbucket.org/macecchi/labickinect.git
 	cd labickinect
 	mkdir build
@@ -80,23 +77,20 @@ You can also generate project files for Eclipse, but please create a new directo
 	cmake -G "Eclipse CDT4 - Unix Makefiles" -D CMAKE_BUILD_TYPE=Debug ../labickinect
 
 
-- - -
 
-# Running
+## Running
 You can run the project by calling `./labickinect` from the terminal. Make sure your Kinect is connected. Instructions on how to use the program will be provided.
 
-- - -
 
-# Support
-The code has been tested only on **Ubuntu 12.04.3** and partly on **OS X 10.8**.
+## Support
+The code has been tested only on **Ubuntu 12.04** and partly on **OS X 10.8**.
 
 There is **NO** support, as the software is still in an early stage of development and its only purpose at the moment is to serve the research laboratory. However, feel free to submit bug reports, feature requests, etc.
 
 If you want, you can contact me directly though e-mail at macecchi@gmail.com.
 
-- - -
 
-# Licensing
+## Licensing
 
 	This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -111,7 +105,6 @@ If you want, you can contact me directly though e-mail at macecchi@gmail.com.
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-- - -
 
-# References
-This project is based on Peter Henry, Michael Krainin, Evan Herbst, Xiaofeng Ren and Dieter Fox, "RGB-D mapping: Using Kinect-style depth cameras for dense 3D modeling of indoor environments" *(The International Journal of Robotics Research, 2012)*
+## References
+This project is based on *Peter Henry, Michael Krainin, Evan Herbst, Xiaofeng Ren and Dieter Fox, **"RGB-D mapping: Using Kinect-style depth cameras for dense 3D modeling of indoor environments"*** (The International Journal of Robotics Research, 2012).

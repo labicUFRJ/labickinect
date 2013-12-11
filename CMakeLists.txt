@@ -20,7 +20,7 @@ SET(labickinect_sources
 	kinect/kinect_controller.cpp kinect/kinect_controller.h
 	rgbd_image.cpp rgbd_image.h
 	LabicCV.cpp LabicCV.h
-	LabicPCL.cpp LabicPCL.h
+	pcl_viewer.cpp pcl_viewer.h
 	reconstructor/reconstructor.cpp reconstructor/reconstructor.h
 	reconstructor/ransac_aligner.cpp reconstructor/ransac_aligner.h
 	reconstructor/visual_reconstructor.cpp reconstructor/visual_reconstructor.h
