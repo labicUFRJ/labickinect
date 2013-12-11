@@ -13,7 +13,7 @@
 #include "common.h"
 #include "kinect/kinect_controller.h"
 #include "LabicCV.h"
-#include "LabicPCL.h"
+#include "pcl_viewer.h"
 #include "reconstructor/reconstructor.h"
 #include "rgbd_image.h"
 #include "tools/queue.h"
@@ -74,16 +74,16 @@ int main(int argc, char **argv) {
 	}
 	cv->start();
 
-	// PCL thread
-	if (opt::enable_pcl()) {
-		pcl = new LabicPCL(kinect, &stop, queue);
-		pcl->start();
-	}
-	
     // Reconstructor thread
 	if (opt::enable_reconstructor()) {
 		recon = new Reconstructor(&stop, queue);
 		recon->start();
+	}
+
+	// PCL thread
+	if (opt::enable_pcl()) {
+		pcl = new LabicPCL(&stop, recon->world);
+		pcl->start();
 	}
 
 	while (!stop) {

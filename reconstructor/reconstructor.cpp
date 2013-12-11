@@ -129,8 +129,8 @@ void Reconstructor::performAlignment() {
 		// 5. Apply transformation to all frame points
 		ddebug << "Final accumulated transformation:\n" << transformGlobal << endl;
 
-		PointCloud<PointXYZRGB> cloudCurrent = rgbdCurrent.pointCloud();
-		PointCloud<PointXYZRGB> alignedCloudCurrent;
+		Cloud cloudCurrent = rgbdCurrent.pointCloud();
+		Cloud alignedCloudCurrent;
 		transformPointCloud(cloudCurrent, alignedCloudCurrent, transformGlobal);
 
 		// 6. Update 'previous' variables

@@ -16,6 +16,7 @@ namespace labic {
         void close() { join(); }
 		void performAlignment();
 		void printStats() const;
+		Cloud world; // TODO private
 
 	private:
 		void threadFunc();
@@ -34,7 +35,6 @@ namespace labic {
 		double	     totalTime;
 		double		 lastError;
 		double		 totalError;
-		pcl::PointCloud<pcl::PointXYZRGB> world;
 		cv::Mat							  descriptorsPrevious;
 		std::vector<cv::KeyPoint>		  featuresPrevious;
 		Eigen::Matrix4d 				  transformPrevious, transformGlobal;

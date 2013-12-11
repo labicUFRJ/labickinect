@@ -59,7 +59,7 @@ void RANSACAligner::getRandomSamples(std::vector<int>& maybeIndexes, std::vector
 
 }
 
-double RANSACAligner::getAlignmentError(const PointCloud<PointXYZRGB>& transformedCloud, const PointCloud<PointXYZRGB>& cloudPrevious, const vector<int>& inliersIndexes) const {
+double RANSACAligner::getAlignmentError(const Cloud& transformedCloud, const Cloud& cloudPrevious, const vector<int>& inliersIndexes) const {
     assert(transformedCloud.size() == cloudPrevious.size());
 
     double error = 0.0;
@@ -74,7 +74,7 @@ double RANSACAligner::getAlignmentError(const PointCloud<PointXYZRGB>& transform
     return error;
 }
 
-void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, pcl::PointCloud<pcl::PointXYZRGB>& cloudCurrent) {
+void RANSACAligner::estimate(Cloud& cloudPrevious, Cloud& cloudCurrent) {
     assert(cloudCurrent.size() == cloudPrevious.size());
     reset();
 
@@ -101,7 +101,7 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 		for (unsigned int i=0; i<notMaybeIndexes.size(); i++) {
 			int pointIndex = notMaybeIndexes[i];
 			// creating pointcloud just to test transformation with a single point
-			PointCloud<PointXYZRGB> transformedPoint;
+			Cloud transformedPoint;
 			transformedPoint.clear();
 			transformedPoint.push_back(cloudCurrent.points[pointIndex]);
 			transformPointCloud(transformedPoint, transformedPoint, maybeTransform);
@@ -130,7 +130,7 @@ void RANSACAligner::estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, p
 
 			// Generate the transformed cloud using thisTransform
 			// Note that this cloud will include points that are not in consensus set, be careful
-			PointCloud<PointXYZRGB> transformedCloudCurrent;
+			Cloud transformedCloudCurrent;
 			transformPointCloud(cloudCurrent, transformedCloudCurrent, thisTransform);
 			thisError = getAlignmentError(transformedCloudCurrent, cloudPrevious, consensusSetIndexes);
 

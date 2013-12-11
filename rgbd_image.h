@@ -20,8 +20,8 @@ namespace labic {
 		const cv::Mat3b& rgb() const { return m_rgb; }
 		const cv::Mat1f& depth() const { return m_depth; }
 		const uint32_t timestamp() const { return time; }
-		const pcl::PointCloud<pcl::PointXYZRGB> pointCloud() const;
-		const pcl::PointCloud<pcl::PointXYZRGB> pointCloudOfSelection(std::vector<cv::Point2f> pts) const;
+		const Cloud pointCloud() const;
+		const Cloud pointCloudOfSelection(std::vector<cv::Point2f> pts) const;
 		const pcl::PointXYZRGB point(int r, int c) const;
 		const pcl::PointXYZRGB point(int i) const;
 		bool rgbPixelHasDepth(int r, int c) const { return m_depth(r,c) > 1e-5; }

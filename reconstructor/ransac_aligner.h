@@ -10,7 +10,7 @@ namespace labic {
 	class RANSACAligner {
 	public:
 		RANSACAligner();
-		void estimate(pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, pcl::PointCloud<pcl::PointXYZRGB>& cloudCurrent);
+		void estimate(Cloud& cloudPrevious, Cloud& cloudCurrent);
 		void setMaxIterations(int _maxIterations) { maxIterations = _maxIterations; }
 		void setMinInliers(int _minInliers) { minInliers = _minInliers; }
 		void setDistanceThreshold(double _dist) { inlierThreshold = _dist; }
@@ -22,7 +22,7 @@ namespace labic {
 	private:
 		void reset();
 		void getRandomSamples(std::vector<int>& maybe, std::vector<int>& notMaybe) const;
-		double getAlignmentError(const pcl::PointCloud<pcl::PointXYZRGB>& transformedCloud, const pcl::PointCloud<pcl::PointXYZRGB>& cloudPrevious, const std::vector<int>& inliersIndexes) const;
+		double getAlignmentError(const Cloud& transformedCloud, const Cloud& cloudPrevious, const std::vector<int>& inliersIndexes) const;
 
 		unsigned int maxIterations; // k
 		unsigned int nSamples; // number of maybe_inliers (random samples)
@@ -33,7 +33,7 @@ namespace labic {
 		double bestError;
 		Eigen::Matrix4d bestTransform;
 		std::vector<int> bestConsensusSetIndexes;
-		//pcl::PointCloud<pcl::PointXYZRGB> cloudCurrent, cloudPrevious;
+		//Cloud cloudCurrent, cloudPrevious;
 		pcl::registration::TransformationEstimationSVD<pcl::PointXYZRGB, pcl::PointXYZRGB, double> estimatorSVD;
 		pcl::registration::TransformationEstimationLM<pcl::PointXYZRGB, pcl::PointXYZRGB, double> estimatorLM;
 		pcl::registration::TransformationEstimation<pcl::PointXYZRGB, pcl::PointXYZRGB, double>* estimator;

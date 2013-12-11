@@ -23,6 +23,7 @@ namespace labic {
 	static const int DEPTH_BLANK = 2047;
 
 	typedef std::chrono::high_resolution_clock hrclock;
+	typedef pcl::PointCloud<pcl::PointXYZRGB> Cloud;
 
 	inline double diffTime(hrclock::time_point a, hrclock::time_point b) {
 		return std::chrono::duration_cast<std::chrono::milliseconds>(a - b).count()/1000.0;
@@ -35,7 +36,7 @@ namespace labic {
 	inline int mmToRaw(float depthValue) {
 		int z = DEPTH_BLANK;
 		if (depthValue > 0) {
-			z = (int) MAX(0, ((1.0/(depthValue/1000.0)) - 3.3309495161)/(-0.0030711016));
+			z = (int) MAX(0, ((1.0/(depthValue)) - 3.3309495161)/(-0.0030711016));
 		}
 		return z;
 	}
@@ -43,9 +44,9 @@ namespace labic {
 	inline pcl::PointXYZ pointInPixelSpace(pcl::PointXYZRGB p) {
 		static const double f = 580.0; // focal length of ir camera in pixels
 		static const double b = 0.075; // 7.5 cm in m
-		p.x /= 1000; // convert from mm scale to m
-		p.y /= 1000;
-		p.z /= 1000;
+//		p.x /= 1000; // convert from mm scale to m
+//		p.y /= 1000;
+//		p.z /= 1000;
 
 		pcl::PointXYZ r;
 		r.x = (f/p.z)*p.x + width/2;

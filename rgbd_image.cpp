@@ -33,7 +33,7 @@ void RGBDImage::update(std::vector<uint8_t>& _raw_rgb, std::vector<uint16_t>& _r
 		int x = i % width;
 		int y = i / width;
 
-		m_depth(y,x) = raw_depth[i];
+		m_depth(y,x) = raw_depth[i]/1000.0; // convert from mm to m
 		m_rgb(y,x)[0] = raw_rgb[3*i+2];
 		m_rgb(y,x)[1] = raw_rgb[3*i+1];
 		m_rgb(y,x)[2] = raw_rgb[3*i+0];
@@ -60,7 +60,7 @@ bool RGBDImage::operator==(const RGBDImage& other) const {
 const pcl::PointXYZRGB RGBDImage::point(int r, int c) const {
 	pcl::PointXYZRGB pt;
 
-	float d = m_depth(r,c); // depth has to be in mm
+	float d = m_depth(r,c); // depth has to be in m
 
 	pt.x = (c - cx_d) * d * fx_d;
 	pt.y = (r - cy_d) * d * fy_d;
@@ -76,9 +76,8 @@ const pcl::PointXYZRGB RGBDImage::point(int i) const {
 	return point(i/width, i%width);
 }
 
-const pcl::PointCloud<pcl::PointXYZRGB> RGBDImage::pointCloud() const {
-	pcl::PointCloud<pcl::PointXYZRGB> cloud;
-	std::vector<cv::Point2f> pts(0);
+const Cloud RGBDImage::pointCloud() const {
+	Cloud cloud;
 
 	//cloud.reserve(width*height);
 
@@ -89,8 +88,8 @@ const pcl::PointCloud<pcl::PointXYZRGB> RGBDImage::pointCloud() const {
 	return cloud;
 }
 
-const pcl::PointCloud<pcl::PointXYZRGB> RGBDImage::pointCloudOfSelection(std::vector<cv::Point2f> pts) const {
-	pcl::PointCloud<pcl::PointXYZRGB> cloud;
+const Cloud RGBDImage::pointCloudOfSelection(std::vector<cv::Point2f> pts) const {
+	Cloud cloud;
 
 	//cloud.reserve(pts.size());
 

@@ -34,7 +34,7 @@ void VisualReconstructor::operator () (RGBDImage& rgbdPrevious, RGBDImage& rgbdC
 	Mat descriptorsCurrent;
 	vector<DMatch> relatedFeatures;
     vector<Point2f> selectedFeaturePointsCurrent, selectedFeaturePointsPrevious;
-	PointCloud<PointXYZRGB> featureCloudCurrent, featureCloudPrevious, alignedCloudCurrent;
+    Cloud featureCloudCurrent, featureCloudPrevious, alignedCloudCurrent;
 
 	// Clear results from last alignment
     transform = Eigen::Matrix4d::Zero();
