@@ -73,7 +73,7 @@ void LabicCV::display() {
 
         ostringstream fps_str;
         fps_str << "OpenCV FPS: " << fps;
-        putText(cameras, fps_str.str(), Point(20,30), CV_FONT_HERSHEY_PLAIN, 1.0f, Scalar::all(0));
+        putText(cameras, fps_str.str(), Point(20,30), FONT_HERSHEY_PLAIN, 1.0f, Scalar::all(0));
 
         processedFrames++;
     } while (!*stop);

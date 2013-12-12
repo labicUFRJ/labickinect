@@ -11,17 +11,19 @@ using namespace pcl;
 using namespace cv;
 using namespace labic;
 
-VisualReconstructor::VisualReconstructor(): ransacError(0.0), cachedPrevious(0) {
+VisualReconstructor::VisualReconstructor():
+ransacError(0.0),
+adjuster(new FastAdjuster(50, true)),
+matcher(new BFMatcher(NORM_HAMMING, true)),
+extractor(new BriefDescriptorExtractor()),
+cachedPrevious(0) {
+
 	// Reconstructor parameters
 	minFeatures      = 150;
 	maxFeatures      = 500;
 	maxDetectionIte  = 100;
 	minInliers       = 30; // min inliers necessary to match and ransac
 	maxMatchDistance = 10; // max distance of visual match to be valid (pixels)
-
-	adjuster = new FastAdjuster(50, true);
-	extractor = new BriefDescriptorExtractor();
-	matcher = new BFMatcher(NORM_HAMMING, true);
 
 	ransac.setDistanceThreshold(0.8); // paper: 2.0 pixels
 	ransac.setMaxIterations(150);
@@ -106,7 +108,7 @@ void VisualReconstructor::extractRGBFeatures(const RGBDImage& rgbd, vector<KeyPo
 
     int pointsDropped = 0;
     unsigned int i, j;
-    cvtColor(rgbd.rgb(), imgBlackWhite, CV_RGB2GRAY);
+    cvtColor(rgbd.rgb(), imgBlackWhite, COLOR_RGB2GRAY);
 
 	for (i=0; i<maxDetectionIte; i++) {
 		adjuster->detect(imgBlackWhite, keypoints);

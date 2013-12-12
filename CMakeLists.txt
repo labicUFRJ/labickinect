@@ -28,8 +28,8 @@ SET(labickinect_sources
 
 add_executable(labickinect ${labickinect_sources})
 
-add_executable (downsample_test tools/downsample_test.cpp)
-target_link_libraries (downsample_test ${PCL_LIBRARIES})
+#add_executable (downsample_test tools/downsample_test.cpp)
+#target_link_libraries (downsample_test ${PCL_LIBRARIES})
 
 #add_executable (labickinect ${labickinect_sources} main.cpp arg.cpp arg.h debug.h queue.h RGBDImage.cpp RGBDImage.h KinectController.cpp KinectController.h LabicCV.cpp LabicCV.h Reconstructor.cpp Reconstructor.h RANSACAligner.cpp RANSACAligner.h LabicPCL.cpp LabicPCL.h libfreenect.h)
 
