@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
 
 	// PCL thread
 	if (opt::enable_pcl()) {
-		pcl = new LabicPCL(&stop, recon->world);
+		pcl = new LabicPCL(&stop);
 		pcl->start();
 	}
 

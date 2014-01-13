@@ -8,7 +8,7 @@ namespace labic {
 	
 	class LabicPCL {
 	public:
-        LabicPCL(bool* _stop, Cloud& cloud);
+        LabicPCL(bool* _stop);
 		void start() { m_Thread = boost::thread(&LabicPCL::display, this); }
         void close() { viewer->close(); if (m_Thread.joinable()) m_Thread.join(); }
         void display();
@@ -18,7 +18,7 @@ namespace labic {
 		boost::thread m_Thread;
         bool* stop;
         boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
-        Cloud& worldCloud;
+        Cloud::Ptr liveCloud;
         const int viewPort;
 
     };

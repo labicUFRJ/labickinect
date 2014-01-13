@@ -6,8 +6,8 @@ using namespace pcl;
 using namespace pcl::visualization;
 using namespace labic;
 
-LabicPCL::LabicPCL(bool* _stop, Cloud& cloud):
-  stop(_stop), worldCloud(cloud), viewPort(1) {
+LabicPCL::LabicPCL(bool* _stop, Cloud::Ptr cloud):
+  stop(_stop), liveCloud(cloud), viewPort(1) {
     std::cout << "[PCLVisualizer] Viewer initialized\n";
 }
 
@@ -17,8 +17,9 @@ void LabicPCL::display() {
 	viewer.reset(new PCLVisualizer("Current World"));
     viewer->setBackgroundColor(0,0,0);
 
-    Cloud::Ptr liveCloud;
     PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb;
+
+    size_t lastSize = 0;
 
     viewer->addCoordinateSystem(0.1);
     viewer->initCameraParameters();
@@ -26,21 +27,22 @@ void LabicPCL::display() {
     viewer->addText("Cloud empty", 20, 10, "size");
 
 	while (!viewer->wasStopped() && !*stop) {
-		liveCloud = worldCloud.makeShared();
-		rgb.setInputCloud(liveCloud);
+		if (liveCloud->size() != lastSize) {
+			lastSize = liveCloud->size();
+//			rgb.setInputCloud(liveCloud);
+//
+			if (!viewer->updatePointCloud(liveCloud, rgb)) {
+				viewer->addPointCloud(liveCloud, rgb);
+			    rgb.setInputCloud(liveCloud);
+			}
 
-		if (!viewer->updatePointCloud(liveCloud, rgb)) {
-			viewer->addPointCloud(liveCloud, rgb);
-			viewer->setPointCloudRenderingProperties(PCL_VISUALIZER_POINT_SIZE, 1);
+			stringstream txtSize;
+			txtSize << "Cloud size: " << liveCloud->size() << " points";
+			viewer->updateText(txtSize.str(), 20, 10, "size");
 		}
 
-		std::stringstream txtSize;
-		txtSize << "Cloud size: " << liveCloud->size() << " points";
-
-		viewer->updateText(txtSize.str(), 20, 10, "size");
-
-		viewer->spinOnce(100);
-	    boost::this_thread::sleep(boost::posix_time::microseconds(100000)); // WHY
+		viewer->spinOnce(100, true);
+	    boost::this_thread::sleep(boost::posix_time::milliseconds(100)); // TODO WHY
 	}
 
 	cout << "[PCLVisualizer] User closed window" << endl;

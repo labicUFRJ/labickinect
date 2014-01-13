@@ -16,11 +16,10 @@ namespace labic {
         void close() { join(); }
 		void performAlignment();
 		void printStats() const;
-		Cloud world; // TODO private
 
 	private:
 		void threadFunc();
-
+		World& 		  world;
         boost::thread m_Thread;
 		unsigned int minInliersToValidateTransformation;
 		unsigned int framesAnalyzed;

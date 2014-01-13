@@ -18,6 +18,7 @@ SET(labickinect_sources
 	tools/queue.h
 	kinect/libfreenect.h
 	kinect/kinect_controller.cpp kinect/kinect_controller.h
+	reconstructor/world.h
 	rgbd_image.cpp rgbd_image.h
 	LabicCV.cpp LabicCV.h
 	pcl_viewer.cpp pcl_viewer.h

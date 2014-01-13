@@ -14,8 +14,10 @@
 #include <chrono>
 #include <boost/thread.hpp>
 #include <pcl/common/common.h>
+#include <pcl/filters/voxel_grid.h>
 #include "opencv2/core/core.hpp"
 #include "tools/debug.h"
+#include "reconstructor/world.h"
 
 namespace labic {
 	static const int width		 = 640;
@@ -43,10 +45,7 @@ namespace labic {
 
 	inline pcl::PointXYZ pointInPixelSpace(pcl::PointXYZRGB p) {
 		static const double f = 580.0; // focal length of ir camera in pixels
-		static const double b = 0.075; // 7.5 cm in m
-//		p.x /= 1000; // convert from mm scale to m
-//		p.y /= 1000;
-//		p.z /= 1000;
+		static const double b = 0.075; // baseline: 7.5 cm in meters
 
 		pcl::PointXYZ r;
 		r.x = (f/p.z)*p.x + width/2;
@@ -68,6 +67,23 @@ namespace labic {
 		pcl::PointXYZ projP2 = pointInPixelSpace(p2);
 
 		return (pow(projP1.x - projP2.x, 2) + pow(projP1.y - projP2.y, 2) + pow(projP1.z - projP2.z, 2));
+	}
+
+	template <class T>
+	pcl::PointCloud<T> downsample(const pcl::PointCloud<T>& cloud, double leafSize = 0.01) {
+		pcl::PointCloud<T> cloud_filtered;
+
+//		std::cout << "PointCloud before filtering: " << cloud.width * cloud.height << " data points (" << pcl::getFieldsList(cloud) << ")." << std::endl;
+
+		// Create the filtering object
+		pcl::VoxelGrid<T> sor;
+		sor.setInputCloud(cloud.makeShared());
+		sor.setLeafSize(leafSize, leafSize, leafSize);
+		sor.filter(cloud_filtered);
+
+//		std::cout << "PointCloud after filtering: " << cloud_filtered.width * cloud_filtered.height << " data points (" << pcl::getFieldsList (cloud_filtered) << ")." << std::endl;
+
+		return cloud_filtered;
 	}
 }
 

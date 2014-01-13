@@ -1,5 +1,4 @@
 #include <pcl/common/eigen.h>
-#include <pcl/io/ply_io.h>
 #include "../kinect/kinect_controller.h"
 #include "reconstructor.h"
 #include "reconstruction_exception.h"
@@ -9,7 +8,7 @@ using namespace pcl;
 using namespace cv;
 using namespace labic;
 
-Reconstructor::Reconstructor(bool* _stop, Queue<RGBDImage>& q) : stop(_stop), autoSave(false), queue(q) {
+Reconstructor::Reconstructor(bool* _stop, Queue<RGBDImage>& q): world(World::instance()), stop(_stop), autoSave(false), queue(q) {
 	// Reconstructor parameters
 	minInliersToValidateTransformation = 10; // gamma - min inliers to accept ransac
 
@@ -40,7 +39,7 @@ void Reconstructor::threadFunc() {
     		    dinfo << "[Reconstructor] Preparing first frame" << endl;
     			rgbdPrevious = queue.pop();
 
-    			world = rgbdPrevious.pointCloud();
+    			world += downsample(rgbdPrevious.pointCloud());
 
     			pointsDetected = world.size();
 
@@ -73,7 +72,7 @@ void Reconstructor::threadFunc() {
 
     cout << "[Reconstructor] Exporting final world. Please wait... " << endl;
     if (world.size() > 0) {
-    	pcl::io::savePLYFileASCII("world.ply", world);
+    	world.savePLY();
     	cout << "Done." << endl;
     }
     else cout << "Nothing to be done." << endl;
@@ -129,7 +128,7 @@ void Reconstructor::performAlignment() {
 		// 5. Apply transformation to all frame points
 		ddebug << "Final accumulated transformation:\n" << transformGlobal << endl;
 
-		Cloud cloudCurrent = rgbdCurrent.pointCloud();
+		Cloud cloudCurrent = downsample(rgbdCurrent.pointCloud());
 		Cloud alignedCloudCurrent;
 		transformPointCloud(cloudCurrent, alignedCloudCurrent, transformGlobal);
 
@@ -143,7 +142,7 @@ void Reconstructor::performAlignment() {
 		if (autoSave) {
 			char filenameply[25];
 			sprintf(filenameply, "world%d.ply", reconstructionsGenerated);
-			pcl::io::savePLYFileASCII(filenameply, world);
+			world.savePLY(filenameply);
 			cout << "[Reconstructor] World exported with filename '" << filenameply << "'" << endl;
 		}
 	} catch (ReconstructionException& e) {
